@@ -64,7 +64,7 @@ model Materi {
   judul      String
   deskripsi  String?  @db.Text
   tgl_unggah DateTime @default(now())
-  lampiran   String?  // URL or link for external resources
+  lampiran   String?  @db.Text // URL or base64 for external resources
   
   // File storage fields (untuk file yang diupload)
   fileData       Bytes?   // Binary file data stored in database
@@ -86,7 +86,7 @@ model Asesmen {
   durasi         Int?            // Optional - untuk KUIS akan diisi jika ada waktu
   tgl_mulai      DateTime?
   tgl_selesai    DateTime?
-  lampiran       String?         // URL or path untuk file tugas
+  lampiran       String?         @db.Text // URL or base64 for file attachment
 
   guruId String
   guru   User   @relation(fields: [guruId], references: [id])
@@ -181,7 +181,7 @@ model PengumpulanProyek {
   namaKelompok String? // Jika kelompok (tugas)
   ketua        String? // Nama ketua kelompok (tugas)
   anggota      String? // Nama anggota kelompok (tugas)
-  fileUrl      String? // URL file yang diupload (tugas)
+  fileUrl      String? @db.Text // URL or base64 for file attachment
 
   // Relations
   kelompokId String? // Optional: untuk proyek kelompok

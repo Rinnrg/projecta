@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -37,15 +37,17 @@ import {
 import Link from "next/link"
 
 interface PageProps {
-  params: { 
+  params: Promise<{ 
     id: string
     asesmenId: string
-  }
+  }>
 }
 
 export default function AsesmenDetailPage({ params }: PageProps) {
   const { user, isLoading: authLoading } = useAuth()
   const router = useRouter()
+  const resolvedParams = use(params)
+  const { id: courseId, asesmenId } = resolvedParams
   const [asesmen, setAsesmen] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
@@ -60,7 +62,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
     // Fetch asesmen data
     const fetchAsesmen = async () => {
       try {
-        const response = await fetch(`/api/asesmen/${params.asesmenId}`)
+        const response = await fetch(`/api/asesmen/${asesmenId}`)
         if (response.ok) {
           const data = await response.json()
           setAsesmen(data.asesmen)
@@ -76,7 +78,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
     }
 
     fetchAsesmen()
-  }, [user, authLoading, router, params.asesmenId])
+  }, [user, authLoading, router, asesmenId])
 
   if (authLoading || loading) {
     return (
@@ -96,7 +98,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
 
   // Check permission
   if (user && user.role === 'GURU' && asesmen.guruId !== user.id) {
-    router.push(`/courses/${params.id}`)
+    router.push(`/courses/${courseId}`)
     return null
   }
 
@@ -117,7 +119,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
       {/* Header */}
       <div className="space-y-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/courses/${params.id}`}>
+          <Link href={`/courses/${courseId}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Kembali ke Course
           </Link>
@@ -150,7 +152,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
           <div className="flex gap-2">
             {isStudent && asesmen.tipe === 'TUGAS' && !isDeadlinePassed && (
               <Button asChild>
-                <Link href={`/courses/${params.id}/asesmen/${params.asesmenId}/submit`}>
+                <Link href={`/courses/${courseId}/asesmen/${asesmenId}/submit`}>
                   <Upload className="mr-2 h-4 w-4" />
                   {hasSubmitted ? 'Edit Pengumpulan' : 'Kumpulkan Tugas'}
                 </Link>
@@ -158,7 +160,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
             )}
             {isStudent && asesmen.tipe === 'KUIS' && !isDeadlinePassed && asesmen.soal && asesmen.soal.length > 0 && (
               <Button asChild>
-                <Link href={`/courses/${params.id}/asesmen/${params.asesmenId}/kerjakan`}>
+                <Link href={`/courses/${courseId}/asesmen/${asesmenId}/kerjakan`}>
                   <FileText className="mr-2 h-4 w-4" />
                   Kerjakan Kuis
                 </Link>
@@ -166,7 +168,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
             )}
             {isTeacherOrAdmin && asesmen.tipe === 'KUIS' && (
               <Button asChild>
-                <Link href={`/courses/${params.id}/asesmen/${params.asesmenId}/soal/new`}>
+                <Link href={`/courses/${courseId}/asesmen/${asesmenId}/soal/new`}>
                   <Plus className="mr-2 h-4 w-4" />
                   Tambah Soal
                 </Link>
@@ -174,7 +176,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
             )}
             {isTeacherOrAdmin && (
               <Button variant="outline" asChild>
-                <Link href={`/courses/${params.id}/asesmen/${params.asesmenId}/edit`}>
+                <Link href={`/courses/${courseId}/asesmen/${asesmenId}/edit`}>
                   <Edit className="mr-2 h-4 w-4" />
                   Edit
                 </Link>

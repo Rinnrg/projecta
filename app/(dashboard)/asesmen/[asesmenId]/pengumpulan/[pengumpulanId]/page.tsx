@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,15 +25,17 @@ import Link from "next/link"
 import { toast } from "@/hooks/use-toast"
 
 interface PageProps {
-  params: { 
+  params: Promise<{ 
     asesmenId: string
     pengumpulanId: string
-  }
+  }>
 }
 
 export default function PengumpulanDetailPage({ params }: PageProps) {
   const { user, isLoading: authLoading } = useAuth()
   const router = useRouter()
+  const resolvedParams = use(params)
+  const { asesmenId, pengumpulanId } = resolvedParams
   const [pengumpulan, setPengumpulan] = useState<any>(null)
   const [asesmen, setAsesmen] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -50,12 +52,12 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
     }
 
     fetchData()
-  }, [user, authLoading])
+  }, [user, authLoading, pengumpulanId, asesmenId])
 
   const fetchData = async () => {
     try {
       // Fetch pengumpulan data
-      const pengumpulanRes = await fetch(`/api/pengumpulan/${params.pengumpulanId}`)
+      const pengumpulanRes = await fetch(`/api/pengumpulan/${pengumpulanId}`)
       if (!pengumpulanRes.ok) throw new Error('Failed to fetch')
       
       const pengumpulanData = await pengumpulanRes.json()
@@ -64,7 +66,7 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
       setCatatan(pengumpulanData.pengumpulan.catatan || '')
 
       // Fetch asesmen data
-      const asesmenRes = await fetch(`/api/asesmen/${params.asesmenId}`)
+      const asesmenRes = await fetch(`/api/asesmen/${asesmenId}`)
       if (asesmenRes.ok) {
         const asesmenData = await asesmenRes.json()
         setAsesmen(asesmenData.asesmen)
@@ -93,7 +95,7 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
 
     setIsSaving(true)
     try {
-      const response = await fetch(`/api/pengumpulan/${params.pengumpulanId}`, {
+      const response = await fetch(`/api/pengumpulan/${pengumpulanId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -143,7 +145,7 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
       {/* Header */}
       <div className="space-y-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/asesmen/${params.asesmenId}`}>
+          <Link href={`/asesmen/${asesmenId}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Kembali ke Asesmen
           </Link>

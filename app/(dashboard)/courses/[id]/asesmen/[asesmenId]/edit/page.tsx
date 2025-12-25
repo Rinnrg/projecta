@@ -1,21 +1,23 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { AsesmenEditForm } from "@/components/asesmen-edit-form"
 import { Loader2 } from "lucide-react"
 
 interface PageProps {
-  params: { 
+  params: Promise<{ 
     id: string
     asesmenId: string
-  }
+  }>
 }
 
 export default function EditAsesmenPage({ params }: PageProps) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
+  const resolvedParams = use(params)
+  const { id: courseId, asesmenId } = resolvedParams
 
   useEffect(() => {
     if (isLoading) return
@@ -52,7 +54,7 @@ export default function EditAsesmenPage({ params }: PageProps) {
         </p>
       </div>
 
-      <AsesmenEditForm asesmenId={params.asesmenId} courseId={params.id} />
+      <AsesmenEditForm asesmenId={asesmenId} courseId={courseId} />
     </div>
   )
 }
