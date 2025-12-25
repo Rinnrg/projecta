@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,6 +26,7 @@ interface AddAsesmenFormProps {
 
 export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenFormProps) {
   const router = useRouter()
+  const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     nama: "",
@@ -49,6 +51,15 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
       return
     }
 
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "User tidak terautentikasi",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsLoading(true)
     try {
       const response = await fetch('/api/asesmen', {
@@ -66,11 +77,13 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
           durasi: formData.durasi ? parseInt(formData.durasi) : null,
           lampiran: formData.lampiran || null,
           courseId: courseId,
+          guruId: user.id,
         }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create asesmen')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create asesmen')
       }
 
       toast({
@@ -84,7 +97,7 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
       console.error('Error creating asesmen:', error)
       toast({
         title: "Error",
-        description: "Gagal membuat asesmen",
+        description: error instanceof Error ? error.message : "Gagal membuat asesmen",
         variant: "destructive",
       })
     } finally {

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   try {
@@ -48,17 +47,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get userId from cookies
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('userId')?.value
-    
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const body = await request.json()
     const { 
       nama, 
@@ -69,13 +57,14 @@ export async function POST(request: NextRequest) {
       tgl_selesai,
       durasi,
       lampiran,
-      courseId 
+      courseId,
+      guruId 
     } = body
 
     // Validasi field wajib
-    if (!nama || !tipe || !courseId) {
+    if (!nama || !tipe || !courseId || !guruId) {
       return NextResponse.json(
-        { error: 'Data tidak lengkap (nama, tipe, courseId wajib diisi)' },
+        { error: 'Data tidak lengkap (nama, tipe, courseId, guruId wajib diisi)' },
         { status: 400 }
       )
     }
@@ -121,7 +110,7 @@ export async function POST(request: NextRequest) {
         tgl_mulai: startDate,
         tgl_selesai: endDate,
         lampiran: lampiran || null,
-        guruId: userId,
+        guruId: guruId,
         courseId,
       },
       include: {
