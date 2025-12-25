@@ -29,7 +29,7 @@ import { id as localeId, enUS } from "date-fns/locale"
 import { DashboardSkeleton } from "@/components/ui/loading-skeletons"
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   // FIX: Rename 'locale' menjadi 'currentLocale' untuk menghindari konflik nama variabel
   const { t, locale: currentLocale } = useAutoTranslate()
   
@@ -98,13 +98,18 @@ export default function DashboardPage() {
     fetchDashboardData()
   }, [user])
 
-  if (!user) {
-    // Don't redirect immediately, wait for auth to load
+  // Show loading while checking auth
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     )
+  }
+
+  // Redirect to login if not authenticated (after auth is loaded)
+  if (!authLoading && !user) {
+    redirect("/login")
   }
 
   if (loading) {

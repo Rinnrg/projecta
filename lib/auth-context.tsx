@@ -9,24 +9,28 @@ interface AuthContextType {
   setUserRole: (role: UserRole) => void
   isAuthenticated: boolean
   logout: () => void
+  isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   // Load user from localStorage on mount
   useEffect(() => {
     const savedUser = localStorage.getItem('user')
     if (savedUser) {
       try {
-        setUser(JSON.parse(savedUser))
+        const parsedUser = JSON.parse(savedUser)
+        setUser(parsedUser)
       } catch (e) {
         console.error('Failed to parse saved user:', e)
         localStorage.removeItem('user')
       }
     }
+    setIsLoading(false)
   }, [])
 
   // Save user to localStorage when it changes
@@ -56,7 +60,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, setUser, setUserRole, isAuthenticated: !!user, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      setUser, 
+      setUserRole, 
+      isAuthenticated: !!user, 
+      logout,
+      isLoading 
+    }}>
       {children}
     </AuthContext.Provider>
   )

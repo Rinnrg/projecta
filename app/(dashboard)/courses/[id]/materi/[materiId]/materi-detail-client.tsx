@@ -34,6 +34,10 @@ interface MateriDetailClientProps {
     deskripsi: string | null
     tgl_unggah: Date
     lampiran: string | null
+    fileData: Buffer | null
+    fileName: string | null
+    fileType: string | null
+    fileSize: number | null
     courseId: string
     course: {
       id: string
@@ -62,7 +66,14 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
 
   const isTeacherOrAdmin = user?.role === "GURU" || user?.role === "ADMIN"
 
-  const getFileIcon = (url: string | null) => {
+  const getFileIcon = (url: string | null, mimetype?: string) => {
+    // Check file from database first
+    if (mimetype) {
+      if (mimetype.startsWith("video/")) return <PlayCircle className="h-6 w-6" />
+      if (mimetype === "application/pdf") return <FileText className="h-6 w-6" />
+      return <FileText className="h-6 w-6" />
+    }
+    // Fallback to URL check
     if (!url) return <FileText className="h-6 w-6" />
     if (url.includes("youtube") || url.includes("youtu.be") || url.endsWith(".mp4") || url.endsWith(".webm")) {
       return <PlayCircle className="h-6 w-6" />
@@ -71,7 +82,15 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
     return <LinkIcon className="h-6 w-6" />
   }
 
-  const getBgColor = (url: string | null) => {
+  const getBgColor = (url: string | null, mimetype?: string) => {
+    // Check file from database first
+    if (mimetype) {
+      if (mimetype.startsWith("video/")) return "bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400"
+      if (mimetype === "application/pdf") return "bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400"
+      if (mimetype.startsWith("image/")) return "bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400"
+      return "bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
+    }
+    // Fallback to URL check
     if (!url) return "bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
     if (url.includes("youtube") || url.includes("youtu.be")) {
       return "bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400"
@@ -83,7 +102,15 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
     return "bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
   }
 
-  const getFileType = (url: string | null) => {
+  const getFileType = (url: string | null, mimetype?: string, originalName?: string) => {
+    // Check file from database first
+    if (mimetype && originalName) {
+      if (mimetype.startsWith("video/")) return `Video: ${originalName}`
+      if (mimetype === "application/pdf") return `PDF: ${originalName}`
+      if (mimetype.startsWith("image/")) return `Gambar: ${originalName}`
+      return `File: ${originalName}`
+    }
+    // Fallback to URL check
     if (!url) return "Tidak ada lampiran"
     if (url.includes("youtube") || url.includes("youtu.be")) return "Video YouTube"
     if (url.endsWith(".pdf")) return "Dokumen PDF"
@@ -267,24 +294,50 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
               Lampiran & Sumber Belajar
             </h3>
 
-            {materi.lampiran ? (
+            {(materi.fileData || materi.lampiran) ? (
               <div className="grid gap-4">
                 <Card className="group hover:border-primary/50 transition-all hover:shadow-md">
                   <CardContent className="p-4 sm:p-6 flex items-start gap-4">
-                    <div className={`p-3 rounded-lg shrink-0 transition-transform group-hover:scale-110 ${getBgColor(materi.lampiran)}`}>
-                      {getFileIcon(materi.lampiran)}
+                    <div className={`p-3 rounded-lg shrink-0 transition-transform group-hover:scale-110 ${
+                      materi.fileData 
+                        ? getBgColor(null, materi.fileType || undefined)
+                        : getBgColor(materi.lampiran)
+                    }`}>
+                      {materi.fileData 
+                        ? getFileIcon(null, materi.fileType || undefined)
+                        : getFileIcon(materi.lampiran)
+                      }
                     </div>
                     <div className="flex-1 space-y-2 min-w-0">
                       <h4 className="font-semibold text-base group-hover:text-primary transition-colors">
-                        {getFileType(materi.lampiran)}
+                        {materi.fileData 
+                          ? getFileType(null, materi.fileType || undefined, materi.fileName || undefined)
+                          : getFileType(materi.lampiran)
+                        }
                       </h4>
-                      <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                        <LinkIcon className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{materi.lampiran}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Klik tombol di samping untuk membuka atau mengunduh lampiran
-                      </p>
+                      {materi.fileData ? (
+                        <>
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                            <FileText className="h-3 w-3 shrink-0" />
+                            <span>{((materi.fileSize || 0) / 1024 / 1024).toFixed(2)} MB</span>
+                            <span>•</span>
+                            <span>Disimpan di database</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Klik tombol di samping untuk membuka atau mengunduh file
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                            <LinkIcon className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{materi.lampiran}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Klik tombol di samping untuk membuka lampiran external
+                          </p>
+                        </>
+                      )}
                     </div>
                     <Button
                       variant="default"
@@ -292,16 +345,30 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
                       className="shrink-0 gap-2"
                       asChild
                     >
-                      <a href={materi.lampiran} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-4 w-4" />
-                        Buka
+                      <a 
+                        href={materi.fileData ? `/api/materi/${materi.id}/file` : materi.lampiran || '#'} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        download={materi.fileData ? materi.fileName || undefined : undefined}
+                      >
+                        {materi.fileData ? (
+                          <>
+                            <Download className="h-4 w-4" />
+                            Unduh
+                          </>
+                        ) : (
+                          <>
+                            <ExternalLink className="h-4 w-4" />
+                            Buka
+                          </>
+                        )}
                       </a>
                     </Button>
                   </CardContent>
                 </Card>
 
                 {/* YouTube Embed if it's a YouTube link */}
-                {(materi.lampiran.includes("youtube.com") || materi.lampiran.includes("youtu.be")) && (
+                {materi.lampiran && (materi.lampiran.includes("youtube.com") || materi.lampiran.includes("youtu.be")) && (
                   <Card>
                     <CardContent className="p-4 sm:p-6">
                       <div className="aspect-video w-full rounded-lg overflow-hidden bg-muted">
@@ -312,6 +379,38 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
                         />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* PDF Preview for database files */}
+                {materi.fileData && materi.fileType === 'application/pdf' && (
+                  <Card>
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="aspect-[3/4] w-full rounded-lg overflow-hidden bg-muted">
+                        <iframe
+                          src={`/api/materi/${materi.id}/file`}
+                          title={materi.judul}
+                          className="w-full h-full"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Video Preview for database video files */}
+                {materi.fileData && materi.fileType?.startsWith('video/') && (
+                  <Card>
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="aspect-video w-full rounded-lg overflow-hidden bg-muted">
+                        <video
+                          src={`/api/materi/${materi.id}/file`}
+                          controls
+                          className="w-full h-full"
+                        >
+                          Browser Anda tidak mendukung tag video.
+                        </video>
                       </div>
                     </CardContent>
                   </Card>

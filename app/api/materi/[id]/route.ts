@@ -50,9 +50,16 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const { judul, deskripsi, lampiran } = body
+    const { judul, deskripsi, lampiran, fileData, fileName, fileType, fileSize } = body
 
     console.log('Updating materi:', id, 'with data:', body)
+
+    // Convert base64 file data to Buffer if provided
+    let fileBuffer = undefined
+    if (fileData) {
+      const base64Data = fileData.includes(',') ? fileData.split(',')[1] : fileData
+      fileBuffer = Buffer.from(base64Data, 'base64')
+    }
 
     const materi = await prisma.materi.update({
       where: { id },
@@ -60,6 +67,10 @@ export async function PUT(
         ...(judul && { judul }),
         ...(deskripsi !== undefined && { deskripsi }),
         ...(lampiran !== undefined && { lampiran }),
+        ...(fileBuffer !== undefined && { fileData: fileBuffer }),
+        ...(fileName !== undefined && { fileName }),
+        ...(fileType !== undefined && { fileType }),
+        ...(fileSize !== undefined && { fileSize }),
       },
       include: {
         course: {

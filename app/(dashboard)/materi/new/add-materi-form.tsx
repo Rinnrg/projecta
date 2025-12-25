@@ -96,22 +96,14 @@ export default function AddMateriForm({ courseId, courseTitle }: AddMateriFormPr
     }
   }
 
-  // Upload file to server
-  const uploadFile = async (file: File): Promise<string> => {
-    const formData = new FormData()
-    formData.append("file", file)
-
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
+  // Convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = (error) => reject(error)
     })
-
-    if (!response.ok) {
-      throw new Error("Gagal mengupload file")
-    }
-
-    const data = await response.json()
-    return data.url
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,16 +127,22 @@ export default function AddMateriForm({ courseId, courseTitle }: AddMateriFormPr
 
     try {
       setIsLoading(true)
-      let lampiranUrl = formData.lampiran
+      let fileData = null
+      let fileName = null
+      let fileType = null
+      let fileSize = null
 
-      // Upload file if file upload type is selected
+      // Convert file to base64 if file upload type is selected
       if (uploadType === "file" && selectedFile) {
         setIsUploading(true)
         try {
-          lampiranUrl = await uploadFile(selectedFile)
+          fileData = await fileToBase64(selectedFile)
+          fileName = selectedFile.name
+          fileType = selectedFile.type
+          fileSize = selectedFile.size
         } catch (uploadError) {
-          console.error("Error uploading file:", uploadError)
-          showError("Error", "Gagal mengupload file")
+          console.error("Error converting file:", uploadError)
+          showError("Error", "Gagal memproses file")
           setIsLoading(false)
           setIsUploading(false)
           return
@@ -161,7 +159,11 @@ export default function AddMateriForm({ courseId, courseTitle }: AddMateriFormPr
           courseId,
           judul: formData.judul,
           deskripsi: formData.deskripsi || null,
-          lampiran: lampiranUrl || null,
+          lampiran: uploadType === "link" ? formData.lampiran : null,
+          fileData,
+          fileName,
+          fileType,
+          fileSize,
         }),
       })
 
