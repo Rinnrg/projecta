@@ -4,11 +4,12 @@ import { prisma } from '@/lib/prisma'
 // GET single asesmen by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const asesmen = await prisma.asesmen.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         guru: {
           select: {
@@ -63,9 +64,10 @@ export async function GET(
 // UPDATE asesmen
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
     const { 
       nama, 
@@ -112,7 +114,7 @@ export async function PUT(
     }
 
     const asesmen = await prisma.asesmen.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(nama && { nama }),
         ...(deskripsi !== undefined && { deskripsi }),
@@ -155,10 +157,10 @@ export async function PUT(
 // DELETE asesmen
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const asesmenId = params.id
+    const { id: asesmenId } = await params
     
     // Use transaction to delete all related data
     // Note: Some deletions will cascade automatically due to onDelete: Cascade in schema
