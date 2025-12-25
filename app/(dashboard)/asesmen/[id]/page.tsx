@@ -188,6 +188,7 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
               </Button>
             )}
           </div>
+        </div>
       </div>
 
       {/* Info Cards */}
