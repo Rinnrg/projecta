@@ -1,49 +1,47 @@
-import { redirect } from "next/navigation"
-import { cookies } from "next/headers"
-import { prisma } from "@/lib/prisma"
+"use client"
+
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
 import { AsesmenEditForm } from "@/components/asesmen-edit-form"
-import { Suspense } from "react"
-
-async function getUser() {
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('userId')?.value
-  
-  if (!userId) {
-    redirect('/login')
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      nama: true,
-      email: true,
-      role: true,
-    },
-  })
-
-  if (!user) {
-    redirect('/login')
-  }
-
-  // Only GURU and ADMIN can edit asesmen
-  if (user.role !== 'GURU' && user.role !== 'ADMIN') {
-    redirect('/asesmen')
-  }
-
-  return user
-}
+import { Loader2 } from "lucide-react"
 
 interface PageProps {
-  params: Promise<{ 
+  params: { 
     id: string
     asesmenId: string
-  }>
+  }
 }
 
-export default async function EditAsesmenPage({ params }: PageProps) {
-  const { id: courseId, asesmenId } = await params
-  const user = await getUser()
+export default function EditAsesmenPage({ params }: PageProps) {
+  const { user, isLoading } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (isLoading) return
+
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
+    if (user.role !== 'GURU' && user.role !== 'ADMIN') {
+      router.push('/courses')
+      return
+    }
+  }, [user, isLoading, router])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (!user) {
+    return null
+  }
 
   return (
     <div className="container py-6 sm:py-8 space-y-6">
@@ -54,9 +52,7 @@ export default async function EditAsesmenPage({ params }: PageProps) {
         </p>
       </div>
 
-      <Suspense fallback={<div>Loading...</div>}>
-        <AsesmenEditForm asesmenId={asesmenId} courseId={courseId} />
-      </Suspense>
+      <AsesmenEditForm asesmenId={params.asesmenId} courseId={params.id} />
     </div>
   )
 }

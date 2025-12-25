@@ -37,8 +37,27 @@ export async function GET(
                 id: true,
                 nama: true,
                 email: true,
+                foto: true,
               },
             },
+          },
+          orderBy: {
+            tanggal: 'desc',
+          },
+        },
+        pengumpulanProyek: {
+          include: {
+            siswa: {
+              select: {
+                id: true,
+                nama: true,
+                email: true,
+                foto: true,
+              },
+            },
+          },
+          orderBy: {
+            tgl_unggah: 'desc',
           },
         },
       },

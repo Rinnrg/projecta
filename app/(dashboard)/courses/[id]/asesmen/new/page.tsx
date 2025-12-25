@@ -1,59 +1,66 @@
-import { redirect } from "next/navigation"
-import { cookies } from "next/headers"
-import { prisma } from "@/lib/prisma"
-import AddAsesmenForm from "./add-asesmen-form"
+"use client"
 
-export const dynamic = 'force-dynamic'
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
+import AddAsesmenForm from "./add-asesmen-form"
+import { Loader2 } from "lucide-react"
 
 interface PageProps {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }
 
-async function getUser() {
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('userId')?.value
-  
-  if (!userId) {
-    redirect('/login')
+export default function AddAsesmenPage({ params }: PageProps) {
+  const { user, isLoading } = useAuth()
+  const router = useRouter()
+  const [course, setCourse] = useState<{ id: string; judul: string } | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Check authentication and authorization
+    if (isLoading) return
+
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
+    if (user.role !== 'GURU' && user.role !== 'ADMIN') {
+      router.push('/courses')
+      return
+    }
+
+    // Fetch course data
+    const fetchCourse = async () => {
+      try {
+        const response = await fetch(`/api/courses/${params.id}`)
+        if (response.ok) {
+          const data = await response.json()
+          setCourse(data.course)
+        } else {
+          router.push('/courses')
+        }
+      } catch (error) {
+        console.error('Error fetching course:', error)
+        router.push('/courses')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCourse()
+  }, [user, isLoading, router, params.id])
+
+  if (isLoading || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      nama: true,
-      email: true,
-      role: true,
-    },
-  })
-
-  if (!user) {
-    redirect('/login')
-  }
-
-  // Only GURU and ADMIN can create asesmen
-  if (user.role !== 'GURU' && user.role !== 'ADMIN') {
-    redirect('/courses')
-  }
-
-  return user
-}
-
-export default async function AddAsesmenPage({ params }: PageProps) {
-  const { id: courseId } = await params
-  const user = await getUser()
-
-  // Verify course exists
-  const course = await prisma.course.findUnique({
-    where: { id: courseId },
-    select: {
-      id: true,
-      judul: true,
-    },
-  })
 
   if (!course) {
-    redirect('/courses')
+    return null
   }
 
   return (

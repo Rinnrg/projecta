@@ -1,6 +1,8 @@
-import { notFound, redirect } from "next/navigation"
-import { prisma } from "@/lib/prisma"
-import { cookies } from "next/headers"
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,128 +29,92 @@ import {
   Edit,
   Download,
   Plus,
+  Loader2,
 } from "lucide-react"
 import Link from "next/link"
 
-export const dynamic = 'force-dynamic'
-
 interface PageProps {
-  params: Promise<{ 
+  params: { 
     id: string
     asesmenId: string
-  }>
+  }
 }
 
-async function getUser() {
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('userId')?.value
-  
-  if (!userId) {
-    redirect('/login')
+export default function AsesmenDetailPage({ params }: PageProps) {
+  const { user, isLoading: authLoading } = useAuth()
+  const router = useRouter()
+  const [asesmen, setAsesmen] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (authLoading) return
+
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
+    // Fetch asesmen data
+    const fetchAsesmen = async () => {
+      try {
+        const response = await fetch(`/api/asesmen/${params.asesmenId}`)
+        if (response.ok) {
+          const data = await response.json()
+          setAsesmen(data.asesmen)
+        } else {
+          router.push('/courses')
+        }
+      } catch (error) {
+        console.error('Error fetching asesmen:', error)
+        router.push('/courses')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAsesmen()
+  }, [user, authLoading, router, params.asesmenId])
+
+  if (authLoading || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      nama: true,
-      email: true,
-      role: true,
-    },
-  })
-
-  if (!user) {
-    redirect('/login')
+  if (!asesmen) {
+    return null
   }
 
-  return user
-}
-
-export default async function AsesmenDetailPage({ params }: PageProps) {
-  const { id: courseId, asesmenId } = await params
-  const user = await getUser()
-
-  const asesmen = await prisma.asesmen.findUnique({
-    where: { id: asesmenId },
-    include: {
-      guru: {
-        select: {
-          nama: true,
-          email: true,
-        },
-      },
-      course: {
-        select: {
-          id: true,
-          judul: true,
-          kategori: true,
-        },
-      },
-      soal: {
-        include: {
-          opsi: true,
-        },
-      },
-      nilai: {
-        include: {
-          siswa: {
-            select: {
-              id: true,
-              nama: true,
-              email: true,
-              foto: true,
-            },
-          },
-        },
-        orderBy: {
-          tanggal: 'desc',
-        },
-      },
-      pengumpulanProyek: {
-        include: {
-          siswa: {
-            select: {
-              id: true,
-              nama: true,
-              email: true,
-              foto: true,
-            },
-          },
-        },
-        where: {
-          asesmenId: asesmenId,
-        },
-        orderBy: {
-          tgl_unggah: 'desc',
-        },
-      },
-    },
-  })
-
-  if (!asesmen || asesmen.courseId !== courseId) {
-    notFound()
+  if (!asesmen) {
+    return null
   }
 
   // Check permission
-  if (user.role === 'GURU' && asesmen.guruId !== user.id) {
-    redirect(`/courses/${courseId}`)
+  if (user && user.role === 'GURU' && asesmen.guruId !== user.id) {
+    router.push(`/courses/${params.id}`)
+    return null
   }
 
   // Check if student has submitted
-  const hasSubmitted = user.role === 'SISWA' 
-    ? asesmen.pengumpulanProyek.some(p => p.siswaId === user.id)
+  const hasSubmitted = user && user.role === 'SISWA' 
+    ? asesmen.pengumpulanProyek?.some((p: any) => p.siswaId === user.id)
     : false
 
   const isDeadlinePassed = asesmen.tgl_selesai 
     ? new Date(asesmen.tgl_selesai) < new Date() 
     : false
 
+  const isTeacherOrAdmin = user && (user.role === 'GURU' || user.role === 'ADMIN')
+  const isStudent = user && user.role === 'SISWA'
+
   return (
     <div className="container max-w-6xl py-6 sm:py-8 space-y-6">
       {/* Header */}
       <div className="space-y-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/courses/${courseId}`}>
+          <Link href={`/courses/${params.id}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Kembali ke Course
           </Link>
@@ -172,40 +138,40 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
               )}
             </div>
             <p className="text-muted-foreground">
-              {asesmen.course.judul} • {asesmen.course.kategori}
+              {asesmen.course?.judul} • {asesmen.course?.kategori}
               {asesmen.tipe === 'TUGAS' && asesmen.tipePengerjaan && (
                 <> • {asesmen.tipePengerjaan === 'KELOMPOK' ? 'Kelompok' : 'Individu'}</>
               )}
             </p>
           </div>
           <div className="flex gap-2">
-            {user.role === 'SISWA' && asesmen.tipe === 'TUGAS' && !isDeadlinePassed && (
+            {isStudent && asesmen.tipe === 'TUGAS' && !isDeadlinePassed && (
               <Button asChild>
-                <Link href={`/courses/${courseId}/asesmen/${asesmenId}/submit`}>
+                <Link href={`/courses/${params.id}/asesmen/${params.asesmenId}/submit`}>
                   <Upload className="mr-2 h-4 w-4" />
                   {hasSubmitted ? 'Edit Pengumpulan' : 'Kumpulkan Tugas'}
                 </Link>
               </Button>
             )}
-            {user.role === 'SISWA' && asesmen.tipe === 'KUIS' && !isDeadlinePassed && asesmen.soal.length > 0 && (
+            {isStudent && asesmen.tipe === 'KUIS' && !isDeadlinePassed && asesmen.soal && asesmen.soal.length > 0 && (
               <Button asChild>
-                <Link href={`/courses/${courseId}/asesmen/${asesmenId}/kerjakan`}>
+                <Link href={`/courses/${params.id}/asesmen/${params.asesmenId}/kerjakan`}>
                   <FileText className="mr-2 h-4 w-4" />
                   Kerjakan Kuis
                 </Link>
               </Button>
             )}
-            {(user.role === 'GURU' || user.role === 'ADMIN') && asesmen.tipe === 'KUIS' && (
+            {isTeacherOrAdmin && asesmen.tipe === 'KUIS' && (
               <Button asChild>
-                <Link href={`/courses/${courseId}/asesmen/${asesmenId}/soal/new`}>
+                <Link href={`/courses/${params.id}/asesmen/${params.asesmenId}/soal/new`}>
                   <Plus className="mr-2 h-4 w-4" />
                   Tambah Soal
                 </Link>
               </Button>
             )}
-            {(user.role === 'GURU' || user.role === 'ADMIN') && (
+            {isTeacherOrAdmin && (
               <Button variant="outline" asChild>
-                <Link href={`/courses/${courseId}/asesmen/${asesmenId}/edit`}>
+                <Link href={`/courses/${params.id}/asesmen/${params.asesmenId}/edit`}>
                   <Edit className="mr-2 h-4 w-4" />
                   Edit
                 </Link>
@@ -243,7 +209,7 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {asesmen.soal.reduce((acc: number, s) => acc + s.bobot, 0)}
+                {asesmen.soal?.reduce((acc: number, s: any) => acc + (s.bobot || 0), 0) || 0}
               </div>
             </CardContent>
           </Card>
@@ -319,8 +285,8 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {asesmen.nilai.length > 0
-                ? (asesmen.nilai.reduce((acc: number, n) => acc + n.skor, 0) / asesmen.nilai.length).toFixed(1)
+              {asesmen.nilai && asesmen.nilai.length > 0
+                ? (asesmen.nilai.reduce((acc: number, n: any) => acc + (n.skor || 0), 0) / asesmen.nilai.length).toFixed(1)
                 : '0'}
             </div>
           </CardContent>
@@ -395,7 +361,7 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
       </Card>
 
       {/* Submissions Table (For Teachers/Admin - TUGAS) */}
-      {(user.role === 'GURU' || user.role === 'ADMIN') && asesmen.tipe === 'TUGAS' && (
+      {isTeacherOrAdmin && asesmen.tipe === 'TUGAS' && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">
@@ -478,7 +444,7 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
       )}
 
       {/* Nilai Table (For Teachers/Admin - KUIS) */}
-      {(user.role === 'GURU' || user.role === 'ADMIN') && asesmen.tipe === 'KUIS' && (
+      {isTeacherOrAdmin && asesmen.tipe === 'KUIS' && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Daftar Nilai Siswa</CardTitle>
