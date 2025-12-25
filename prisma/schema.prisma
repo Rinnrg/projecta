@@ -19,6 +19,11 @@ enum TipeAsesmen {
   TUGAS
 }
 
+enum TipePengerjaan {
+  INDIVIDU
+  KELOMPOK
+}
+
 model User {
   id        String   @id @default(uuid())
   username  String?  @unique
@@ -37,6 +42,7 @@ model User {
   anggotaKelompok AnggotaKelompok[]
   profileShowcase ProfileShowcase[]
   enrollments     Enrollment[]
+  pengumpulanTugas PengumpulanTugas[]
 }
 
 model Course {
@@ -71,15 +77,16 @@ model Materi {
 }
 
 model Asesmen {
-  id          String       @id @default(cuid())
-  nama        String
-  deskripsi   String?
-  tipe        TipeAsesmen  @default(KUIS)
-  jml_soal    Int
-  durasi      Int
-  tgl_mulai   DateTime?
-  tgl_selesai DateTime?
-  lampiran    String?      // URL or path untuk file tugas
+  id             String          @id @default(cuid())
+  nama           String
+  deskripsi      String?
+  tipe           TipeAsesmen     @default(KUIS)
+  tipePengerjaan TipePengerjaan? @default(INDIVIDU) // Hanya untuk TUGAS
+  jml_soal       Int
+  durasi         Int
+  tgl_mulai      DateTime?
+  tgl_selesai    DateTime?
+  lampiran       String?         // URL or path untuk file tugas
 
   guruId String
   guru   User   @relation(fields: [guruId], references: [id])
@@ -89,7 +96,8 @@ model Asesmen {
 
   soal Soal[]
 
-  nilai Nilai[]
+  nilai             Nilai[]
+  pengumpulanTugas  PengumpulanTugas[]
 }
 
 model Soal {
@@ -122,6 +130,23 @@ model Nilai {
 
   asesmenId String
   asesmen   Asesmen @relation(fields: [asesmenId], references: [id])
+}
+
+model PengumpulanTugas {
+  id          String   @id @default(cuid())
+  namaKelompok String? // Jika kelompok
+  ketua       String?  // Nama ketua kelompok
+  anggota     String?  // Nama anggota kelompok (separated by comma atau JSON)
+  fileUrl     String?  // URL file yang diupload
+  catatan     String?  @db.Text
+  tgl_upload  DateTime @default(now())
+  nilai       Float?
+
+  siswaId String // Yang mengupload (bisa ketua atau individu)
+  siswa   User   @relation(fields: [siswaId], references: [id])
+
+  asesmenId String
+  asesmen   Asesmen @relation(fields: [asesmenId], references: [id], onDelete: Cascade)
 }
 
 model Proyek {

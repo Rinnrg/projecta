@@ -18,6 +18,7 @@ import {
   Clock, 
   Calendar,
   Users,
+  User,
   CheckCircle2,
   AlertCircle,
   Plus,
@@ -178,7 +179,7 @@ export default async function AsesmenPage() {
                     <TableHead>Nama</TableHead>
                     <TableHead>Tipe</TableHead>
                     <TableHead>Course</TableHead>
-                    <TableHead>Soal</TableHead>
+                    <TableHead>Info</TableHead>
                     <TableHead>Durasi</TableHead>
                     <TableHead>Deadline</TableHead>
                     <TableHead>Pengumpulan</TableHead>
@@ -214,16 +215,30 @@ export default async function AsesmenPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center text-sm">
-                          <FileText className="mr-1 h-3 w-3" />
-                          {item._count.soal}/{item.jml_soal}
-                        </div>
+                        {item.tipe === 'KUIS' ? (
+                          <div className="flex items-center text-sm">
+                            <FileText className="mr-1 h-3 w-3" />
+                            {item._count.soal}/{item.jml_soal}
+                          </div>
+                        ) : (
+                          <div className="flex items-center text-sm">
+                            {item.tipePengerjaan === 'KELOMPOK' ? (
+                              <><Users className="mr-1 h-3 w-3" /> Kelompok</>
+                            ) : (
+                              <><User className="mr-1 h-3 w-3" /> Individu</>
+                            )}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center text-sm">
-                          <Clock className="mr-1 h-3 w-3" />
-                          {item.durasi} menit
-                        </div>
+                        {item.tipe === 'KUIS' ? (
+                          <div className="flex items-center text-sm">
+                            <Clock className="mr-1 h-3 w-3" />
+                            {item.durasi} menit
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {item.tgl_selesai ? (

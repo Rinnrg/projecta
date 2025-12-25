@@ -2,6 +2,7 @@
 
 export type UserRole = "ADMIN" | "GURU" | "SISWA"
 export type TipeAsesmen = "KUIS" | "TUGAS"
+export type TipePengerjaan = "INDIVIDU" | "KELOMPOK"
 
 export interface User {
   id: string
@@ -38,6 +39,7 @@ export interface Asesmen {
   nama: string
   deskripsi?: string
   tipe: TipeAsesmen
+  tipePengerjaan?: TipePengerjaan
   jml_soal: number
   durasi: number
   tgl_mulai?: Date
@@ -47,6 +49,7 @@ export interface Asesmen {
   courseId: string
   soal?: Soal[]
   nilai?: Nilai[]
+  pengumpulanTugas?: PengumpulanTugas[]
 }
 
 export interface Soal {
@@ -70,6 +73,21 @@ export interface Nilai {
   tanggal: Date
   siswaId: string
   asesmenId: string
+}
+
+export interface PengumpulanTugas {
+  id: string
+  namaKelompok?: string
+  ketua?: string
+  anggota?: string
+  fileUrl?: string
+  catatan?: string
+  tgl_upload: Date
+  nilai?: number
+  siswaId: string
+  asesmenId: string
+  siswa?: User
+  asesmen?: Asesmen
 }
 
 export interface Proyek {

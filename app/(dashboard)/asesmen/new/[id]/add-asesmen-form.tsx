@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { ArrowLeft, Loader2, Plus, Upload, FileText, Calendar } from "lucide-react"
+import { ArrowLeft, Loader2, Plus, Upload, FileText, Calendar, User, Users } from "lucide-react"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import Link from "next/link"
 
@@ -34,6 +34,7 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
     nama: "",
     deskripsi: "",
     tipe: "KUIS" as "KUIS" | "TUGAS",
+    tipePengerjaan: "INDIVIDU" as "INDIVIDU" | "KELOMPOK",
     jml_soal: "",
     durasi: "",
     tgl_mulai: "",
@@ -60,34 +61,35 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
       return
     }
 
-    if (!formData.jml_soal || parseInt(formData.jml_soal) <= 0) {
-      showError("Error", "Jumlah soal harus lebih dari 0")
+    // Validate jml_soal and durasi only for KUIS
+    if (formData.tipe === "KUIS") {
+      if (!formData.jml_soal || parseInt(formData.jml_soal) <= 0) {
+        showError("Error", "Jumlah soal harus lebih dari 0")
+        return
+      }
+
+      if (!formData.durasi || parseInt(formData.durasi) <= 0) {
+        showError("Error", "Durasi harus lebih dari 0")
+        return
+      }
+    }
+
+    // Validate dates (required for both KUIS and TUGAS)
+    if (!formData.tgl_mulai) {
+      showError("Error", `Tanggal mulai harus diisi untuk ${formData.tipe === "KUIS" ? "kuis" : "tugas"}`)
+      return
+    }
+    if (!formData.tgl_selesai) {
+      showError("Error", `Tanggal selesai harus diisi untuk ${formData.tipe === "KUIS" ? "kuis" : "tugas"}`)
       return
     }
 
-    if (!formData.durasi || parseInt(formData.durasi) <= 0) {
-      showError("Error", "Durasi harus lebih dari 0")
+    const startDate = new Date(formData.tgl_mulai)
+    const endDate = new Date(formData.tgl_selesai)
+    
+    if (endDate < startDate) {
+      showError("Error", "Tanggal selesai harus setelah tanggal mulai")
       return
-    }
-
-    // Validate dates for TUGAS type
-    if (formData.tipe === "TUGAS") {
-      if (!formData.tgl_mulai) {
-        showError("Error", "Tanggal mulai harus diisi untuk tugas")
-        return
-      }
-      if (!formData.tgl_selesai) {
-        showError("Error", "Tanggal selesai harus diisi untuk tugas")
-        return
-      }
-
-      const startDate = new Date(formData.tgl_mulai)
-      const endDate = new Date(formData.tgl_selesai)
-      
-      if (endDate < startDate) {
-        showError("Error", "Tanggal selesai harus setelah tanggal mulai")
-        return
-      }
     }
 
     try {
@@ -110,8 +112,9 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
           nama: formData.nama,
           deskripsi: formData.deskripsi || null,
           tipe: formData.tipe,
-          jml_soal: parseInt(formData.jml_soal),
-          durasi: parseInt(formData.durasi),
+          tipePengerjaan: formData.tipe === "TUGAS" ? formData.tipePengerjaan : null,
+          jml_soal: formData.tipe === "KUIS" ? parseInt(formData.jml_soal) : 0,
+          durasi: formData.tipe === "KUIS" ? parseInt(formData.durasi) : 0,
           tgl_mulai: formData.tgl_mulai || null,
           tgl_selesai: formData.tgl_selesai || null,
           lampiran: fileUrl,
@@ -213,6 +216,45 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
                 </p>
               </div>
 
+              {/* Tipe Pengerjaan (Only for TUGAS) */}
+              {formData.tipe === "TUGAS" && (
+                <div className="space-y-2">
+                  <Label htmlFor="tipePengerjaan">
+                    Tipe Pengerjaan <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={formData.tipePengerjaan}
+                    onValueChange={(value: "INDIVIDU" | "KELOMPOK") => 
+                      setFormData({ ...formData, tipePengerjaan: value })
+                    }
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger id="tipePengerjaan">
+                      <SelectValue placeholder="Pilih tipe pengerjaan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="INDIVIDU">
+                        <div className="flex items-center">
+                          <User className="mr-2 h-4 w-4" />
+                          Individu - Dikerjakan per siswa
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="KELOMPOK">
+                        <div className="flex items-center">
+                          <Users className="mr-2 h-4 w-4" />
+                          Kelompok - Dikerjakan berkelompok
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {formData.tipePengerjaan === "INDIVIDU" 
+                      ? "Setiap siswa mengumpulkan tugas sendiri-sendiri" 
+                      : "Siswa dapat mengumpulkan tugas secara berkelompok dengan ketua dan anggota"}
+                  </p>
+                </div>
+              )}
+
               {/* Nama Asesmen */}
               <div className="space-y-2">
                 <Label htmlFor="nama">
@@ -250,93 +292,93 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
                 </p>
               </div>
 
-              {/* Jumlah Soal & Durasi */}
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="jml_soal">
-                    {formData.tipe === "KUIS" ? "Jumlah Soal" : "Jumlah Pertanyaan"} <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="jml_soal"
-                    type="number"
-                    min="1"
-                    placeholder="10"
-                    value={formData.jml_soal}
-                    onChange={(e) => setFormData({ ...formData, jml_soal: e.target.value })}
-                    disabled={isLoading}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {formData.tipe === "KUIS" ? "Total soal pilihan ganda" : "Total pertanyaan atau bagian tugas"}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="durasi">
-                    Durasi (menit) <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="durasi"
-                    type="number"
-                    min="1"
-                    placeholder="30"
-                    value={formData.durasi}
-                    onChange={(e) => setFormData({ ...formData, durasi: e.target.value })}
-                    disabled={isLoading}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Waktu pengerjaan dalam menit
-                  </p>
-                </div>
-              </div>
-
-              {/* Tanggal (Only for TUGAS) */}
-              {formData.tipe === "TUGAS" && (
+              {/* Jumlah Soal & Durasi (Only for KUIS) */}
+              {formData.tipe === "KUIS" && (
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="tgl_mulai">
-                      Tanggal Mulai <span className="text-destructive">*</span>
+                    <Label htmlFor="jml_soal">
+                      Jumlah Soal <span className="text-destructive">*</span>
                     </Label>
-                    <div className="relative">
-                      <Input
-                        id="tgl_mulai"
-                        type="datetime-local"
-                        value={formData.tgl_mulai}
-                        onChange={(e) => setFormData({ ...formData, tgl_mulai: e.target.value })}
-                        disabled={isLoading}
-                        required={formData.tipe === "TUGAS"}
-                        className="pl-10"
-                      />
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                    </div>
+                    <Input
+                      id="jml_soal"
+                      type="number"
+                      min="1"
+                      placeholder="10"
+                      value={formData.jml_soal}
+                      onChange={(e) => setFormData({ ...formData, jml_soal: e.target.value })}
+                      disabled={isLoading}
+                      required
+                    />
                     <p className="text-xs text-muted-foreground">
-                      Kapan tugas mulai bisa dikerjakan
+                      Total soal pilihan ganda
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="tgl_selesai">
-                      Tanggal Selesai <span className="text-destructive">*</span>
+                    <Label htmlFor="durasi">
+                      Durasi (menit) <span className="text-destructive">*</span>
                     </Label>
-                    <div className="relative">
-                      <Input
-                        id="tgl_selesai"
-                        type="datetime-local"
-                        value={formData.tgl_selesai}
-                        onChange={(e) => setFormData({ ...formData, tgl_selesai: e.target.value })}
-                        disabled={isLoading}
-                        required={formData.tipe === "TUGAS"}
-                        className="pl-10"
-                      />
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                    </div>
+                    <Input
+                      id="durasi"
+                      type="number"
+                      min="1"
+                      placeholder="30"
+                      value={formData.durasi}
+                      onChange={(e) => setFormData({ ...formData, durasi: e.target.value })}
+                      disabled={isLoading}
+                      required
+                    />
                     <p className="text-xs text-muted-foreground">
-                      Deadline pengumpulan tugas
+                      Waktu pengerjaan dalam menit
                     </p>
                   </div>
                 </div>
               )}
+
+              {/* Tanggal (untuk KUIS dan TUGAS) */}
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="tgl_mulai">
+                    Tanggal Mulai <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="tgl_mulai"
+                      type="datetime-local"
+                      value={formData.tgl_mulai}
+                      onChange={(e) => setFormData({ ...formData, tgl_mulai: e.target.value })}
+                      disabled={isLoading}
+                      required
+                      className="pl-10"
+                    />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {formData.tipe === "KUIS" ? "Kapan kuis mulai bisa dikerjakan" : "Kapan tugas mulai bisa dikerjakan"}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="tgl_selesai">
+                    Tanggal Selesai <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="tgl_selesai"
+                      type="datetime-local"
+                      value={formData.tgl_selesai}
+                      onChange={(e) => setFormData({ ...formData, tgl_selesai: e.target.value })}
+                      disabled={isLoading}
+                      required
+                      className="pl-10"
+                    />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {formData.tipe === "KUIS" ? "Deadline pengerjaan kuis" : "Deadline pengumpulan tugas"}
+                  </p>
+                </div>
+              </div>
 
               {/* File Upload (Only for TUGAS) */}
               {formData.tipe === "TUGAS" && (

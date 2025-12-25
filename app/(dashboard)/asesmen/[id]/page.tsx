@@ -98,6 +98,21 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
           tanggal: 'desc',
         },
       },
+      pengumpulanTugas: {
+        include: {
+          siswa: {
+            select: {
+              id: true,
+              nama: true,
+              email: true,
+              foto: true,
+            },
+          },
+        },
+        orderBy: {
+          tgl_upload: 'desc',
+        },
+      },
     },
   })
 
@@ -109,6 +124,11 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
   if (user.role === 'GURU' && asesmen.guruId !== user.id) {
     redirect('/asesmen')
   }
+
+  // Check if student has submitted
+  const hasSubmitted = user.role === 'SISWA' 
+    ? asesmen.pengumpulanTugas.some(p => p.siswaId === user.id)
+    : false
 
   const isDeadlinePassed = asesmen.tgl_selesai 
     ? new Date(asesmen.tgl_selesai) < new Date() 
@@ -136,7 +156,7 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
                   <><Upload className="mr-1 h-3 w-3" /> Tugas</>
                 )}
               </Badge>
-              {isDeadlinePassed && asesmen.tipe === 'TUGAS' && (
+              {isDeadlinePassed && (
                 <Badge variant="destructive">
                   <XCircle className="mr-1 h-3 w-3" /> Ditutup
                 </Badge>
@@ -144,44 +164,110 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
             </div>
             <p className="text-muted-foreground">
               {asesmen.course.judul} • {asesmen.course.kategori}
+              {asesmen.tipe === 'TUGAS' && asesmen.tipePengerjaan && (
+                <> • {asesmen.tipePengerjaan === 'KELOMPOK' ? 'Kelompok' : 'Individu'}</>
+              )}
             </p>
           </div>
-          {(user.role === 'GURU' || user.role === 'ADMIN') && (
-            <Button variant="outline" asChild>
-              <Link href={`/asesmen/${id}/edit`}>
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
-              </Link>
-            </Button>
-          )}
-        </div>
+          <div className="flex gap-2">
+            {user.role === 'SISWA' && asesmen.tipe === 'TUGAS' && !isDeadlinePassed && (
+              <Button asChild>
+                <Link href={`/asesmen/${asesmen.id}/submit`}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  {hasSubmitted ? 'Edit Pengumpulan' : 'Kumpulkan Tugas'}
+                </Link>
+              </Button>
+            )}
+            {(user.role === 'GURU' || user.role === 'ADMIN') && (
+              <Button variant="outline" asChild>
+                <Link href={`/asesmen/${id}/edit`}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit
+                </Link>
+              </Button>
+            )}
+          </div>
       </div>
 
       {/* Info Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Jumlah Soal</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{asesmen.jml_soal}</div>
-            <p className="text-xs text-muted-foreground">
-              {asesmen.soal.length} soal sudah dibuat
-            </p>
-          </CardContent>
-        </Card>
+        {asesmen.tipe === 'KUIS' && (
+          <>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Jumlah Soal</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{asesmen.jml_soal}</div>
+                <p className="text-xs text-muted-foreground">
+                  {asesmen.soal.length} soal sudah dibuat
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Durasi</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{asesmen.durasi}</div>
-            <p className="text-xs text-muted-foreground">menit</p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Durasi</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{asesmen.durasi}</div>
+                <p className="text-xs text-muted-foreground">menit</p>
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {asesmen.tipe === 'TUGAS' && (
+          <>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Tipe Pengerjaan</CardTitle>
+                {asesmen.tipePengerjaan === 'KELOMPOK' ? (
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <User className="h-4 w-4 text-muted-foreground" />
+                )}
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {asesmen.tipePengerjaan === 'KELOMPOK' ? 'Kelompok' : 'Individu'}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Dikerjakan secara {asesmen.tipePengerjaan?.toLowerCase()}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Deadline</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                {asesmen.tgl_selesai ? (
+                  <>
+                    <div className="text-lg font-bold">
+                      {new Date(asesmen.tgl_selesai).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'short',
+                      })}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(asesmen.tgl_selesai).toLocaleTimeString('id-ID', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </>
+                ) : (
+                  <div className="text-sm text-muted-foreground">Tidak ada deadline</div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        )}
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -282,21 +368,117 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
       </Card>
 
       {/* Submissions List */}
-      {(user.role === 'GURU' || user.role === 'ADMIN') && (
+      {(user.role === 'GURU' || user.role === 'ADMIN') && asesmen.tipe === 'TUGAS' && (
         <Card>
           <CardHeader>
-            <CardTitle>Daftar Pengumpulan</CardTitle>
+            <CardTitle>Daftar Pengumpulan Tugas</CardTitle>
             <CardDescription>
-              Siswa yang telah mengumpulkan {asesmen.tipe === 'KUIS' ? 'kuis' : 'tugas'}
+              Siswa yang telah mengumpulkan tugas {asesmen.tipePengerjaan === 'KELOMPOK' ? '(Kelompok)' : '(Individu)'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {asesmen.pengumpulanTugas.length === 0 ? (
+              <div className="text-center py-12">
+                <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-semibold">Belum ada pengumpulan</h3>
+                <p className="text-muted-foreground mt-2">
+                  Tidak ada siswa yang telah mengumpulkan tugas ini
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nama Siswa</TableHead>
+                      {asesmen.tipePengerjaan === 'KELOMPOK' && (
+                        <>
+                          <TableHead>Kelompok</TableHead>
+                          <TableHead>Ketua</TableHead>
+                          <TableHead>Anggota</TableHead>
+                        </>
+                      )}
+                      <TableHead>Tanggal Upload</TableHead>
+                      <TableHead>File</TableHead>
+                      <TableHead>Nilai</TableHead>
+                      <TableHead>Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {asesmen.pengumpulanTugas.map((pengumpulan) => (
+                      <TableRow key={pengumpulan.id}>
+                        <TableCell className="font-medium">
+                          {pengumpulan.siswa.nama}
+                        </TableCell>
+                        {asesmen.tipePengerjaan === 'KELOMPOK' && (
+                          <>
+                            <TableCell>{pengumpulan.namaKelompok || '-'}</TableCell>
+                            <TableCell>{pengumpulan.ketua || '-'}</TableCell>
+                            <TableCell className="max-w-xs">
+                              <div className="line-clamp-2 text-sm">
+                                {pengumpulan.anggota || '-'}
+                              </div>
+                            </TableCell>
+                          </>
+                        )}
+                        <TableCell className="text-sm">
+                          {new Date(pengumpulan.tgl_upload).toLocaleString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          {pengumpulan.fileUrl ? (
+                            <Button variant="ghost" size="sm" asChild>
+                              <a href={pengumpulan.fileUrl} download>
+                                <Download className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {pengumpulan.nilai ? (
+                            <span className="font-bold">{pengumpulan.nilai}</span>
+                          ) : (
+                            <Badge variant="outline">Belum dinilai</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="sm">
+                            Beri Nilai
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Nilai List for KUIS */}
+      {(user.role === 'GURU' || user.role === 'ADMIN') && asesmen.tipe === 'KUIS' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Daftar Nilai Kuis</CardTitle>
+            <CardDescription>
+              Siswa yang telah mengerjakan kuis
             </CardDescription>
           </CardHeader>
           <CardContent>
             {asesmen.nilai.length === 0 ? (
               <div className="text-center py-12">
                 <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-semibold">Belum ada pengumpulan</h3>
+                <h3 className="mt-4 text-lg font-semibold">Belum ada yang mengerjakan</h3>
                 <p className="text-muted-foreground mt-2">
-                  Tidak ada siswa yang telah mengumpulkan {asesmen.tipe === 'KUIS' ? 'kuis' : 'tugas'} ini
+                  Tidak ada siswa yang telah mengerjakan kuis ini
                 </p>
               </div>
             ) : (
