@@ -23,14 +23,10 @@ export async function GET(request: NextRequest) {
             kategori: true,
           },
         },
-        soal: {
-          include: {
-            opsi: true,
-          },
-        },
         _count: {
           select: {
             nilai: true,
+            soal: true,
           },
         },
       },
@@ -57,8 +53,6 @@ export async function POST(request: NextRequest) {
       deskripsi, 
       tipe,
       tipePengerjaan,
-      jml_soal, 
-      durasi, 
       tgl_mulai,
       tgl_selesai,
       lampiran,
@@ -66,9 +60,10 @@ export async function POST(request: NextRequest) {
       courseId 
     } = body
 
-    if (!nama || !tipe || !jml_soal || !durasi || !guruId || !courseId) {
+    // Validasi field wajib
+    if (!nama || !tipe || !guruId || !courseId) {
       return NextResponse.json(
-        { error: 'Data tidak lengkap' },
+        { error: 'Data tidak lengkap (nama, tipe, guruId, courseId wajib diisi)' },
         { status: 400 }
       )
     }
@@ -110,8 +105,8 @@ export async function POST(request: NextRequest) {
         deskripsi,
         tipe,
         tipePengerjaan: tipe === 'TUGAS' ? tipePengerjaan : null,
-        jml_soal,
-        durasi,
+        jml_soal: null, // Will be calculated from actual soal count
+        durasi: null,   // Optional, can be set later if needed
         tgl_mulai: startDate,
         tgl_selesai: endDate,
         lampiran: lampiran || null,

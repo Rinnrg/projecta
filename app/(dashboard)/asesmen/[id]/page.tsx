@@ -197,25 +197,27 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
           <>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Jumlah Soal</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Soal</CardTitle>
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{asesmen.jml_soal}</div>
+                <div className="text-2xl font-bold">{asesmen.soal.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  {asesmen.soal.length} soal sudah dibuat
+                  soal telah dibuat
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Durasi</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Poin</CardTitle>
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{asesmen.durasi}</div>
-                <p className="text-xs text-muted-foreground">menit</p>
+                <div className="text-2xl font-bold">
+                  {asesmen.soal.reduce((acc, s) => acc + s.bobot, 0)}
+                </div>
+                <p className="text-xs text-muted-foreground">poin maksimal</p>
               </CardContent>
             </Card>
           </>
@@ -563,17 +565,15 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
             <div>
               <CardTitle>Daftar Soal</CardTitle>
               <CardDescription>
-                Soal-soal dalam kuis ini
+                Soal-soal dalam kuis ini ({asesmen.soal.length} soal)
               </CardDescription>
             </div>
-            {asesmen.soal.length < asesmen.jml_soal && (
-              <Button asChild>
-                <Link href={`/asesmen/${id}/soal/new`}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  Tambah Soal
-                </Link>
-              </Button>
-            )}
+            <Button asChild>
+              <Link href={`/asesmen/${id}/soal/new`}>
+                <FileText className="mr-2 h-4 w-4" />
+                Tambah Soal
+              </Link>
+            </Button>
           </CardHeader>
           <CardContent>
             {asesmen.soal.length === 0 ? (

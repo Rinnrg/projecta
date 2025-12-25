@@ -82,8 +82,8 @@ model Asesmen {
   deskripsi      String?
   tipe           TipeAsesmen     @default(KUIS)
   tipePengerjaan TipePengerjaan? @default(INDIVIDU) // Hanya untuk TUGAS
-  jml_soal       Int
-  durasi         Int
+  jml_soal       Int?            // Optional - untuk KUIS akan dihitung otomatis dari jumlah soal
+  durasi         Int?            // Optional - untuk KUIS akan diisi jika ada waktu
   tgl_mulai      DateTime?
   tgl_selesai    DateTime?
   lampiran       String?         // URL or path untuk file tugas

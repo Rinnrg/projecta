@@ -218,7 +218,7 @@ export default async function AsesmenPage() {
                         {item.tipe === 'KUIS' ? (
                           <div className="flex items-center text-sm">
                             <FileText className="mr-1 h-3 w-3" />
-                            {item._count.soal}/{item.jml_soal}
+                            {item._count.soal} soal
                           </div>
                         ) : (
                           <div className="flex items-center text-sm">
@@ -231,7 +231,7 @@ export default async function AsesmenPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {item.tipe === 'KUIS' ? (
+                        {item.tipe === 'KUIS' && item.durasi ? (
                           <div className="flex items-center text-sm">
                             <Clock className="mr-1 h-3 w-3" />
                             {item.durasi} menit

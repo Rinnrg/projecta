@@ -40,8 +40,8 @@ export interface Asesmen {
   deskripsi?: string
   tipe: TipeAsesmen
   tipePengerjaan?: TipePengerjaan
-  jml_soal: number
-  durasi: number
+  jml_soal?: number | null  // Optional - akan dihitung dari jumlah soal
+  durasi?: number | null    // Optional
   tgl_mulai?: Date
   tgl_selesai?: Date
   lampiran?: string

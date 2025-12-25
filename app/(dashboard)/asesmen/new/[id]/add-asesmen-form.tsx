@@ -35,8 +35,6 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
     deskripsi: "",
     tipe: "KUIS" as "KUIS" | "TUGAS",
     tipePengerjaan: "INDIVIDU" as "INDIVIDU" | "KELOMPOK",
-    jml_soal: "",
-    durasi: "",
     tgl_mulai: "",
     tgl_selesai: "",
   })
@@ -61,26 +59,13 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
       return
     }
 
-    // Validate jml_soal and durasi only for KUIS
-    if (formData.tipe === "KUIS") {
-      if (!formData.jml_soal || parseInt(formData.jml_soal) <= 0) {
-        showError("Error", "Jumlah soal harus lebih dari 0")
-        return
-      }
-
-      if (!formData.durasi || parseInt(formData.durasi) <= 0) {
-        showError("Error", "Durasi harus lebih dari 0")
-        return
-      }
-    }
-
-    // Validate dates (required for both KUIS and TUGAS)
+    // Validate dates - required for both KUIS and TUGAS
     if (!formData.tgl_mulai) {
-      showError("Error", `Tanggal mulai harus diisi untuk ${formData.tipe === "KUIS" ? "kuis" : "tugas"}`)
+      showError("Error", `Tanggal mulai harus diisi`)
       return
     }
     if (!formData.tgl_selesai) {
-      showError("Error", `Tanggal selesai harus diisi untuk ${formData.tipe === "KUIS" ? "kuis" : "tugas"}`)
+      showError("Error", `Tanggal selesai harus diisi`)
       return
     }
 
@@ -113,10 +98,8 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
           deskripsi: formData.deskripsi || null,
           tipe: formData.tipe,
           tipePengerjaan: formData.tipe === "TUGAS" ? formData.tipePengerjaan : null,
-          jml_soal: formData.tipe === "KUIS" ? parseInt(formData.jml_soal) : 0,
-          durasi: formData.tipe === "KUIS" ? parseInt(formData.durasi) : 0,
-          tgl_mulai: formData.tgl_mulai || null,
-          tgl_selesai: formData.tgl_selesai || null,
+          tgl_mulai: formData.tgl_mulai,
+          tgl_selesai: formData.tgl_selesai,
           lampiran: fileUrl,
           courseId,
           guruId: user?.id,
@@ -135,9 +118,8 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
       // Redirect based on type
       setTimeout(() => {
         if (result.asesmen?.id && formData.tipe === "KUIS") {
-          // TODO: Redirect to add questions page when implemented
-          // router.push(`/asesmen/${result.asesmen.id}/soal`)
-          router.push(`/courses/${courseId}`)
+          // Redirect to add questions page for KUIS
+          router.push(`/asesmen/${result.asesmen.id}`)
         } else {
           router.push(`/courses/${courseId}`)
         }
@@ -291,49 +273,6 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
                   Berikan penjelasan tentang tujuan dan cakupan {formData.tipe === "KUIS" ? "kuis" : "tugas"} ini
                 </p>
               </div>
-
-              {/* Jumlah Soal & Durasi (Only for KUIS) */}
-              {formData.tipe === "KUIS" && (
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="jml_soal">
-                      Jumlah Soal <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="jml_soal"
-                      type="number"
-                      min="1"
-                      placeholder="10"
-                      value={formData.jml_soal}
-                      onChange={(e) => setFormData({ ...formData, jml_soal: e.target.value })}
-                      disabled={isLoading}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Total soal pilihan ganda
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="durasi">
-                      Durasi (menit) <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="durasi"
-                      type="number"
-                      min="1"
-                      placeholder="30"
-                      value={formData.durasi}
-                      onChange={(e) => setFormData({ ...formData, durasi: e.target.value })}
-                      disabled={isLoading}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Waktu pengerjaan dalam menit
-                    </p>
-                  </div>
-                </div>
-              )}
 
               {/* Tanggal (untuk KUIS dan TUGAS) */}
               <div className="grid gap-6 sm:grid-cols-2">
