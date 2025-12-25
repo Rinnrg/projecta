@@ -21,6 +21,7 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { FileUploadField } from "@/components/file-upload-field"
+import { useSweetAlert } from "@/components/ui/sweet-alert"
 
 interface AddAsesmenFormProps {
   courseId: string
@@ -41,6 +42,7 @@ interface Soal {
 export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenFormProps) {
   const router = useRouter()
   const { user, isLoading: authLoading } = useAuth()
+  const { success, error: showError, AlertComponent } = useSweetAlert()
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState<'basic' | 'questions'>('basic')
   const [soalList, setSoalList] = useState<Soal[]>([])
@@ -64,12 +66,6 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
     durasi: "",
     lampiran: "",
   })
-
-  // Debug: Log user info
-  useEffect(() => {
-    console.log('Current user:', user)
-    console.log('Auth loading:', authLoading)
-  }, [user, authLoading])
 
   // Show loading state while auth is loading
   if (authLoading) {
@@ -231,18 +227,6 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
         guruId: user.id,
       }
 
-      console.log('=== DEBUG INFO ===')
-      console.log('Form Data:', formData)
-      console.log('Course ID:', courseId)
-      console.log('User:', user)
-      console.log('Body Data to be sent:', bodyData)
-      console.log('Validation check:')
-      console.log('  - nama:', bodyData.nama, 'valid:', !!bodyData.nama)
-      console.log('  - tipe:', bodyData.tipe, 'valid:', !!bodyData.tipe)
-      console.log('  - courseId:', bodyData.courseId, 'valid:', !!bodyData.courseId)
-      console.log('  - guruId:', bodyData.guruId, 'valid:', !!bodyData.guruId)
-      console.log('===================')
-
       // Tambahkan soal untuk KUIS
       if (formData.tipe === 'KUIS') {
         bodyData.soal = soalList.map(s => ({
@@ -268,20 +252,21 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
         throw new Error(errorData.error || 'Failed to create asesmen')
       }
 
-      toast({
-        title: "Berhasil",
-        description: "Asesmen berhasil dibuat",
-      })
-
-      router.push(`/courses/${courseId}`)
-      router.refresh()
+      // Tampilkan Sweet Alert sukses
+      success("Berhasil!", "Asesmen berhasil dibuat")
+      
+      // Tunggu sebentar agar user melihat alert, lalu redirect
+      setTimeout(() => {
+        router.push(`/courses/${courseId}`)
+        router.refresh()
+      }, 1500)
+      
     } catch (error) {
       console.error('Error creating asesmen:', error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Gagal membuat asesmen",
-        variant: "destructive",
-      })
+      showError(
+        "Gagal Membuat Asesmen",
+        error instanceof Error ? error.message : "Terjadi kesalahan saat membuat asesmen"
+      )
     } finally {
       setIsLoading(false)
     }
@@ -290,11 +275,13 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
   // Render step pertanyaan untuk KUIS
   if (currentStep === 'questions' && formData.tipe === 'KUIS') {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
+      <>
+        <AlertComponent />
+        <div className="space-y-6">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
             size="sm"
             asChild
           >
@@ -448,30 +435,33 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
           </Button>
         </div>
       </div>
+      </>
     )
   }
 
   // Render form basic info
   return (
-    <form onSubmit={(e) => {
-      e.preventDefault()
-      handleNext()
-    }}>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2 mb-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              asChild
-            >
-              <Link href={`/courses/${courseId}`}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Kembali
-              </Link>
-            </Button>
-          </div>
+    <>
+      <AlertComponent />
+      <form onSubmit={(e) => {
+        e.preventDefault()
+        handleNext()
+      }}>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                asChild
+              >
+                <Link href={`/courses/${courseId}`}>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Kembali
+                </Link>
+              </Button>
+            </div>
           <CardTitle>Informasi Asesmen</CardTitle>
           <CardDescription>
             {courseTitle ? `Buat asesmen baru untuk course ${courseTitle}` : 'Buat asesmen baru untuk course ini'}
@@ -605,5 +595,6 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
         </CardContent>
       </Card>
     </form>
+    </>
   )
 }

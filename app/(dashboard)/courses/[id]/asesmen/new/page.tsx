@@ -1,37 +1,37 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import AddAsesmenForm from "./add-asesmen-form"
 import { Loader2 } from "lucide-react"
 
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default function AddAsesmenPage({ params }: PageProps) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
+  
+  // Unwrap the Promise using React's use() hook
+  const resolvedParams = use(params)
+  const courseId = resolvedParams.id
 
   useEffect(() => {
     // Check authentication and authorization
     if (isLoading) return
 
     if (!user) {
-      console.log('No user, redirecting to login')
       router.push('/login')
       return
     }
 
-    console.log('User role:', user.role, 'User:', user)
-
     if (user.role !== 'GURU' && user.role !== 'ADMIN') {
-      console.log('User is not GURU or ADMIN, redirecting to /courses')
       router.push('/courses')
       return
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, router, resolvedParams, courseId])
 
   if (isLoading) {
     return (
@@ -53,7 +53,7 @@ export default function AddAsesmenPage({ params }: PageProps) {
           Buat asesmen (kuis atau tugas) untuk course ini
         </p>
       </div>
-      <AddAsesmenForm courseId={params.id} courseTitle="" />
+      <AddAsesmenForm courseId={courseId} courseTitle="" />
     </div>
   )
 }
