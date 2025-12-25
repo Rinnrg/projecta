@@ -52,21 +52,67 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { nama, deskripsi, jml_soal, durasi, guruId, courseId } = body
+    const { 
+      nama, 
+      deskripsi, 
+      tipe,
+      jml_soal, 
+      durasi, 
+      tgl_mulai,
+      tgl_selesai,
+      lampiran,
+      guruId, 
+      courseId 
+    } = body
 
-    if (!nama || !jml_soal || !durasi || !guruId || !courseId) {
+    if (!nama || !tipe || !jml_soal || !durasi || !guruId || !courseId) {
       return NextResponse.json(
         { error: 'Data tidak lengkap' },
         { status: 400 }
       )
     }
 
+    // Validate dates if provided
+    let startDate = null
+    let endDate = null
+    
+    if (tgl_mulai) {
+      startDate = new Date(tgl_mulai)
+      if (isNaN(startDate.getTime())) {
+        return NextResponse.json(
+          { error: 'Format tanggal mulai tidak valid' },
+          { status: 400 }
+        )
+      }
+    }
+
+    if (tgl_selesai) {
+      endDate = new Date(tgl_selesai)
+      if (isNaN(endDate.getTime())) {
+        return NextResponse.json(
+          { error: 'Format tanggal selesai tidak valid' },
+          { status: 400 }
+        )
+      }
+      
+      if (startDate && endDate < startDate) {
+        return NextResponse.json(
+          { error: 'Tanggal selesai harus setelah tanggal mulai' },
+          { status: 400 }
+        )
+      }
+    }
+
     const asesmen = await prisma.asesmen.create({
       data: {
         nama,
         deskripsi,
+        tipe,
         jml_soal,
         durasi,
+        tgl_mulai: startDate,
+        tgl_selesai: endDate,
+        lampiran: lampiran || null,
         guruId,
         courseId,
       },

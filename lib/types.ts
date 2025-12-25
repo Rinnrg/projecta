@@ -1,6 +1,7 @@
 // Types for the Projecta application
 
 export type UserRole = "ADMIN" | "GURU" | "SISWA"
+export type TipeAsesmen = "KUIS" | "TUGAS"
 
 export interface User {
   id: string
@@ -36,8 +37,12 @@ export interface Asesmen {
   id: string
   nama: string
   deskripsi?: string
+  tipe: TipeAsesmen
   jml_soal: number
   durasi: number
+  tgl_mulai?: Date
+  tgl_selesai?: Date
+  lampiran?: string
   guruId: string
   courseId: string
   soal?: Soal[]

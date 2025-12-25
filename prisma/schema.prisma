@@ -14,6 +14,11 @@ enum Role {
   SISWA
 }
 
+enum TipeAsesmen {
+  KUIS
+  TUGAS
+}
+
 model User {
   id        String   @id @default(uuid())
   username  String?  @unique
@@ -66,11 +71,15 @@ model Materi {
 }
 
 model Asesmen {
-  id        String  @id @default(cuid())
-  nama      String
-  deskripsi String?
-  jml_soal  Int
-  durasi    Int
+  id          String       @id @default(cuid())
+  nama        String
+  deskripsi   String?
+  tipe        TipeAsesmen  @default(KUIS)
+  jml_soal    Int
+  durasi      Int
+  tgl_mulai   DateTime?
+  tgl_selesai DateTime?
+  lampiran    String?      // URL or path untuk file tugas
 
   guruId String
   guru   User   @relation(fields: [guruId], references: [id])
