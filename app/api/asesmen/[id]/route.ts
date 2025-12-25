@@ -45,8 +45,23 @@ export async function GET(
             tanggal: 'desc',
           },
         },
+        pengumpulanProyek: {
+          include: {
+            siswa: {
+              select: {
+                id: true,
+                nama: true,
+                email: true,
+                foto: true,
+              },
+            },
+          },
+          orderBy: {
+            tgl_unggah: 'desc',
+          },
+        },
       },
-    })
+    } as any)
 
     if (!asesmen) {
       return NextResponse.json(
