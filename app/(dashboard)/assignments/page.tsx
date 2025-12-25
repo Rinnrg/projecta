@@ -87,10 +87,10 @@ export default function AssignmentsPage() {
                   {t("assignments.all")}
                 </TabsTrigger>
                 <TabsTrigger value="pending" className="text-xs sm:text-sm">
-                  {t("assignments.pending")}
+                  {t("Tertunda")}
                 </TabsTrigger>
                 <TabsTrigger value="completed" className="text-xs sm:text-sm">
-                  {t("dashboard.completed")}
+                  {t("Selesai")}
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -187,7 +187,7 @@ function AssessmentGrid({
                     ) : (
                       <AlertCircle className="mr-1 h-3 w-3" />
                     )}
-                    {status === "completed" ? t("dashboard.completed") : t("assignments.pending")}
+                    {status === "completed" ? t("Selesai") : t("Tertunda")}
                   </Badge>
                   {score !== null && <span className="text-base font-bold text-green-600 sm:text-lg">{score}%</span>}
                 </div>

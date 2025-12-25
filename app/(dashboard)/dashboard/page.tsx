@@ -47,46 +47,41 @@ export default function DashboardPage() {
       try {
         setLoading(true)
         
-        // Fetch stats
-        const statsRes = await fetch(`/api/stats?userId=${user.id}&role=${user.role}`)
-        const statsData = await statsRes.json()
+        // Fetch semua data secara paralel untuk performa optimal
+        const [statsRes, coursesRes, scheduleRes, asesmenRes, activityRes] = await Promise.all([
+          fetch(`/api/stats?userId=${user.id}&role=${user.role}`, { 
+            next: { revalidate: 60 } 
+          }),
+          user.role === 'SISWA' 
+            ? fetch(`/api/courses?siswaId=${user.id}`, { next: { revalidate: 300 } })
+            : user.role === 'GURU'
+            ? fetch(`/api/courses?guruId=${user.id}`, { next: { revalidate: 300 } })
+            : fetch('/api/courses', { next: { revalidate: 300 } }),
+          fetch(`/api/schedule?userId=${user.id}&role=${user.role}`, { 
+            next: { revalidate: 180 } 
+          }),
+          user.role === 'GURU'
+            ? fetch(`/api/asesmen?guruId=${user.id}`, { next: { revalidate: 120 } })
+            : fetch('/api/asesmen', { next: { revalidate: 120 } }),
+          fetch(`/api/activity?userId=${user.id}&role=${user.role}`, { 
+            next: { revalidate: 60 } 
+          }),
+        ])
+
+        // Parse semua response secara paralel
+        const [statsData, coursesData, scheduleData, asesmenData, activityData] = await Promise.all([
+          statsRes.json(),
+          coursesRes.json(),
+          scheduleRes.json(),
+          asesmenRes.json(),
+          activityRes.json(),
+        ])
+
+        // Set semua state
         setStats(statsData.stats)
-
-        // Fetch courses
-        const coursesRes = await fetch('/api/courses')
-        const coursesData = await coursesRes.json()
-        
-        if (user.role === 'SISWA') {
-          const enrollmentsRes = await fetch(`/api/courses?siswaId=${user.id}`)
-          const enrollmentsData = await enrollmentsRes.json()
-          setCourses(enrollmentsData.courses || coursesData.courses.slice(0, 3))
-        } else if (user.role === 'GURU') {
-          const teacherCoursesRes = await fetch(`/api/courses?guruId=${user.id}`)
-          const teacherCoursesData = await teacherCoursesRes.json()
-          setCourses(teacherCoursesData.courses || [])
-        } else {
-          setCourses(coursesData.courses.slice(0, 3))
-        }
-
-        // Fetch schedule
-        const scheduleRes = await fetch(`/api/schedule?userId=${user.id}&role=${user.role}`)
-        const scheduleData = await scheduleRes.json()
+        setCourses(coursesData.courses || [])
         setScheduleEvents(scheduleData.schedule || [])
-
-        // Fetch assessments
-        if (user.role === 'GURU') {
-          const asesmenRes = await fetch(`/api/asesmen?guruId=${user.id}`)
-          const asesmenData = await asesmenRes.json()
-          setAsesmenList(asesmenData.asesmen || [])
-        } else {
-          const asesmenRes = await fetch('/api/asesmen')
-          const asesmenData = await asesmenRes.json()
-          setAsesmenList(asesmenData.asesmen || [])
-        }
-
-        // Fetch activities
-        const activityRes = await fetch(`/api/activity?userId=${user.id}&role=${user.role}`)
-        const activityData = await activityRes.json()
+        setAsesmenList(asesmenData.asesmen || [])
         setActivities(activityData.activities || [])
 
       } catch (error) {
@@ -169,25 +164,25 @@ export default function DashboardPage() {
           {user.role === "SISWA" && stats && (
             <>
               <StatsCard
-                title={t("dashboard.enrolledCourses")}
+                title={t("Kursus Diikuti")}
                 value={stats.coursesCount || 0}
                 icon={BookOpen}
                 trend={{ value: 12, isPositive: true }}
               />
               <StatsCard
-                title={t("projects.completed")}
+                title={t("Selesai")}
                 value={stats.asesmenCount || 0}
                 icon={CheckCircle2}
                 iconColor="bg-success/10"
               />
               <StatsCard
-                title={t("assignments.pending")}
+                title={t("Tertunda")}
                 value={stats.proyekCount || 0}
                 icon={AlertCircle}
                 iconColor="bg-warning/10"
               />
               <StatsCard
-                title={t("dashboard.avgGrade")}
+                title={t("Nilai Rata-rata")}
                 value={`${Math.round(stats.avgNilai || 0)}%`}
                 icon={TrendingUp}
                 trend={{ value: 5, isPositive: true }}

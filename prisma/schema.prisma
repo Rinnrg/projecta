@@ -189,3 +189,20 @@ model Enrollment {
 
   @@unique([courseId, siswaId])
 }
+
+model File {
+  id           String   @id @default(cuid())
+  filename     String
+  originalName String
+  mimetype     String
+  size         Int
+  folder       String
+  data         Bytes    // Store file as binary in database
+  uploadedBy   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([uploadedBy])
+  @@index([folder])
+  @@index([createdAt])
+}

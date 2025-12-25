@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useCourses } from "@/hooks/use-api"
+import { useDebounce } from "@/hooks/use-debounce"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,6 +15,7 @@ import { cn } from "@/lib/utils"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { AnimateIn } from "@/components/ui/animate-in"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
+import { CoursePageSkeleton } from "@/components/ui/loading-skeletons"
 
 const categoriesMap = {
   id: ["Semua", "Programming", "Database", "Design", "Networking"],
@@ -31,14 +33,20 @@ export default function CoursesPage() {
   const { confirm, success, AlertComponent } = useSweetAlert()
   const { courses, loading, error, refetch } = useCourses()
 
+  // Debounce search query untuk mengurangi re-render
+  const debouncedSearchQuery = useDebounce(searchQuery, 300)
+
   const categories = categoriesMap[locale]
   const allCategory = locale === 'id' ? "Semua" : "All"
 
-  const filteredCourses = courses.filter((course) => {
-    const matchesSearch = course.judul.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = selectedCategory === allCategory || course.kategori === selectedCategory
-    return matchesSearch && matchesCategory
-  })
+  // Gunakan useMemo untuk optimasi filtering
+  const filteredCourses = useMemo(() => {
+    return courses.filter((course) => {
+      const matchesSearch = course.judul.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+      const matchesCategory = selectedCategory === allCategory || course.kategori === selectedCategory
+      return matchesSearch && matchesCategory
+    })
+  }, [courses, debouncedSearchQuery, selectedCategory, allCategory])
 
   const isTeacherOrAdmin = user?.role === "GURU" || user?.role === "ADMIN"
 
@@ -61,13 +69,7 @@ export default function CoursesPage() {
   }
 
   if (loading) {
-    return (
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    )
+    return <CoursePageSkeleton />
   }
 
   if (error) {
@@ -75,6 +77,9 @@ export default function CoursesPage() {
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center">
           <p className="text-sm text-destructive">{error}</p>
+          <Button onClick={refetch} variant="outline" size="sm" className="mt-4">
+            {t("Coba Lagi")}
+          </Button>
         </div>
       </div>
     )

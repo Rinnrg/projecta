@@ -1,18 +1,46 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+
+// Cache untuk menyimpan data API
+const cache = new Map<string, { data: any; timestamp: number }>()
+const CACHE_DURATION = 5 * 60 * 1000 // 5 menit
+
+function getCachedData(key: string) {
+  const cached = cache.get(key)
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data
+  }
+  return null
+}
+
+function setCachedData(key: string, data: any) {
+  cache.set(key, { data, timestamp: Date.now() })
+}
 
 export function useCourses() {
   const [courses, setCourses] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
+    const cacheKey = 'courses'
+    const cachedData = getCachedData(cacheKey)
+    
+    if (cachedData) {
+      setCourses(cachedData)
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
-      const response = await fetch('/api/courses')
+      const response = await fetch('/api/courses', {
+        next: { revalidate: 300 }, // Cache 5 menit
+      })
       const data = await response.json()
       
       if (response.ok) {
         setCourses(data.courses)
+        setCachedData(cacheKey, data.courses)
       } else {
         setError(data.error || 'Gagal mengambil data courses')
       }
@@ -22,11 +50,11 @@ export function useCourses() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchCourses()
-  }, [])
+  }, [fetchCourses])
 
   return { courses, loading, error, refetch: fetchCourses }
 }
@@ -36,15 +64,27 @@ export function useUsers(role?: string) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
+    const cacheKey = role ? `users-${role}` : 'users'
+    const cachedData = getCachedData(cacheKey)
+    
+    if (cachedData) {
+      setUsers(cachedData)
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
       const url = role ? `/api/users?role=${role}` : '/api/users'
-      const response = await fetch(url)
+      const response = await fetch(url, {
+        next: { revalidate: 180 }, // Cache 3 menit
+      })
       const data = await response.json()
       
       if (response.ok) {
         setUsers(data.users)
+        setCachedData(cacheKey, data.users)
       } else {
         setError(data.error || 'Gagal mengambil data users')
       }
@@ -54,11 +94,11 @@ export function useUsers(role?: string) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [role])
 
   useEffect(() => {
     fetchUsers()
-  }, [role])
+  }, [fetchUsers])
 
   return { users, loading, error, refetch: fetchUsers }
 }
@@ -68,15 +108,27 @@ export function useProyek(guruId?: string) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchProyek = async () => {
+  const fetchProyek = useCallback(async () => {
+    const cacheKey = guruId ? `proyek-${guruId}` : 'proyek'
+    const cachedData = getCachedData(cacheKey)
+    
+    if (cachedData) {
+      setProyek(cachedData)
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
       const url = guruId ? `/api/proyek?guruId=${guruId}` : '/api/proyek'
-      const response = await fetch(url)
+      const response = await fetch(url, {
+        next: { revalidate: 180 },
+      })
       const data = await response.json()
       
       if (response.ok) {
         setProyek(data.proyek)
+        setCachedData(cacheKey, data.proyek)
       } else {
         setError(data.error || 'Gagal mengambil data proyek')
       }
@@ -86,11 +138,11 @@ export function useProyek(guruId?: string) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [guruId])
 
   useEffect(() => {
     fetchProyek()
-  }, [guruId])
+  }, [fetchProyek])
 
   return { proyek, loading, error, refetch: fetchProyek }
 }
@@ -100,15 +152,27 @@ export function useAsesmen(courseId?: string) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchAsesmen = async () => {
+  const fetchAsesmen = useCallback(async () => {
+    const cacheKey = courseId ? `asesmen-${courseId}` : 'asesmen'
+    const cachedData = getCachedData(cacheKey)
+    
+    if (cachedData) {
+      setAsesmen(cachedData)
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
       const url = courseId ? `/api/asesmen?courseId=${courseId}` : '/api/asesmen'
-      const response = await fetch(url)
+      const response = await fetch(url, {
+        next: { revalidate: 120 },
+      })
       const data = await response.json()
       
       if (response.ok) {
         setAsesmen(data.asesmen)
+        setCachedData(cacheKey, data.asesmen)
       } else {
         setError(data.error || 'Gagal mengambil data asesmen')
       }
@@ -118,11 +182,11 @@ export function useAsesmen(courseId?: string) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [courseId])
 
   useEffect(() => {
     fetchAsesmen()
-  }, [courseId])
+  }, [fetchAsesmen])
 
   return { asesmen, loading, error, refetch: fetchAsesmen }
 }
