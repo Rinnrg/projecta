@@ -3,12 +3,12 @@
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
 
-export default function BackButton() {
-  const searchParams = useSearchParams()
-  const courseId = searchParams.get("courseId")
+interface BackButtonProps {
+  courseId?: string
+}
 
+export default function BackButton({ courseId }: BackButtonProps) {
   const backHref = courseId 
     ? `/courses/${courseId}?tab=assessments` 
     : "/asesmen"

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,12 +19,11 @@ import { Loader2 } from "lucide-react"
 
 interface AsesmenEditFormProps {
   asesmenId: string
+  courseId?: string
 }
 
-export function AsesmenEditForm({ asesmenId }: AsesmenEditFormProps) {
+export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const courseId = searchParams.get('courseId')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [courses, setCourses] = useState<any[]>([])

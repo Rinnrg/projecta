@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { cookies } from "next/headers"
 import { prisma } from "@/lib/prisma"
 import { AsesmenEditForm } from "@/components/asesmen-edit-form"
+import { Suspense } from "react"
 
 async function getUser() {
   const cookieStore = await cookies()
@@ -33,7 +34,13 @@ async function getUser() {
   return user
 }
 
-export default async function EditAsesmenPage({ params }: { params: { id: string } }) {
+export default async function EditAsesmenPage({ 
+  params,
+  searchParams 
+}: { 
+  params: { id: string }
+  searchParams: { courseId?: string }
+}) {
   const user = await getUser()
 
   return (
@@ -45,7 +52,9 @@ export default async function EditAsesmenPage({ params }: { params: { id: string
         </p>
       </div>
 
-      <AsesmenEditForm asesmenId={params.id} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <AsesmenEditForm asesmenId={params.id} courseId={searchParams.courseId} />
+      </Suspense>
     </div>
   )
 }

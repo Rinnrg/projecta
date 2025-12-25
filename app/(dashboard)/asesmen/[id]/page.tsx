@@ -35,6 +35,7 @@ export const dynamic = 'force-dynamic'
 
 interface PageProps {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ courseId?: string }>
 }
 
 async function getUser() {
@@ -62,8 +63,9 @@ async function getUser() {
   return user
 }
 
-export default async function AsesmenDetailPage({ params }: PageProps) {
+export default async function AsesmenDetailPage({ params, searchParams }: PageProps) {
   const { id } = await params
+  const { courseId } = await searchParams
   const user = await getUser()
 
   const asesmen = await prisma.asesmen.findUnique({
@@ -144,7 +146,7 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
     <div className="container max-w-6xl py-6 sm:py-8 space-y-6">
       {/* Header */}
       <div className="space-y-4">
-        <BackButton />
+        <BackButton courseId={courseId} />
 
         <div className="flex items-start justify-between">
           <div className="space-y-2">
@@ -197,7 +199,7 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
             )}
             {(user.role === 'GURU' || user.role === 'ADMIN') && (
               <Button variant="outline" asChild>
-                <Link href={`/asesmen/${id}/edit`}>
+                <Link href={courseId ? `/asesmen/${id}/edit?courseId=${courseId}` : `/asesmen/${id}/edit`}>
                   <Edit className="mr-2 h-4 w-4" />
                   Edit
                 </Link>
