@@ -37,7 +37,7 @@ import { id as localeId, enUS } from "date-fns/locale"
 import type { DayButtonProps } from "react-day-picker"
 import { AnimateIn } from "@/components/ui/animate-in"
 
-type EventType = "assessment" | "project" | "assignment" | "lesson"
+type EventType = "assessment" | "project" | "lesson"
 
 interface ScheduleEvent {
   id: string
@@ -81,7 +81,7 @@ export default function SchedulePage() {
             // Map API types to our event types
             type: event.type === 'assessment' ? 'assessment' : 
                   event.type === 'project' ? 'project' : 
-                  'assignment' as EventType
+                  'lesson' as EventType
           }))
           setAllEvents(events)
         }
@@ -109,13 +109,6 @@ export default function SchedulePage() {
         dotColor: "bg-emerald-500",
         icon: FolderKanban,
         label: t("project"),
-      },
-      assignment: {
-        color:
-          "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800",
-        dotColor: "bg-amber-500",
-        icon: FileText,
-        label: t("assignment"),
       },
       lesson: {
         color:
@@ -150,7 +143,7 @@ export default function SchedulePage() {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     return allEvents
-      .filter((event) => isBefore(event.date, today) && (event.type === "assignment" || event.type === "project"))
+      .filter((event) => isBefore(event.date, today) && (event.type === "assessment" || event.type === "project"))
       .sort((a, b) => b.date.getTime() - a.date.getTime())
       .slice(0, 3)
   }, [allEvents])
@@ -343,6 +336,7 @@ export default function SchedulePage() {
                   onSelect={setSelectedDate}
                   month={currentMonth}
                   onMonthChange={setCurrentMonth}
+                  locale={dateLocale}
                   className="w-full"
                   components={{
                     DayButton: CustomDayButton,

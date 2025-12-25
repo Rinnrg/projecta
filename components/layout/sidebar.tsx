@@ -60,7 +60,6 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, onNavClick }: S
     { title: t("Beranda"), href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "GURU", "SISWA"] },
     { title: t("Jadwal"), href: "/schedule", icon: Calendar, roles: ["ADMIN", "GURU", "SISWA"] },
     { title: t("Kursus"), href: "/courses", icon: BookOpen, roles: ["ADMIN", "GURU", "SISWA"] },
-    { title: t("Tugas"), href: "/assignments", icon: FileText, roles: ["ADMIN", "GURU", "SISWA"] },
     { title: t("Compiler"), href: "/compiler", icon: Code, roles: ["ADMIN", "GURU", "SISWA"] },
     { title: t("Galeri"), href: "/showcase", icon: Award, roles: ["ADMIN", "GURU"] },
   ]
