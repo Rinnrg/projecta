@@ -272,32 +272,6 @@ export default function AsesmenDetailPage({ params }: PageProps) {
         </div>
       )}
 
-      {/* Nilai Stats */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Pengumpulan</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{asesmen.nilai.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Nilai Rata-rata</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {asesmen.nilai && asesmen.nilai.length > 0
-                ? (asesmen.nilai.reduce((acc: number, n: any) => acc + (n.skor || 0), 0) / asesmen.nilai.length).toFixed(1)
-                : '0'}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Description */}
       <Card>
         <CardHeader>
@@ -347,35 +321,37 @@ export default function AsesmenDetailPage({ params }: PageProps) {
               </div>
             )}
           </div>
-
-          {asesmen.lampiran && (
-            <>
-              <Separator />
-              <div>
-                <h4 className="text-sm font-medium mb-2">Lampiran</h4>
-                {asesmen.lampiran.startsWith('data:') ? (
-                  <Button variant="outline" size="sm" asChild>
-                    <a
-                      href={asesmen.lampiran}
-                      download={`lampiran-${asesmen.nama}.${asesmen.lampiran.split(';')[0].split('/')[1]}`}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Unduh File
-                    </a>
-                  </Button>
-                ) : (
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={asesmen.lampiran} target="_blank" rel="noopener noreferrer">
-                      <Download className="mr-2 h-4 w-4" />
-                      {asesmen.lampiran.startsWith('http') ? 'Buka Link' : 'Unduh Lampiran'}
-                    </a>
-                  </Button>
-                )}
-              </div>
-            </>
-          )}
         </CardContent>
       </Card>
+
+      {/* Lampiran Section */}
+      {asesmen.lampiran && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Lampiran</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {asesmen.lampiran.startsWith('data:') ? (
+              <Button variant="outline" size="sm" asChild>
+                <a
+                  href={asesmen.lampiran}
+                  download={`lampiran-${asesmen.nama}.${asesmen.lampiran.split(';')[0].split('/')[1]}`}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Unduh File
+                </a>
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" asChild>
+                <a href={asesmen.lampiran} target="_blank" rel="noopener noreferrer">
+                  <Download className="mr-2 h-4 w-4" />
+                  {asesmen.lampiran.startsWith('http') ? 'Buka Link' : 'Unduh Lampiran'}
+                </a>
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Tabs for Teacher/Admin */}
       {isTeacherOrAdmin && (
