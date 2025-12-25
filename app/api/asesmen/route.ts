@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   try {
@@ -47,6 +48,17 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Get userId from cookies
+    const cookieStore = await cookies()
+    const userId = cookieStore.get('userId')?.value
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { 
       nama, 
@@ -55,15 +67,15 @@ export async function POST(request: NextRequest) {
       tipePengerjaan,
       tgl_mulai,
       tgl_selesai,
+      durasi,
       lampiran,
-      guruId, 
       courseId 
     } = body
 
     // Validasi field wajib
-    if (!nama || !tipe || !guruId || !courseId) {
+    if (!nama || !tipe || !courseId) {
       return NextResponse.json(
-        { error: 'Data tidak lengkap (nama, tipe, guruId, courseId wajib diisi)' },
+        { error: 'Data tidak lengkap (nama, tipe, courseId wajib diisi)' },
         { status: 400 }
       )
     }
@@ -105,12 +117,11 @@ export async function POST(request: NextRequest) {
         deskripsi,
         tipe,
         tipePengerjaan: tipe === 'TUGAS' ? tipePengerjaan : null,
-        jml_soal: null, // Will be calculated from actual soal count
-        durasi: null,   // Optional, can be set later if needed
+        ...(durasi && { durasi: parseInt(durasi) }),
         tgl_mulai: startDate,
         tgl_selesai: endDate,
         lampiran: lampiran || null,
-        guruId,
+        guruId: userId,
         courseId,
       },
       include: {
