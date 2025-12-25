@@ -158,8 +158,39 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await prisma.asesmen.delete({
-      where: { id: params.id },
+    const asesmenId = params.id
+    
+    // Use transaction to delete all related data
+    // Note: Some deletions will cascade automatically due to onDelete: Cascade in schema
+    await prisma.$transaction(async (tx) => {
+      // Get all soal IDs for this asesmen
+      const soals = await tx.soal.findMany({
+        where: { asesmenId },
+        select: { id: true }
+      })
+      
+      // Delete all opsi for each soal (opsi has cascade delete, but we do it explicitly)
+      for (const soal of soals) {
+        await tx.opsi.deleteMany({
+          where: { soalId: soal.id }
+        })
+      }
+      
+      // Delete all soal (will cascade delete opsi)
+      await tx.soal.deleteMany({
+        where: { asesmenId }
+      })
+      
+      // Delete all nilai for this asesmen
+      await tx.nilai.deleteMany({
+        where: { asesmenId }
+      })
+      
+      // Delete the asesmen
+      // This will cascade delete PengumpulanProyek (and then ProfileShowcase will cascade from that)
+      await tx.asesmen.delete({
+        where: { id: asesmenId }
+      })
     })
 
     return NextResponse.json({ message: 'Asesmen berhasil dihapus' })

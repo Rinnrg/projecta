@@ -263,7 +263,7 @@ export function SearchDropdown() {
         title: materi.judul,
         description: `${materi.course.judul} • ${materi.deskripsi?.substring(0, 50) || ''}`,
         icon: BookMarked,
-        href: `/materi/${materi.id}`,
+        href: `/courses/${materi.course.id}/materi/${materi.id}`,
         category: t("Materi"),
         badge: materi.course.kategori,
       })
