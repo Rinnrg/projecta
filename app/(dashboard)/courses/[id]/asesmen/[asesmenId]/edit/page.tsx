@@ -34,13 +34,15 @@ async function getUser() {
   return user
 }
 
-export default async function EditAsesmenPage({ 
-  params,
-  searchParams 
-}: { 
-  params: { id: string }
-  searchParams: { courseId?: string }
-}) {
+interface PageProps {
+  params: Promise<{ 
+    id: string
+    asesmenId: string
+  }>
+}
+
+export default async function EditAsesmenPage({ params }: PageProps) {
+  const { id: courseId, asesmenId } = await params
   const user = await getUser()
 
   return (
@@ -53,7 +55,7 @@ export default async function EditAsesmenPage({
       </div>
 
       <Suspense fallback={<div>Loading...</div>}>
-        <AsesmenEditForm asesmenId={params.id} courseId={searchParams.courseId} />
+        <AsesmenEditForm asesmenId={asesmenId} courseId={courseId} />
       </Suspense>
     </div>
   )

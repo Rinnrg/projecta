@@ -126,7 +126,7 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
         description: "Asesmen berhasil diperbarui",
       })
 
-      // Redirect kembali ke course detail jika datang dari course detail
+      // Redirect kembali ke course detail
       if (courseId) {
         router.push(`/courses/${courseId}`)
       } else {
