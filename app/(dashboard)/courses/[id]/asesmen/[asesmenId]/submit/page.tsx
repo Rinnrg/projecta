@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { FileUploadField } from "@/components/file-upload-field"
+import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { 
   ArrowLeft, 
   Upload, 
@@ -19,7 +20,6 @@ import {
   AlertCircle,
 } from "lucide-react"
 import Link from "next/link"
-import { toast } from "@/hooks/use-toast"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface PageProps {
@@ -34,6 +34,7 @@ export default function SubmitAsesmenPage({ params }: PageProps) {
   const router = useRouter()
   const resolvedParams = use(params)
   const { id: courseId, asesmenId } = resolvedParams
+  const { confirm, success, error: showError, AlertComponent } = useSweetAlert()
   
   const [asesmen, setAsesmen] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -100,66 +101,64 @@ export default function SubmitAsesmenPage({ params }: PageProps) {
     e.preventDefault()
     
     if (!fileUrl) {
-      toast({
-        title: "Error",
-        description: "Silakan upload file tugas terlebih dahulu",
-        variant: "destructive",
-      })
+      showError("Error", "Silakan upload file tugas terlebih dahulu")
       return
     }
     
     if (asesmen.tipePengerjaan === 'KELOMPOK') {
       if (!namaKelompok || !ketua || !anggota) {
-        toast({
-          title: "Error",
-          description: "Silakan lengkapi informasi kelompok",
-          variant: "destructive",
-        })
+        showError("Error", "Silakan lengkapi informasi kelompok")
         return
       }
     }
     
-    setSubmitting(true)
-    
-    try {
-      const response = await fetch(`/api/asesmen/${asesmenId}/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          siswaId: user?.id,
-          namaKelompok: asesmen.tipePengerjaan === 'KELOMPOK' ? namaKelompok : null,
-          ketua: asesmen.tipePengerjaan === 'KELOMPOK' ? ketua : null,
-          anggota: asesmen.tipePengerjaan === 'KELOMPOK' ? anggota : null,
-          fileUrl,
-          catatan,
-        }),
-      })
-      
-      if (response.ok) {
-        toast({
-          title: "Berhasil",
-          description: existingSubmission 
-            ? "Tugas berhasil diperbarui" 
-            : "Tugas berhasil dikumpulkan",
-        })
-        router.push(`/courses/${courseId}/asesmen/${asesmenId}`)
-      } else {
-        const data = await response.json()
-        toast({
-          title: "Error",
-          description: data.error || "Gagal mengumpulkan tugas",
-          variant: "destructive",
-        })
+    const confirmed = await confirm(
+      existingSubmission ? "Perbarui Pengumpulan?" : "Kumpulkan Tugas?",
+      {
+        description: existingSubmission
+          ? "Apakah Anda yakin ingin memperbarui pengumpulan tugas ini?"
+          : "Apakah Anda yakin ingin mengumpulkan tugas ini?",
+        confirmText: existingSubmission ? "Perbarui" : "Kumpulkan",
+        cancelText: "Batal",
+        type: "info",
+        onConfirm: async () => {
+          try {
+            const response = await fetch(`/api/asesmen/${asesmenId}/submit`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                siswaId: user?.id,
+                namaKelompok: asesmen.tipePengerjaan === 'KELOMPOK' ? namaKelompok : null,
+                ketua: asesmen.tipePengerjaan === 'KELOMPOK' ? ketua : null,
+                anggota: asesmen.tipePengerjaan === 'KELOMPOK' ? anggota : null,
+                fileUrl,
+                catatan,
+              }),
+            })
+            
+            if (!response.ok) {
+              const data = await response.json()
+              throw new Error(data.error || "Gagal mengumpulkan tugas")
+            }
+          } catch (error) {
+            console.error('Error submitting:', error)
+            throw error
+          }
+        }
       }
-    } catch (error) {
-      console.error('Error submitting:', error)
-      toast({
-        title: "Error",
-        description: "Gagal mengumpulkan tugas",
-        variant: "destructive",
-      })
-    } finally {
-      setSubmitting(false)
+    )
+    
+    if (confirmed) {
+      success(
+        "Berhasil!",
+        existingSubmission 
+          ? "Tugas berhasil diperbarui" 
+          : "Tugas berhasil dikumpulkan"
+      )
+      // Redirect after a short delay to let user see the success message
+      setTimeout(() => {
+        router.push(`/courses/${courseId}/asesmen/${asesmenId}`)
+      }, 1500)
     }
   }
 
@@ -183,6 +182,8 @@ export default function SubmitAsesmenPage({ params }: PageProps) {
 
   return (
     <div className="container max-w-4xl py-6 sm:py-8 space-y-6">
+      <AlertComponent />
+      
       {/* Header */}
       <div className="space-y-4">
         <Button variant="ghost" size="sm" asChild>
@@ -365,23 +366,6 @@ export default function SubmitAsesmenPage({ params }: PageProps) {
                 </Link>
               </Button>
             </div>
-
-            {existingSubmission && (
-              <Alert>
-                <FileText className="h-4 w-4" />
-                <AlertDescription>
-                  Anda sudah mengumpulkan tugas ini sebelumnya pada{' '}
-                  {new Date(existingSubmission.tgl_unggah).toLocaleString('id-ID', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                  . Form ini akan memperbarui pengumpulan Anda.
-                </AlertDescription>
-              </Alert>
-            )}
           </form>
         </CardContent>
       </Card>

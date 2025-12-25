@@ -150,13 +150,33 @@ export default function AsesmenDetailPage({ params }: PageProps) {
             </p>
           </div>
           <div className="flex gap-2">
-            {isStudent && asesmen.tipe === 'TUGAS' && !isDeadlinePassed && (
-              <Button asChild>
-                <Link href={`/courses/${courseId}/asesmen/${asesmenId}/submit`}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  {hasSubmitted ? 'Edit Pengumpulan' : 'Kumpulkan Tugas'}
-                </Link>
-              </Button>
+            {isStudent && asesmen.tipe === 'TUGAS' && (
+              <>
+                {hasSubmitted ? (
+                  <Button 
+                    disabled
+                    className="bg-green-600 hover:bg-green-600 cursor-not-allowed opacity-90"
+                  >
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Sudah Diserahkan
+                  </Button>
+                ) : isDeadlinePassed ? (
+                  <Button 
+                    disabled
+                    variant="secondary"
+                  >
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Deadline Terlewat
+                  </Button>
+                ) : (
+                  <Button asChild>
+                    <Link href={`/courses/${courseId}/asesmen/${asesmenId}/submit`}>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Kumpulkan Tugas
+                    </Link>
+                  </Button>
+                )}
+              </>
             )}
             {isStudent && asesmen.tipe === 'KUIS' && !isDeadlinePassed && asesmen.soal && asesmen.soal.length > 0 && (
               <Button asChild>
