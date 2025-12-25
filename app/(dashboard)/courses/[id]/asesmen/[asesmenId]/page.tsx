@@ -351,21 +351,24 @@ export default function AsesmenDetailPage({ params }: PageProps) {
               <Separator />
               <div>
                 <h4 className="text-sm font-medium mb-2">Lampiran</h4>
-                <Button variant="outline" size="sm" asChild>
-                  <a href={asesmen.lampiran} target="_blank" rel="noopener noreferrer">
-                    {asesmen.lampiran.startsWith('http') ? (
-                      <>
-                        <Download className="mr-2 h-4 w-4" />
-                        Buka Link
-                      </>
-                    ) : (
-                      <>
-                        <Download className="mr-2 h-4 w-4" />
-                        Unduh Lampiran
-                      </>
-                    )}
-                  </a>
-                </Button>
+                {asesmen.lampiran.startsWith('data:') ? (
+                  <Button variant="outline" size="sm" asChild>
+                    <a
+                      href={asesmen.lampiran}
+                      download={`lampiran-${asesmen.nama}.${asesmen.lampiran.split(';')[0].split('/')[1]}`}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Unduh File
+                    </a>
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={asesmen.lampiran} target="_blank" rel="noopener noreferrer">
+                      <Download className="mr-2 h-4 w-4" />
+                      {asesmen.lampiran.startsWith('http') ? 'Buka Link' : 'Unduh Lampiran'}
+                    </a>
+                  </Button>
+                )}
               </div>
             </>
           )}

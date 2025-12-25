@@ -245,21 +245,33 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
               <div className="space-y-2">
                 <Label className="text-muted-foreground">File</Label>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={pengumpulan.fileUrl} target="_blank" rel="noopener noreferrer">
-                      {pengumpulan.fileUrl.startsWith('http') ? (
-                        <>
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          Buka Link
-                        </>
-                      ) : (
-                        <>
-                          <Download className="mr-2 h-4 w-4" />
-                          Unduh File
-                        </>
-                      )}
-                    </a>
-                  </Button>
+                  {pengumpulan.fileUrl.startsWith('data:') ? (
+                    <Button variant="outline" size="sm" asChild>
+                      <a
+                        href={pengumpulan.fileUrl}
+                        download={`submission-${pengumpulan.id}.${pengumpulan.fileUrl.split(';')[0].split('/')[1]}`}
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Unduh File
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={pengumpulan.fileUrl} target="_blank" rel="noopener noreferrer">
+                        {pengumpulan.fileUrl.startsWith('http') ? (
+                          <>
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Buka Link
+                          </>
+                        ) : (
+                          <>
+                            <Download className="mr-2 h-4 w-4" />
+                            Unduh File
+                          </>
+                        )}
+                      </a>
+                    </Button>
+                  )}
                 </div>
               </div>
             </>

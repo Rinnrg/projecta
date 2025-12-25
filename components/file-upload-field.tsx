@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Upload, Link2, X, File, Loader2 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { toast } from "@/hooks/use-toast"
 
 interface FileUploadFieldProps {
   label: string
@@ -31,28 +32,58 @@ export function FileUploadField({
     const file = e.target.files?.[0]
     if (!file) return
 
+    // Check file size (max 5MB for base64)
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+      toast({
+        title: "Error",
+        description: "Ukuran file terlalu besar. Maksimal 5MB",
+        variant: "destructive",
+      })
+      e.target.value = '' // Reset input
+      return
+    }
+
     setIsUploading(true)
     setFileName(file.name)
 
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        throw new Error('Upload failed')
+      // Convert file to base64 and save directly
+      const reader = new FileReader()
+      
+      reader.onloadend = () => {
+        const base64String = reader.result as string
+        // Save as data URL (includes file type info)
+        onChange(base64String)
+        setIsUploading(false)
+        toast({
+          title: "Berhasil",
+          description: "File berhasil diupload",
+        })
       }
 
-      const data = await response.json()
-      onChange(data.url)
+      reader.onerror = () => {
+        setIsUploading(false)
+        toast({
+          title: "Error",
+          description: "Gagal membaca file",
+          variant: "destructive",
+        })
+        setFileName('')
+        e.target.value = ''
+      }
+
+      // Read file as data URL (base64)
+      reader.readAsDataURL(file)
     } catch (error) {
       console.error('Error uploading file:', error)
-      alert('Gagal mengupload file')
-    } finally {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Gagal mengupload file",
+        variant: "destructive",
+      })
+      setFileName('')
+      e.target.value = ''
       setIsUploading(false)
     }
   }
@@ -61,6 +92,9 @@ export function FileUploadField({
     onChange('')
     setFileName('')
   }
+
+  // Check if value is a data URL (base64)
+  const isDataURL = value && value.startsWith('data:')
 
   return (
     <div className="space-y-2">
@@ -83,9 +117,14 @@ export function FileUploadField({
           <Input
             type="url"
             placeholder="https://..."
-            value={value}
+            value={isDataURL ? '' : value}
             onChange={(e) => onChange(e.target.value)}
           />
+          {isDataURL && (
+            <p className="text-xs text-amber-600">
+              File sudah diupload. Ganti ke tab "Upload File" untuk melihat atau menggantinya.
+            </p>
+          )}
         </TabsContent>
 
         <TabsContent value="file" className="space-y-2">
@@ -95,15 +134,23 @@ export function FileUploadField({
                 <div className="flex items-center gap-2">
                   <File className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium">{fileName || 'File terupload'}</p>
-                    <a 
-                      href={value} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:underline"
-                    >
-                      Lihat file
-                    </a>
+                    <p className="text-sm font-medium">
+                      {fileName || (isDataURL ? 'File terupload' : 'Link eksternal')}
+                    </p>
+                    {isDataURL ? (
+                      <p className="text-xs text-muted-foreground">
+                        File disimpan di database
+                      </p>
+                    ) : (
+                      <a 
+                        href={value} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        Lihat file
+                      </a>
+                    )}
                   </div>
                 </div>
                 <Button
@@ -117,14 +164,19 @@ export function FileUploadField({
               </div>
             </Card>
           ) : (
-            <div className="flex items-center gap-2">
-              <Input
-                type="file"
-                accept={accept}
-                onChange={handleFileChange}
-                disabled={isUploading}
-              />
-              {isUploading && <Loader2 className="h-4 w-4 animate-spin" />}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept={accept}
+                  onChange={handleFileChange}
+                  disabled={isUploading}
+                />
+                {isUploading && <Loader2 className="h-4 w-4 animate-spin" />}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Maksimal 5MB. File akan disimpan di database.
+              </p>
             </div>
           )}
         </TabsContent>
