@@ -462,19 +462,33 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3 sm:space-y-4">
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground sm:gap-4 sm:text-sm">
-                      <span className="flex items-center gap-1 sm:gap-1.5">
-                        <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        {assessment.jml_soal} Soal
-                      </span>
-                      <span className="flex items-center gap-1 sm:gap-1.5">
-                        <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        {assessment.durasi} menit
-                      </span>
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                      <Badge variant={assessment.tipe === 'KUIS' ? 'default' : 'secondary'}>
+                        {assessment.tipe === 'KUIS' ? 'Kuis' : 'Tugas'}
+                      </Badge>
+                      {assessment.tgl_selesai && (
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {new Date(assessment.tgl_selesai).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                          })}
+                        </span>
+                      )}
                     </div>
                     <Button className="w-full" size="sm" asChild>
-                      <Link href={user?.role === "SISWA" ? `/assignments/${assessment.id}/work` : `/assignments/${assessment.id}`}>
-                        {user?.role === "SISWA" ? "Mulai Asesmen" : "Lihat Detail"}
+                      <Link href={
+                        user?.role === "SISWA" 
+                          ? assessment.tipe === 'KUIS' 
+                            ? `/asesmen/${assessment.id}/kerjakan`
+                            : `/asesmen/${assessment.id}/submit`
+                          : `/asesmen/${assessment.id}`
+                      }>
+                        {user?.role === "SISWA" 
+                          ? assessment.tipe === 'KUIS' 
+                            ? "Kerjakan Kuis" 
+                            : "Kumpulkan Tugas"
+                          : "Lihat Detail"}
                       </Link>
                     </Button>
                   </CardContent>
