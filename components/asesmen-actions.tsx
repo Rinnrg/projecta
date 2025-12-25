@@ -45,8 +45,10 @@ export function AsesmenActions({ asesmenId, asesmenNama, userRole }: AsesmenActi
         method: 'DELETE',
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error('Gagal menghapus asesmen')
+        throw new Error(data.error || 'Gagal menghapus asesmen')
       }
 
       toast({
@@ -54,13 +56,13 @@ export function AsesmenActions({ asesmenId, asesmenNama, userRole }: AsesmenActi
         description: "Asesmen berhasil dihapus",
       })
 
-      router.refresh()
       setShowDeleteDialog(false)
+      router.refresh()
     } catch (error) {
       console.error('Error deleting asesmen:', error)
       toast({
         title: "Error",
-        description: "Gagal menghapus asesmen",
+        description: error instanceof Error ? error.message : "Gagal menghapus asesmen",
         variant: "destructive",
       })
     } finally {
@@ -107,7 +109,10 @@ export function AsesmenActions({ asesmenId, asesmenNama, userRole }: AsesmenActi
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={(e) => {
+                e.preventDefault()
+                handleDelete()
+              }}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
