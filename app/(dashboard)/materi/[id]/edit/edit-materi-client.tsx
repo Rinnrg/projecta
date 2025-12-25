@@ -107,22 +107,14 @@ export default function EditMateriClient({ materi }: EditMateriClientProps) {
     }
   }
 
-  // Upload file to server
-  const uploadFile = async (file: File): Promise<string> => {
-    const formData = new FormData()
-    formData.append("file", file)
-
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
+  // Convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = (error) => reject(error)
     })
-
-    if (!response.ok) {
-      throw new Error("Gagal mengupload file")
-    }
-
-    const data = await response.json()
-    return data.url
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -136,21 +128,37 @@ export default function EditMateriClient({ materi }: EditMateriClientProps) {
     setIsSubmitting(true)
 
     try {
-      let lampiranUrl = formData.lampiran
+      let requestBody: any = {
+        judul: formData.judul,
+        deskripsi: formData.deskripsi,
+      }
 
-      // If file is selected, upload it first
+      // If file is selected, convert to base64 and include file data
       if (uploadMode === "file" && selectedFile) {
         setIsUploading(true)
         try {
-          lampiranUrl = await uploadFile(selectedFile)
+          const base64Data = await fileToBase64(selectedFile)
+          requestBody.fileData = base64Data
+          requestBody.fileName = selectedFile.name
+          requestBody.fileType = selectedFile.type
+          requestBody.fileSize = selectedFile.size
+          requestBody.lampiran = null // Clear lampiran URL when uploading file
         } catch (uploadError) {
-          console.error("Error uploading file:", uploadError)
-          showError("Error", "Gagal mengupload file")
+          console.error("Error converting file:", uploadError)
+          showError("Error", "Gagal memproses file")
           setIsSubmitting(false)
           setIsUploading(false)
           return
         }
         setIsUploading(false)
+      } else if (uploadMode === "link") {
+        // Use link URL
+        requestBody.lampiran = formData.lampiran || null
+        // Clear file data when using link
+        requestBody.fileData = null
+        requestBody.fileName = null
+        requestBody.fileType = null
+        requestBody.fileSize = null
       }
 
       const response = await fetch(`/api/materi/${materi.id}`, {
@@ -158,10 +166,7 @@ export default function EditMateriClient({ materi }: EditMateriClientProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...formData,
-          lampiran: lampiranUrl,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (!response.ok) {

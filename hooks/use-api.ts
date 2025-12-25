@@ -16,13 +16,13 @@ function setCachedData(key: string, data: any) {
   cache.set(key, { data, timestamp: Date.now() })
 }
 
-export function useCourses() {
+export function useCourses(userId?: string, role?: string) {
   const [courses, setCourses] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchCourses = useCallback(async () => {
-    const cacheKey = 'courses'
+    const cacheKey = userId && role ? `courses-${role}-${userId}` : 'courses'
     const cachedData = getCachedData(cacheKey)
     
     if (cachedData) {
@@ -33,7 +33,16 @@ export function useCourses() {
 
     try {
       setLoading(true)
-      const response = await fetch('/api/courses', {
+      let url = '/api/courses'
+      
+      // Add filters based on role and userId
+      if (userId && role === 'SISWA') {
+        url += `?siswaId=${userId}`
+      } else if (userId && role === 'GURU') {
+        url += `?guruId=${userId}`
+      }
+      
+      const response = await fetch(url, {
         next: { revalidate: 300 }, // Cache 5 menit
       })
       const data = await response.json()
@@ -50,7 +59,7 @@ export function useCourses() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [userId, role])
 
   useEffect(() => {
     fetchCourses()

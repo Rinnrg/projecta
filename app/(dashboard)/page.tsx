@@ -112,6 +112,11 @@ export default function DashboardPage() {
     redirect("/login")
   }
 
+  // Add safety check - this should not happen due to redirect above
+  if (!user) {
+    return null
+  }
+
   if (loading) {
     return <DashboardSkeleton />
   }
@@ -154,8 +159,8 @@ export default function DashboardPage() {
           <p className="text-xs font-medium text-muted-foreground sm:text-sm">{greeting()}</p>
           <h1 className="text-xl font-semibold tracking-tight sm:text-2xl md:text-3xl">{user.nama.split(" ")[0]}</h1>
           <p className="max-w-md text-xs text-muted-foreground sm:text-[15px]">
-            {user.role === "SISWA" && t("dashboard.trackProgress")}
-            {user.role === "GURU" && t("dashboard.manageCourses")}
+            {user.role === "SISWA" && t("Pantau perkembangan belajar Anda")}
+            {user.role === "GURU" && t("Kelola kursus dan materi pembelajaran")}
             {user.role === "ADMIN" && t("Ringkasan Sistem")}
           </p>
         </div>
@@ -251,10 +256,10 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-semibold sm:text-lg">
-                {user.role === "SISWA" ? t("dashboard.continueLearning") : t("Kursus Anda")}
+                {user.role === "SISWA" ? t("Lanjutkan Belajar") : t("Kursus Anda")}
               </h2>
               <p className="text-xs text-muted-foreground sm:text-sm">
-                {user.role === "SISWA" ? t("dashboard.pickUpWhereLeft") : t("Baru Diperbarui")}
+                {user.role === "SISWA" ? t("Ambil di mana Anda tinggalkan") : t("Baru Diperbarui")}
               </p>
             </div>
             <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
@@ -352,7 +357,7 @@ export default function DashboardPage() {
           {(user.role === "ADMIN" || user.role === "GURU" || user.role === "SISWA") && (
             <Card className="border-border/50 p-3 sm:p-5">
               <h3 className="mb-3 text-sm font-semibold sm:mb-4 sm:text-base">
-                {user.role === "SISWA" ? t("dashboard.readyToTake") : t("dashboard.recentAssessments")}
+                {user.role === "SISWA" ? t("Siap Dikerjakan") : t("Asesmen Terbaru")}
               </h3>
               <div className="space-y-2">
                 {asesmenList.slice(0, 3).map((asesmen) => (

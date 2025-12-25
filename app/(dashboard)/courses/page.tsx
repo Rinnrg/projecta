@@ -31,7 +31,7 @@ export default function CoursesPage() {
   const [selectedCategory, setSelectedCategory] = useState(locale === 'id' ? "Semua" : "All")
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
   const { confirm, success, AlertComponent } = useSweetAlert()
-  const { courses, loading, error, refetch } = useCourses()
+  const { courses, loading, error, refetch } = useCourses(user?.id, user?.role)
 
   // Debounce search query untuk mengurangi re-render
   const debouncedSearchQuery = useDebounce(searchQuery, 300)

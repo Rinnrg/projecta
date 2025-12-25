@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { mockCourses, mockProyek, mockAsesmenList } from "@/lib/mock-data"
+import { useState, useMemo, useEffect } from "react"
+import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -19,6 +19,7 @@ import {
   GraduationCap,
   BookOpen,
   AlertCircle,
+  Loader2,
 } from "lucide-react"
 import {
   format,
@@ -36,84 +37,63 @@ import { id as localeId, enUS } from "date-fns/locale"
 import type { DayButtonProps } from "react-day-picker"
 import { AnimateIn } from "@/components/ui/animate-in"
 
-const generateDynamicEvents = () => {
-  const today = new Date()
-  const events: Array<{
-    id: string
-    title: string
-    date: Date
-    type: "assignment" | "project" | "assessment" | "lesson"
-    courseId?: string
-    description?: string
-  }> = []
-
-  mockProyek.forEach((project, index) => {
-    const daysFromNow = index * 7 + 3
-    events.push({
-      id: `proj-${project.id}`,
-      title: project.judul,
-      date: addDays(today, daysFromNow),
-      type: "project",
-      description: project.deskripsi,
-    })
-  })
-
-  mockAsesmenList.forEach((asesmen, index) => {
-    const daysFromNow = index * 5 + 2
-    const course = mockCourses.find((c) => c.id === asesmen.courseId)
-    events.push({
-      id: `asm-${asesmen.id}`,
-      title: asesmen.nama,
-      date: addDays(today, daysFromNow),
-      type: "assessment",
-      courseId: asesmen.courseId,
-      description: `${asesmen.jml_soal} soal - ${asesmen.durasi} menit${course ? ` | ${course.judul}` : ""}`,
-    })
-  })
-
-  const assignments = [
-    { title: "Tugas React Components", courseId: "c1", daysFromNow: 1 },
-    { title: "Latihan SQL Query", courseId: "c2", daysFromNow: 4 },
-    { title: "Desain Wireframe", courseId: "c3", daysFromNow: 6 },
-    { title: "Implementasi Sorting", courseId: "c4", daysFromNow: 8 },
-    { title: "Tugas API Integration", courseId: "c1", daysFromNow: 10 },
-  ]
-
-  assignments.forEach((assignment, index) => {
-    events.push({
-      id: `asg-${index}`,
-      title: assignment.title,
-      date: addDays(today, assignment.daysFromNow),
-      type: "assignment",
-      courseId: assignment.courseId,
-    })
-  })
-
-  const lessons = [
-    { title: "Kelas React Hooks", courseId: "c1", daysFromNow: 0 },
-    { title: "Materi Database Normalization", courseId: "c2", daysFromNow: 1 },
-    { title: "Workshop UI Design", courseId: "c3", daysFromNow: 2 },
-    { title: "Kelas Algoritma Searching", courseId: "c4", daysFromNow: 3 },
-  ]
-
-  lessons.forEach((lesson, index) => {
-    events.push({
-      id: `lsn-${index}`,
-      title: lesson.title,
-      date: addDays(today, lesson.daysFromNow),
-      type: "lesson",
-      courseId: lesson.courseId,
-    })
-  })
-
-  return events.sort((a, b) => a.date.getTime() - b.date.getTime())
-}
-
 type EventType = "assessment" | "project" | "assignment" | "lesson"
 
+interface ScheduleEvent {
+  id: string
+  title: string
+  date: Date
+  type: EventType
+  courseId?: string
+  description?: string
+  course?: string
+  group?: string
+  status?: string
+}
+
 export default function SchedulePage() {
+  const { user } = useAuth()
   const { t, locale } = useAutoTranslate()
   const dateLocale = locale === 'id' ? localeId : enUS
+
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
+  const [filterType, setFilterType] = useState<"all" | EventType>("all")
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar")
+  const [allEvents, setAllEvents] = useState<ScheduleEvent[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch schedule events from API
+  useEffect(() => {
+    if (!user) return
+
+    const fetchSchedule = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch(`/api/schedule?userId=${user.id}&role=${user.role}`)
+        const data = await response.json()
+
+        if (response.ok) {
+          // Convert date strings to Date objects
+          const events: ScheduleEvent[] = data.schedule.map((event: any) => ({
+            ...event,
+            date: new Date(event.date),
+            // Map API types to our event types
+            type: event.type === 'assessment' ? 'assessment' : 
+                  event.type === 'project' ? 'project' : 
+                  'assignment' as EventType
+          }))
+          setAllEvents(events)
+        }
+      } catch (error) {
+        console.error('Error fetching schedule:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchSchedule()
+  }, [user])
 
   const eventTypeConfig = useMemo(
     () => ({
@@ -147,13 +127,6 @@ export default function SchedulePage() {
     }),
     [t],
   )
-
-  const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
-  const [filterType, setFilterType] = useState<"all" | EventType>("all")
-  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar")
-
-  const allEvents = useMemo(() => generateDynamicEvents(), [])
 
   const filteredEvents = useMemo(() => {
     return allEvents.filter((event) => filterType === "all" || event.type === filterType)
@@ -189,10 +162,6 @@ export default function SchedulePage() {
       .filter((event) => !isBefore(event.date, start) && !isAfter(event.date, end))
       .sort((a, b) => a.date.getTime() - b.date.getTime())
   }, [filteredEvents, currentMonth])
-
-  const getCourse = (courseId: string | undefined) => {
-    return courseId ? mockCourses.find((c) => c.id === courseId) : undefined
-  }
 
   const formatDateLabel = (date: Date) => {
     if (isToday(date)) {
@@ -237,6 +206,15 @@ export default function SchedulePage() {
           </div>
         )}
       </button>
+    )
+  }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
     )
   }
 
@@ -376,7 +354,6 @@ export default function SchedulePage() {
                     monthEvents.map((event) => {
                       const config = eventTypeConfig[event.type]
                       const Icon = config.icon
-                      const course = getCourse(event.courseId)
 
                       return (
                         <div key={event.id} className={`flex items-start gap-3 rounded-lg border p-3 ${config.color}`}>
@@ -390,7 +367,7 @@ export default function SchedulePage() {
                                 {format(event.date, "d MMM", { locale: dateLocale })}
                               </Badge>
                             </div>
-                            {course && <p className="text-xs opacity-80 mt-0.5 truncate">{course.judul}</p>}
+                            {event.course && <p className="text-xs opacity-80 mt-0.5 truncate">{event.course}</p>}
                             {event.description && (
                               <p className="text-xs opacity-70 mt-1 line-clamp-2">{event.description}</p>
                             )}
@@ -426,7 +403,6 @@ export default function SchedulePage() {
                       {selectedDateEvents.map((event) => {
                         const config = eventTypeConfig[event.type]
                         const Icon = config.icon
-                        const course = getCourse(event.courseId)
 
                         return (
                           <div key={event.id} className={`rounded-lg border p-2 sm:p-3 ${config.color}`}>
@@ -434,7 +410,7 @@ export default function SchedulePage() {
                               <Icon className="h-3.5 w-3.5 mt-0.5 sm:h-4 sm:w-4 shrink-0" />
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-medium sm:text-sm">{event.title}</p>
-                                {course && <p className="text-xs opacity-80 truncate">{course.judul}</p>}
+                                {event.course && <p className="text-xs opacity-80 truncate">{event.course}</p>}
                                 {event.description && (
                                   <p className="text-xs opacity-70 mt-1 line-clamp-2">{event.description}</p>
                                 )}
