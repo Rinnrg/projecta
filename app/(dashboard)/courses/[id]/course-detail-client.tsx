@@ -316,9 +316,11 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <h2 className="text-base font-semibold sm:text-lg">Materi Pembelajaran</h2>
             {isTeacherOrAdmin && (
-              <Button size="sm" className="w-full sm:w-auto" onClick={() => showError("Fitur Dalam Pengembangan", "Silakan tambah materi melalui halaman Materi")}>
-                <Plus className="mr-2 h-4 w-4" />
-                Tambah Materi
+              <Button size="sm" className="w-full sm:w-auto" asChild>
+                <Link href={`/materi/new/${course.id}`}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Tambah Materi
+                </Link>
               </Button>
             )}
           </div>
@@ -409,9 +411,11 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <h2 className="text-base font-semibold sm:text-lg">Daftar Asesmen</h2>
             {isTeacherOrAdmin && (
-              <Button size="sm" className="w-full sm:w-auto" onClick={() => showError("Fitur Dalam Pengembangan", "Silakan buat asesmen melalui halaman Asesmen")}>
-                <Plus className="mr-2 h-4 w-4" />
-                Buat Asesmen
+              <Button size="sm" className="w-full sm:w-auto" asChild>
+                <Link href={`/asesmen/new/${course.id}`}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Buat Asesmen
+                </Link>
               </Button>
             )}
           </div>
