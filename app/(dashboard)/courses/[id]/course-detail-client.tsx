@@ -460,7 +460,7 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem asChild>
-                              <Link href={`/asesmen/${assessment.id}/edit`}>
+                              <Link href={`/asesmen/${assessment.id}/edit?courseId=${course.id}`}>
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Edit Asesmen
                               </Link>
@@ -493,7 +493,7 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
                       )}
                     </div>
                     <Button className="w-full" size="sm" asChild>
-                      <Link href={`/asesmen/${assessment.id}`}>
+                      <Link href={`/asesmen/${assessment.id}?courseId=${course.id}`}>
                         Lihat Detail
                       </Link>
                     </Button>

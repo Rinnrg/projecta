@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,6 +23,8 @@ interface AsesmenEditFormProps {
 
 export function AsesmenEditForm({ asesmenId }: AsesmenEditFormProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const courseId = searchParams.get('courseId')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [courses, setCourses] = useState<any[]>([])
@@ -125,7 +127,12 @@ export function AsesmenEditForm({ asesmenId }: AsesmenEditFormProps) {
         description: "Asesmen berhasil diperbarui",
       })
 
-      router.push('/asesmen')
+      // Redirect kembali ke course detail jika datang dari course detail
+      if (courseId) {
+        router.push(`/courses/${courseId}`)
+      } else {
+        router.push('/asesmen')
+      }
       router.refresh()
     } catch (error) {
       console.error('Error updating asesmen:', error)
@@ -284,7 +291,13 @@ export function AsesmenEditForm({ asesmenId }: AsesmenEditFormProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.back()}
+              onClick={() => {
+                if (courseId) {
+                  router.push(`/courses/${courseId}`)
+                } else {
+                  router.back()
+                }
+              }}
               disabled={isSaving}
             >
               Batal

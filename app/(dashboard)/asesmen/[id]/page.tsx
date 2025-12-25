@@ -29,6 +29,7 @@ import {
   Plus,
 } from "lucide-react"
 import Link from "next/link"
+import BackButton from "./back-button"
 
 export const dynamic = 'force-dynamic'
 
@@ -143,12 +144,7 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
     <div className="container max-w-6xl py-6 sm:py-8 space-y-6">
       {/* Header */}
       <div className="space-y-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/asesmen">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Kembali ke Daftar Asesmen
-          </Link>
-        </Button>
+        <BackButton />
 
         <div className="flex items-start justify-between">
           <div className="space-y-2">
