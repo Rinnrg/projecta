@@ -18,6 +18,7 @@ import { toast } from "@/hooks/use-toast"
 import { Loader2, Plus, Trash2, Check, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { FileUploadField } from "@/components/file-upload-field"
 
 interface AsesmenEditFormProps {
   asesmenId: string
@@ -577,15 +578,13 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="lampiran">Lampiran (URL)</Label>
-            <Input
-              id="lampiran"
-              value={formData.lampiran}
-              onChange={(e) => setFormData({ ...formData, lampiran: e.target.value })}
-              placeholder="https://..."
-            />
-          </div>
+          <FileUploadField
+            label="Lampiran"
+            description="Upload file atau masukkan link URL"
+            value={formData.lampiran}
+            onChange={(value) => setFormData({ ...formData, lampiran: value })}
+            accept=".pdf,.doc,.docx,.ppt,.pptx,.zip"
+          />
 
           <div className="flex gap-2 justify-end pt-4">
             <Button

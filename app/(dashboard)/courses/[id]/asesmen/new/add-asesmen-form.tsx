@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,6 +20,7 @@ import { Loader2, ArrowLeft, Plus, Trash2, Check, X } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { FileUploadField } from "@/components/file-upload-field"
 
 interface AddAsesmenFormProps {
   courseId: string
@@ -39,7 +40,7 @@ interface Soal {
 
 export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenFormProps) {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState<'basic' | 'questions'>('basic')
   const [soalList, setSoalList] = useState<Soal[]>([])
@@ -63,6 +64,21 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
     durasi: "",
     lampiran: "",
   })
+
+  // Debug: Log user info
+  useEffect(() => {
+    console.log('Current user:', user)
+    console.log('Auth loading:', authLoading)
+  }, [user, authLoading])
+
+  // Show loading state while auth is loading
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
 
   const handleAddSoal = () => {
     // Validasi soal
@@ -167,12 +183,26 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
       return
     }
 
-    if (!user?.id) {
+    // Validasi user dengan lebih detail
+    if (!user) {
+      console.error('User is null or undefined:', user)
       toast({
         title: "Error",
-        description: "User tidak terautentikasi",
+        description: "Anda belum login. Silakan login terlebih dahulu.",
         variant: "destructive",
       })
+      router.push('/login')
+      return
+    }
+
+    if (!user.id || user.id === 'temp') {
+      console.error('User ID invalid:', user)
+      toast({
+        title: "Error",
+        description: "Session tidak valid. Silakan login ulang.",
+        variant: "destructive",
+      })
+      router.push('/login')
       return
     }
 
@@ -200,6 +230,9 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
         courseId: courseId,
         guruId: user.id,
       }
+
+      console.log('Sending data:', bodyData)
+      console.log('User info:', { id: user.id, nama: user.nama, role: user.role })
 
       // Tambahkan soal untuk KUIS
       if (formData.tipe === 'KUIS') {
@@ -530,15 +563,13 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="lampiran">Lampiran (URL)</Label>
-            <Input
-              id="lampiran"
-              value={formData.lampiran}
-              onChange={(e) => setFormData({ ...formData, lampiran: e.target.value })}
-              placeholder="https://..."
-            />
-          </div>
+          <FileUploadField
+            label="Lampiran"
+            description="Upload file atau masukkan link URL"
+            value={formData.lampiran}
+            onChange={(value) => setFormData({ ...formData, lampiran: value })}
+            accept=".pdf,.doc,.docx,.ppt,.pptx,.zip"
+          />
 
           <div className="flex gap-2 justify-end pt-4">
             <Button

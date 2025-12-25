@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Table,
   TableBody,
@@ -30,6 +31,8 @@ import {
   Download,
   Plus,
   Loader2,
+  Eye,
+  ClipboardList,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -349,9 +352,18 @@ export default function AsesmenDetailPage({ params }: PageProps) {
               <div>
                 <h4 className="text-sm font-medium mb-2">Lampiran</h4>
                 <Button variant="outline" size="sm" asChild>
-                  <a href={asesmen.lampiran} download>
-                    <Download className="mr-2 h-4 w-4" />
-                    Unduh Lampiran
+                  <a href={asesmen.lampiran} target="_blank" rel="noopener noreferrer">
+                    {asesmen.lampiran.startsWith('http') ? (
+                      <>
+                        <Download className="mr-2 h-4 w-4" />
+                        Buka Link
+                      </>
+                    ) : (
+                      <>
+                        <Download className="mr-2 h-4 w-4" />
+                        Unduh Lampiran
+                      </>
+                    )}
                   </a>
                 </Button>
               </div>
@@ -360,149 +372,272 @@ export default function AsesmenDetailPage({ params }: PageProps) {
         </CardContent>
       </Card>
 
-      {/* Submissions Table (For Teachers/Admin - TUGAS) */}
-      {isTeacherOrAdmin && asesmen.tipe === 'TUGAS' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">
-              Siswa yang telah mengumpulkan tugas {asesmen.tipePengerjaan === 'KELOMPOK' ? '(Kelompok)' : '(Individu)'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {asesmen.pengumpulanProyek.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                Belum ada siswa yang mengumpulkan tugas
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>
-                      {asesmen.tipePengerjaan === 'KELOMPOK' ? 'Nama Kelompok' : 'Nama Siswa'}
-                    </TableHead>
-                    {asesmen.tipePengerjaan === 'KELOMPOK' && (
-                      <>
-                        <TableHead>Ketua</TableHead>
-                        <TableHead>Anggota</TableHead>
-                      </>
-                    )}
-                    <TableHead>Tanggal Upload</TableHead>
-                    <TableHead>Nilai</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {asesmen.pengumpulanProyek.map((pengumpulan: any) => (
-                    <TableRow key={pengumpulan.id}>
-                      <TableCell>
-                        {asesmen.tipePengerjaan === 'KELOMPOK' && (
-                          <div className="font-medium">{pengumpulan.namaKelompok || '-'}</div>
-                        )}
-                        {asesmen.tipePengerjaan === 'INDIVIDU' && pengumpulan.siswa && (
-                          <div className="flex items-center gap-2">
-                            <div>
-                              <div className="font-medium">{pengumpulan.siswa.nama}</div>
-                              <div className="text-sm text-muted-foreground">{pengumpulan.siswa.email}</div>
-                            </div>
-                          </div>
-                        )}
-                      </TableCell>
-                      {asesmen.tipePengerjaan === 'KELOMPOK' && (
-                        <>
-                          <TableCell>{pengumpulan.ketua || '-'}</TableCell>
-                          <TableCell>{pengumpulan.anggota || '-'}</TableCell>
-                        </>
-                      )}
-                      <TableCell>
-                        {new Date(pengumpulan.tgl_unggah).toLocaleDateString('id-ID', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
-                      </TableCell>
-                      <TableCell>
-                        {pengumpulan.nilai ? (
-                          <Badge variant="secondary">{pengumpulan.nilai}</Badge>
-                        ) : (
-                          <Badge variant="outline">Belum dinilai</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" asChild>
-                          <Link href={`/asesmen/${asesmen.id}/pengumpulan/${pengumpulan.id}`}>
-                            Lihat Detail
-                          </Link>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      {/* Tabs for Teacher/Admin */}
+      {isTeacherOrAdmin && (
+        <Tabs defaultValue="info" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="info">
+              <FileText className="mr-2 h-4 w-4" />
+              Informasi
+            </TabsTrigger>
+            <TabsTrigger value="rekap">
+              <ClipboardList className="mr-2 h-4 w-4" />
+              Rekap Pengumpulan
+            </TabsTrigger>
+          </TabsList>
 
-      {/* Nilai Table (For Teachers/Admin - KUIS) */}
-      {isTeacherOrAdmin && asesmen.tipe === 'KUIS' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Daftar Nilai Siswa</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {asesmen.nilai.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                Belum ada siswa yang mengerjakan kuis
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nama Siswa</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Nilai</TableHead>
-                    <TableHead>Tanggal</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {asesmen.nilai.map((nilai: any) => (
-                    <TableRow key={nilai.id}>
-                      <TableCell className="font-medium">{nilai.siswa.nama}</TableCell>
-                      <TableCell className="text-muted-foreground">{nilai.siswa.email}</TableCell>
-                      <TableCell>
-                        <Badge variant={nilai.skor >= 75 ? 'default' : 'secondary'}>
-                          {nilai.skor}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(nilai.tanggal).toLocaleDateString('id-ID', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
-                      </TableCell>
-                      <TableCell>
-                        {nilai.skor >= 75 ? (
-                          <Badge variant="default" className="bg-green-500">
-                            <CheckCircle2 className="mr-1 h-3 w-3" />
-                            Lulus
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">
-                            <XCircle className="mr-1 h-3 w-3" />
-                            Belum Lulus
-                          </Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+          <TabsContent value="info" className="space-y-4">
+            {/* Nilai Table (For KUIS) */}
+            {asesmen.tipe === 'KUIS' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Daftar Nilai Siswa</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {asesmen.nilai.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      Belum ada siswa yang mengerjakan kuis
+                    </p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nama Siswa</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Nilai</TableHead>
+                          <TableHead>Tanggal</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {asesmen.nilai.map((nilai: any) => (
+                          <TableRow key={nilai.id}>
+                            <TableCell className="font-medium">{nilai.siswa.nama}</TableCell>
+                            <TableCell className="text-muted-foreground">{nilai.siswa.email}</TableCell>
+                            <TableCell>
+                              <Badge variant={nilai.skor >= 75 ? 'default' : 'secondary'}>
+                                {nilai.skor}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {new Date(nilai.tanggal).toLocaleDateString('id-ID', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                            </TableCell>
+                            <TableCell>
+                              {nilai.skor >= 75 ? (
+                                <Badge variant="default" className="bg-green-500">
+                                  <CheckCircle2 className="mr-1 h-3 w-3" />
+                                  Lulus
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary">
+                                  <XCircle className="mr-1 h-3 w-3" />
+                                  Belum Lulus
+                                </Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
             )}
-          </CardContent>
-        </Card>
+          </TabsContent>
+
+          <TabsContent value="rekap" className="space-y-4">
+            {/* Submissions Table (For TUGAS) */}
+            {asesmen.tipe === 'TUGAS' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    Rekap Pengumpulan {asesmen.tipePengerjaan === 'KELOMPOK' ? '(Kelompok)' : '(Individu)'}
+                  </CardTitle>
+                  <CardDescription>
+                    Daftar siswa yang telah mengumpulkan tugas beserta nilainya
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {asesmen.pengumpulanProyek && asesmen.pengumpulanProyek.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      Belum ada siswa yang mengumpulkan tugas
+                    </p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>
+                            {asesmen.tipePengerjaan === 'KELOMPOK' ? 'Nama Kelompok' : 'Nama Siswa'}
+                          </TableHead>
+                          {asesmen.tipePengerjaan === 'KELOMPOK' && (
+                            <>
+                              <TableHead>Ketua</TableHead>
+                              <TableHead>Anggota</TableHead>
+                            </>
+                          )}
+                          <TableHead>Tanggal Upload</TableHead>
+                          <TableHead>Nilai</TableHead>
+                          <TableHead className="text-right">Aksi</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {asesmen.pengumpulanProyek && asesmen.pengumpulanProyek.map((pengumpulan: any) => (
+                          <TableRow key={pengumpulan.id}>
+                            <TableCell>
+                              {asesmen.tipePengerjaan === 'KELOMPOK' && (
+                                <div className="font-medium">{pengumpulan.namaKelompok || '-'}</div>
+                              )}
+                              {asesmen.tipePengerjaan === 'INDIVIDU' && pengumpulan.siswa && (
+                                <div className="flex items-center gap-2">
+                                  <div>
+                                    <div className="font-medium">{pengumpulan.siswa.nama}</div>
+                                    <div className="text-sm text-muted-foreground">{pengumpulan.siswa.email}</div>
+                                  </div>
+                                </div>
+                              )}
+                            </TableCell>
+                            {asesmen.tipePengerjaan === 'KELOMPOK' && (
+                              <>
+                                <TableCell>{pengumpulan.ketua || '-'}</TableCell>
+                                <TableCell>{pengumpulan.anggota || '-'}</TableCell>
+                              </>
+                            )}
+                            <TableCell>
+                              {new Date(pengumpulan.tgl_unggah).toLocaleDateString('id-ID', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </TableCell>
+                            <TableCell>
+                              {pengumpulan.nilai ? (
+                                <Badge variant={pengumpulan.nilai >= 75 ? 'default' : 'secondary'}>
+                                  {pengumpulan.nilai}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline">Belum dinilai</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button variant="ghost" size="sm" asChild>
+                                <Link href={`/asesmen/${asesmen.id}/pengumpulan/${pengumpulan.id}`}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  Lihat Detail
+                                </Link>
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Nilai Stats for KUIS */}
+            {asesmen.tipe === 'KUIS' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Rekap Nilai Kuis</CardTitle>
+                  <CardDescription>
+                    Ringkasan nilai siswa yang sudah mengerjakan kuis
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {asesmen.nilai.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      Belum ada siswa yang mengerjakan kuis
+                    </p>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium">Total Peserta</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold">{asesmen.nilai.length}</div>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium">Nilai Tertinggi</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold">
+                              {Math.max(...asesmen.nilai.map((n: any) => n.skor))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium">Nilai Terendah</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold">
+                              {Math.min(...asesmen.nilai.map((n: any) => n.skor))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nama Siswa</TableHead>
+                            <TableHead>Nilai</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Tanggal</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {asesmen.nilai.map((nilai: any) => (
+                            <TableRow key={nilai.id}>
+                              <TableCell className="font-medium">{nilai.siswa.nama}</TableCell>
+                              <TableCell>
+                                <Badge variant={nilai.skor >= 75 ? 'default' : 'secondary'}>
+                                  {nilai.skor}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {nilai.skor >= 75 ? (
+                                  <Badge variant="default" className="bg-green-500">
+                                    <CheckCircle2 className="mr-1 h-3 w-3" />
+                                    Lulus
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary">
+                                    <XCircle className="mr-1 h-3 w-3" />
+                                    Belum Lulus
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {new Date(nilai.tanggal).toLocaleDateString('id-ID', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric',
+                                })}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   )
 }
+

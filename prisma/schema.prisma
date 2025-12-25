@@ -130,6 +130,8 @@ model Nilai {
 
   asesmenId String
   asesmen   Asesmen @relation(fields: [asesmenId], references: [id])
+
+  @@unique([siswaId, asesmenId], name: "siswaId_asesmenId")
 }
 
 model Proyek {
