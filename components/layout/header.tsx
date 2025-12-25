@@ -12,13 +12,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTheme } from "next-themes"
-import type { UserRole } from "@/lib/types"
 
 interface HeaderProps {
   onMenuClick: () => void
@@ -26,16 +24,14 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick, isMobile }: HeaderProps) {
-  const { user, setUserRole, logout } = useAuth()
+  // HAPUS: setUserRole tidak lagi dibutuhkan
+  const { user, logout } = useAuth()
   const { theme, setTheme } = useTheme()
   const { locale, setLocale, t } = useAutoTranslate()
   const router = useRouter()
 
-  const roleLabels: Record<UserRole, string> = {
-    ADMIN: t("Admin"),
-    GURU: t("Guru"),
-    SISWA: t("Siswa"),
-  }
+  // HAPUS: roleLabels tidak lagi dibutuhkan karena dropdown dihapus
+  // const roleLabels: Record<UserRole, string> = { ... }
 
   const getInitials = (name: string) => {
     return name
@@ -74,32 +70,9 @@ export function Header({ onMenuClick, isMobile }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-1">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="hidden h-8 gap-2 px-3 text-sm text-muted-foreground sm:flex hover:text-primary"
-            >
-              <span className="h-2 w-2 rounded-full bg-primary animate-pulse-soft" />
-              {user && roleLabels[user.role]}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44 animate-scale-in">
-            <DropdownMenuLabel className="text-sm text-muted-foreground">{t("Ganti Tampilan")}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setUserRole("SISWA")} className="text-sm cursor-pointer">
-              {t("Siswa")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setUserRole("GURU")} className="text-sm cursor-pointer">
-              {t("Guru")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setUserRole("ADMIN")} className="text-sm cursor-pointer">
-              {t("Admin")}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* BAGIAN DROPDOWN ROLE TELAH DIHAPUS DARI SINI */}
 
+        {/* Language Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

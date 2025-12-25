@@ -3,7 +3,6 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
-import { mockCourses, mockShowcase, mockAsesmenList } from "@/lib/mock-data"
 import { 
   FileText, 
   BookOpen, 
@@ -16,11 +15,14 @@ import {
   FolderOpen,
   User,
   Search,
-  CheckSquare
+  CheckSquare,
+  BookMarked,
+  ClipboardList,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { useDebounce } from "@/hooks/use-debounce"
 
 interface SearchItem {
   id: string
@@ -33,13 +35,66 @@ interface SearchItem {
   badgeVariant?: "default" | "secondary" | "destructive" | "outline"
 }
 
+interface SearchResults {
+  courses: Array<{
+    id: string
+    judul: string
+    kategori: string
+    gambar: string
+  }>
+  materi: Array<{
+    id: string
+    judul: string
+    deskripsi: string | null
+    tgl_unggah: Date
+    course: {
+      id: string
+      judul: string
+      kategori: string
+    }
+  }>
+  asesmen: Array<{
+    id: string
+    nama: string
+    deskripsi: string | null
+    tipe: string
+    tgl_selesai: Date | null
+    course: {
+      id: string
+      judul: string
+    }
+    _count: {
+      soal: number
+    }
+  }>
+  schedules: Array<{
+    id: string
+    judul: string
+    deskripsi: string
+    tgl_mulai: Date
+    tgl_selesai: Date
+    guru: {
+      nama: string
+    }
+  }>
+}
+
 export function SearchDropdown() {
   const router = useRouter()
   const { t } = useAutoTranslate()
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [searchResults, setSearchResults] = React.useState<SearchResults>({
+    courses: [],
+    materi: [],
+    asesmen: [],
+    schedules: [],
+  })
   const dropdownRef = React.useRef<HTMLDivElement>(null)
   const inputRef = React.useRef<HTMLInputElement>(null)
+
+  const debouncedSearch = useDebounce(search, 300)
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -68,8 +123,44 @@ export function SearchDropdown() {
     return () => document.removeEventListener("keydown", down)
   }, [])
 
+  // Fetch search results from API
+  React.useEffect(() => {
+    if (!debouncedSearch) {
+      setSearchResults({
+        courses: [],
+        materi: [],
+        asesmen: [],
+        schedules: [],
+      })
+      return
+    }
+
+    const fetchSearchResults = async () => {
+      setIsLoading(true)
+      try {
+        const response = await fetch(`/api/search?q=${encodeURIComponent(debouncedSearch)}`)
+        if (response.ok) {
+          const data = await response.json()
+          setSearchResults(data.results || {
+            courses: [],
+            materi: [],
+            asesmen: [],
+            schedules: [],
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching search results:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchSearchResults()
+  }, [debouncedSearch])
+
   const searchItems: SearchItem[] = React.useMemo(() => {
     const items: SearchItem[] = [
+      // Navigation items (static)
       {
         id: "dashboard",
         title: t("Dashboard"),
@@ -79,7 +170,7 @@ export function SearchDropdown() {
         category: t("Navigasi"),
       },
       {
-        id: "courses",
+        id: "courses-page",
         title: t("Kursus"),
         description: t("Jelajahi semua kursus yang tersedia"),
         icon: BookOpen,
@@ -95,11 +186,11 @@ export function SearchDropdown() {
         category: t("Navigasi"),
       },
       {
-        id: "assignments",
-        title: t("Tugas"),
-        description: t("Lihat tugas yang harus diselesaikan"),
-        icon: FileText,
-        href: "/assignments",
+        id: "asesmen-page",
+        title: t("Asesmen"),
+        description: t("Lihat tugas dan kuis"),
+        icon: CheckSquare,
+        href: "/asesmen",
         category: t("Navigasi"),
       },
       {
@@ -152,45 +243,69 @@ export function SearchDropdown() {
       },
     ]
 
-    mockCourses.forEach((course) => {
+    // Add courses from search results
+    searchResults.courses.forEach((course) => {
       items.push({
         id: `course-${course.id}`,
         title: course.judul,
         description: course.kategori,
         icon: BookOpen,
-        href: `/courses`,
+        href: `/courses/${course.id}`,
         category: t("Kursus"),
         badge: course.kategori,
       })
     })
 
-    mockShowcase.forEach((showcase) => {
+    // Add materi from search results
+    searchResults.materi.forEach((materi) => {
       items.push({
-        id: `showcase-${showcase.id}`,
-        title: showcase.judul,
-        description: showcase.deskripsi || undefined,
-        icon: Award,
-        href: `/showcase/${showcase.id}`,
-        category: t("Portofolio"),
-        badge: `${showcase.nilai}/100`,
-        badgeVariant: showcase.nilai >= 90 ? "default" : showcase.nilai >= 75 ? "secondary" : "outline",
+        id: `materi-${materi.id}`,
+        title: materi.judul,
+        description: `${materi.course.judul} • ${materi.deskripsi?.substring(0, 50) || ''}`,
+        icon: BookMarked,
+        href: `/materi/${materi.id}`,
+        category: t("Materi"),
+        badge: materi.course.kategori,
       })
     })
 
-    mockAsesmenList.forEach((assessment) => {
+    // Add asesmen from search results
+    searchResults.asesmen.forEach((asesmen) => {
+      const tipeLabel = asesmen.tipe === 'KUIS' ? 'Kuis' : 'Tugas'
+      const badge = asesmen.tipe === 'KUIS' 
+        ? `${asesmen._count.soal} soal` 
+        : tipeLabel
+      
       items.push({
-        id: `assessment-${assessment.id}`,
-        title: assessment.nama,
-        description: assessment.deskripsi || undefined,
-        icon: CheckSquare,
-        href: `/assignments`,
-        category: t("Penilaian"),
-        badge: `${assessment.jml_soal} soal`,
+        id: `asesmen-${asesmen.id}`,
+        title: asesmen.nama,
+        description: `${asesmen.course.judul} • ${asesmen.deskripsi?.substring(0, 50) || tipeLabel}`,
+        icon: asesmen.tipe === 'KUIS' ? FileText : ClipboardList,
+        href: `/asesmen/${asesmen.id}`,
+        category: t("Asesmen"),
+        badge: badge,
+        badgeVariant: asesmen.tipe === 'KUIS' ? 'default' : 'secondary',
+      })
+    })
+
+    // Add schedules/projects from search results
+    searchResults.schedules.forEach((schedule) => {
+      items.push({
+        id: `schedule-${schedule.id}`,
+        title: schedule.judul,
+        description: `${schedule.guru.nama} • ${schedule.deskripsi.substring(0, 50)}`,
+        icon: Calendar,
+        href: `/projects/${schedule.id}`,
+        category: t("Jadwal"),
+        badge: new Date(schedule.tgl_selesai).toLocaleDateString('id-ID', {
+          day: 'numeric',
+          month: 'short',
+        }),
       })
     })
 
     return items
-  }, [t])
+  }, [t, searchResults])
 
   const filteredItems = React.useMemo(() => {
     if (!search) return searchItems.slice(0, 10)
@@ -248,9 +363,16 @@ export function SearchDropdown() {
       {open && (
         <div className="absolute top-full left-0 right-0 mt-2 rounded-lg border border-border bg-popover shadow-lg animate-in fade-in-0 zoom-in-95 z-50">
           <div className="max-h-[400px] overflow-y-auto p-2">
-            {filteredItems.length === 0 ? (
+            {isLoading ? (
               <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-                {t("Tidak ada hasil ditemukan")}
+                <div className="flex items-center justify-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  {t("Mencari")}...
+                </div>
+              </div>
+            ) : filteredItems.length === 0 ? (
+              <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                {search ? t("Tidak ada hasil ditemukan") : t("Ketik untuk mencari...")}
               </div>
             ) : (
               <>

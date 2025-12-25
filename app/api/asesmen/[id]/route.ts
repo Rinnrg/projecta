@@ -67,15 +67,62 @@ export async function PUT(
 ) {
   try {
     const body = await request.json()
-    const { nama, deskripsi, jml_soal, durasi, courseId } = body
+    const { 
+      nama, 
+      deskripsi, 
+      tipe,
+      tipePengerjaan,
+      jml_soal, 
+      durasi, 
+      tgl_mulai,
+      tgl_selesai,
+      lampiran,
+      courseId 
+    } = body
+
+    // Validate dates if provided
+    let startDate = null
+    let endDate = null
+    
+    if (tgl_mulai) {
+      startDate = new Date(tgl_mulai)
+      if (isNaN(startDate.getTime())) {
+        return NextResponse.json(
+          { error: 'Format tanggal mulai tidak valid' },
+          { status: 400 }
+        )
+      }
+    }
+
+    if (tgl_selesai) {
+      endDate = new Date(tgl_selesai)
+      if (isNaN(endDate.getTime())) {
+        return NextResponse.json(
+          { error: 'Format tanggal selesai tidak valid' },
+          { status: 400 }
+        )
+      }
+      
+      if (startDate && endDate < startDate) {
+        return NextResponse.json(
+          { error: 'Tanggal selesai harus setelah tanggal mulai' },
+          { status: 400 }
+        )
+      }
+    }
 
     const asesmen = await prisma.asesmen.update({
       where: { id: params.id },
       data: {
         ...(nama && { nama }),
         ...(deskripsi !== undefined && { deskripsi }),
-        ...(jml_soal && { jml_soal }),
-        ...(durasi && { durasi }),
+        ...(tipe && { tipe }),
+        ...(tipePengerjaan !== undefined && { tipePengerjaan }),
+        ...(jml_soal !== undefined && { jml_soal }),
+        ...(durasi !== undefined && { durasi }),
+        ...(tgl_mulai !== undefined && { tgl_mulai: startDate }),
+        ...(tgl_selesai !== undefined && { tgl_selesai: endDate }),
+        ...(lampiran !== undefined && { lampiran }),
         ...(courseId && { courseId }),
       },
       include: {
