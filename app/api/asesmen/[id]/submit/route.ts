@@ -46,7 +46,7 @@ export async function POST(
     }
 
     // Check if already submitted
-    const existingSubmission = await prisma.pengumpulanTugas.findFirst({
+    const existingSubmission = await prisma.pengumpulanProyek.findFirst({
       where: {
         asesmenId: id,
         siswaId,
@@ -57,7 +57,7 @@ export async function POST(
 
     if (existingSubmission) {
       // Update existing submission
-      pengumpulan = await prisma.pengumpulanTugas.update({
+      pengumpulan = await prisma.pengumpulanProyek.update({
         where: { id: existingSubmission.id },
         data: {
           namaKelompok,
@@ -69,7 +69,7 @@ export async function POST(
       })
     } else {
       // Create new submission
-      pengumpulan = await prisma.pengumpulanTugas.create({
+      pengumpulan = await prisma.pengumpulanProyek.create({
         data: {
           namaKelompok,
           ketua,

@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { cookies } from "next/headers"
-import SubmitTugasForm from "./submit-tugas-form"
+import AddSoalForm from "./add-soal-form"
 
 export const dynamic = 'force-dynamic'
 
@@ -34,12 +34,12 @@ async function getUser() {
   return user
 }
 
-export default async function SubmitTugasPage({ params }: PageProps) {
+export default async function AddSoalPage({ params }: PageProps) {
   const { id } = await params
   const user = await getUser()
 
-  // Only students can submit
-  if (user.role !== 'SISWA') {
+  // Only teachers and admins can add questions
+  if (user.role !== 'GURU' && user.role !== 'ADMIN') {
     redirect(`/asesmen/${id}`)
   }
 
@@ -51,6 +51,7 @@ export default async function SubmitTugasPage({ params }: PageProps) {
           judul: true,
         },
       },
+      soal: true,
     },
   })
 
@@ -58,31 +59,23 @@ export default async function SubmitTugasPage({ params }: PageProps) {
     notFound()
   }
 
-  // Check if it's a task (TUGAS)
-  if (asesmen.tipe !== 'TUGAS') {
+  // Check if it's a quiz
+  if (asesmen.tipe !== 'KUIS') {
     redirect(`/asesmen/${id}`)
   }
 
-  // Check if already submitted
-  const existingSubmission = await prisma.pengumpulanProyek.findFirst({
-    where: {
-      asesmenId: id,
-      siswaId: user.id,
-    },
-  })
-
-  // Check deadline
-  const isDeadlinePassed = asesmen.tgl_selesai 
-    ? new Date(asesmen.tgl_selesai) < new Date() 
-    : false
+  // Check permission
+  if (user.role === 'GURU' && asesmen.guruId !== user.id) {
+    redirect(`/asesmen/${id}`)
+  }
 
   return (
-    <div className="container max-w-3xl py-6 sm:py-8">
-      <SubmitTugasForm 
-        asesmen={asesmen}
-        user={user}
-        existingSubmission={existingSubmission}
-        isDeadlinePassed={isDeadlinePassed}
+    <div className="container max-w-4xl py-6 sm:py-8">
+      <AddSoalForm 
+        asesmenId={asesmen.id}
+        asesmenNama={asesmen.nama}
+        courseTitle={asesmen.course.judul}
+        currentSoalCount={asesmen.soal.length}
       />
     </div>
   )

@@ -49,7 +49,7 @@ export interface Asesmen {
   courseId: string
   soal?: Soal[]
   nilai?: Nilai[]
-  pengumpulanTugas?: PengumpulanTugas[]
+  pengumpulanProyek?: PengumpulanProyek[] // Renamed from pengumpulanTugas
 }
 
 export interface Soal {
@@ -75,17 +75,20 @@ export interface Nilai {
   asesmenId: string
 }
 
-export interface PengumpulanTugas {
+export interface PengumpulanProyek {
   id: string
   namaKelompok?: string
   ketua?: string
   anggota?: string
   fileUrl?: string
   catatan?: string
-  tgl_upload: Date
+  sourceCode?: string
+  output?: string
+  tgl_unggah: Date
   nilai?: number
-  siswaId: string
-  asesmenId: string
+  siswaId?: string
+  kelompokId?: string
+  asesmenId?: string
   siswa?: User
   asesmen?: Asesmen
 }

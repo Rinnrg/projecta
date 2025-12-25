@@ -26,6 +26,7 @@ import {
   ArrowLeft,
   Edit,
   Download,
+  Plus,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -99,7 +100,7 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
           tanggal: 'desc',
         },
       },
-      pengumpulanTugas: {
+      pengumpulanProyek: {
         include: {
           siswa: {
             select: {
@@ -110,8 +111,11 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
             },
           },
         },
+        where: {
+          asesmenId: id, // Only get submissions for this asesmen
+        },
         orderBy: {
-          tgl_upload: 'desc',
+          tgl_unggah: 'desc',
         },
       },
     },
@@ -128,7 +132,7 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
 
   // Check if student has submitted
   const hasSubmitted = user.role === 'SISWA' 
-    ? asesmen.pengumpulanTugas.some(p => p.siswaId === user.id)
+    ? asesmen.pengumpulanProyek.some(p => p.siswaId === user.id)
     : false
 
   const isDeadlinePassed = asesmen.tgl_selesai 
@@ -176,6 +180,22 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
                 <Link href={`/asesmen/${asesmen.id}/submit`}>
                   <Upload className="mr-2 h-4 w-4" />
                   {hasSubmitted ? 'Edit Pengumpulan' : 'Kumpulkan Tugas'}
+                </Link>
+              </Button>
+            )}
+            {user.role === 'SISWA' && asesmen.tipe === 'KUIS' && !isDeadlinePassed && asesmen.soal.length > 0 && (
+              <Button asChild>
+                <Link href={`/asesmen/${asesmen.id}/kerjakan`}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  Kerjakan Kuis
+                </Link>
+              </Button>
+            )}
+            {(user.role === 'GURU' || user.role === 'ADMIN') && asesmen.tipe === 'KUIS' && (
+              <Button asChild>
+                <Link href={`/asesmen/${id}/soal/new`}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Tambah Soal
                 </Link>
               </Button>
             )}
@@ -381,7 +401,7 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {asesmen.pengumpulanTugas.length === 0 ? (
+            {asesmen.pengumpulanProyek.length === 0 ? (
               <div className="text-center py-12">
                 <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-4 text-lg font-semibold">Belum ada pengumpulan</h3>
@@ -409,10 +429,10 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {asesmen.pengumpulanTugas.map((pengumpulan) => (
+                    {asesmen.pengumpulanProyek.map((pengumpulan) => (
                       <TableRow key={pengumpulan.id}>
                         <TableCell className="font-medium">
-                          {pengumpulan.siswa.nama}
+                          {pengumpulan.siswa?.nama || '-'}
                         </TableCell>
                         {asesmen.tipePengerjaan === 'KELOMPOK' && (
                           <>
@@ -426,7 +446,7 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
                           </>
                         )}
                         <TableCell className="text-sm">
-                          {new Date(pengumpulan.tgl_upload).toLocaleString('id-ID', {
+                          {new Date(pengumpulan.tgl_unggah).toLocaleString('id-ID', {
                             day: 'numeric',
                             month: 'short',
                             year: 'numeric',
@@ -437,7 +457,7 @@ export default async function AsesmenDetailPage({ params }: PageProps) {
                         <TableCell>
                           {pengumpulan.fileUrl ? (
                             <Button variant="ghost" size="sm" asChild>
-                              <a href={pengumpulan.fileUrl} download>
+                              <a href={pengumpulan.fileUrl} download title="Download file">
                                 <Download className="h-4 w-4" />
                               </a>
                             </Button>
