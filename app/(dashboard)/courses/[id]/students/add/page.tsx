@@ -2,6 +2,8 @@ import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import AddStudentsClient from "./add-students-client"
 
+export const dynamic = 'force-dynamic'
+
 interface PageProps {
   params: Promise<{ id: string }>
 }

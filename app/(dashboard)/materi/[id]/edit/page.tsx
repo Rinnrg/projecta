@@ -2,6 +2,8 @@ import { notFound, redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import EditMateriClient from "./edit-materi-client"
 
+export const dynamic = 'force-dynamic'
+
 interface PageProps {
   params: Promise<{ id: string }>
 }

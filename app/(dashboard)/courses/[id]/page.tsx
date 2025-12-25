@@ -3,6 +3,8 @@ import CourseDetailClient from "./course-detail-client"
 import { prisma } from "@/lib/prisma"
 import type { Course, Asesmen } from "@/lib/types"
 
+export const dynamic = 'force-dynamic'
+
 interface PageProps {
   params: Promise<{ id: string }>
 }

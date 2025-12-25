@@ -2,6 +2,8 @@ import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import WorkAsesmenClient from "./work-asesmen-client"
 
+export const dynamic = 'force-dynamic'
+
 interface PageProps {
   params: Promise<{ 
     id: string
