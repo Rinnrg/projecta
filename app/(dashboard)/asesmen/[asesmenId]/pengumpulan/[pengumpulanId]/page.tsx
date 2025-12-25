@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
+import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { 
   ArrowLeft,
   Download,
@@ -22,7 +23,6 @@ import {
   ExternalLink,
 } from "lucide-react"
 import Link from "next/link"
-import { toast } from "@/hooks/use-toast"
 
 interface PageProps {
   params: Promise<{ 
@@ -36,6 +36,7 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
   const router = useRouter()
   const resolvedParams = use(params)
   const { asesmenId, pengumpulanId } = resolvedParams
+  const { success, error: showError, AlertComponent } = useSweetAlert()
   const [pengumpulan, setPengumpulan] = useState<any>(null)
   const [asesmen, setAsesmen] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -73,11 +74,7 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
       }
     } catch (error) {
       console.error('Error fetching data:', error)
-      toast({
-        title: "Error",
-        description: "Gagal mengambil data pengumpulan",
-        variant: "destructive",
-      })
+      showError("Error", "Gagal mengambil data pengumpulan")
     } finally {
       setLoading(false)
     }
@@ -85,11 +82,13 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
 
   const handleSaveNilai = async () => {
     if (!nilai) {
-      toast({
-        title: "Error",
-        description: "Nilai wajib diisi",
-        variant: "destructive",
-      })
+      showError("Error", "Nilai wajib diisi")
+      return
+    }
+
+    const nilaiNum = parseFloat(nilai)
+    if (nilaiNum < 0 || nilaiNum > 100) {
+      showError("Error", "Nilai harus antara 0-100")
       return
     }
 
@@ -101,26 +100,21 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          nilai: parseFloat(nilai),
+          nilai: nilaiNum,
           catatan,
         }),
       })
 
-      if (!response.ok) throw new Error('Failed to save')
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to save')
+      }
 
-      toast({
-        title: "Berhasil",
-        description: "Nilai berhasil disimpan",
-      })
-
+      success("Berhasil!", "Nilai berhasil disimpan")
       fetchData()
     } catch (error) {
       console.error('Error saving nilai:', error)
-      toast({
-        title: "Error",
-        description: "Gagal menyimpan nilai",
-        variant: "destructive",
-      })
+      showError("Error", "Gagal menyimpan nilai")
     } finally {
       setIsSaving(false)
     }
@@ -142,6 +136,8 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
 
   return (
     <div className="container max-w-5xl py-6 sm:py-8 space-y-6">
+      <AlertComponent />
+      
       {/* Header */}
       <div className="space-y-4">
         <Button variant="ghost" size="sm" asChild>

@@ -45,7 +45,6 @@ export default function SubmitAsesmenPage({ params }: PageProps) {
   const [ketua, setKetua] = useState("")
   const [anggota, setAnggota] = useState("")
   const [fileUrl, setFileUrl] = useState("")
-  const [catatan, setCatatan] = useState("")
   
   const [existingSubmission, setExistingSubmission] = useState<any>(null)
 
@@ -81,7 +80,6 @@ export default function SubmitAsesmenPage({ params }: PageProps) {
             setKetua(submission.ketua || "")
             setAnggota(submission.anggota || "")
             setFileUrl(submission.fileUrl || "")
-            setCatatan(submission.catatan || "")
           }
         } else {
           router.push(`/courses/${courseId}`)
@@ -123,23 +121,31 @@ export default function SubmitAsesmenPage({ params }: PageProps) {
         type: "info",
         onConfirm: async () => {
           try {
+            const payload = {
+              siswaId: user?.id,
+              namaKelompok: asesmen.tipePengerjaan === 'KELOMPOK' ? namaKelompok : null,
+              ketua: asesmen.tipePengerjaan === 'KELOMPOK' ? ketua : null,
+              anggota: asesmen.tipePengerjaan === 'KELOMPOK' ? anggota : null,
+              fileUrl,
+            }
+            
+            console.log('Submitting payload:', payload)
+            
             const response = await fetch(`/api/asesmen/${asesmenId}/submit`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                siswaId: user?.id,
-                namaKelompok: asesmen.tipePengerjaan === 'KELOMPOK' ? namaKelompok : null,
-                ketua: asesmen.tipePengerjaan === 'KELOMPOK' ? ketua : null,
-                anggota: asesmen.tipePengerjaan === 'KELOMPOK' ? anggota : null,
-                fileUrl,
-                catatan,
-              }),
+              body: JSON.stringify(payload),
             })
             
+            console.log('Response status:', response.status)
+            const responseData = await response.json()
+            console.log('Response data:', responseData)
+            
             if (!response.ok) {
-              const data = await response.json()
-              throw new Error(data.error || "Gagal mengumpulkan tugas")
+              throw new Error(responseData.error || "Gagal mengumpulkan tugas")
             }
+            
+            return responseData
           } catch (error) {
             console.error('Error submitting:', error)
             throw error
@@ -321,19 +327,6 @@ export default function SubmitAsesmenPage({ params }: PageProps) {
                     ? "Deadline sudah lewat"
                     : "Upload file tugas atau berikan link ke file (Google Drive, OneDrive, dll)"
                 }
-              />
-            </div>
-
-            {/* Catatan */}
-            <div className="space-y-2">
-              <Label htmlFor="catatan">Catatan (Opsional)</Label>
-              <Textarea
-                id="catatan"
-                value={catatan}
-                onChange={(e) => setCatatan(e.target.value)}
-                placeholder="Tambahkan catatan untuk pengumpulan ini"
-                rows={4}
-                disabled={isDeadlinePassed}
               />
             </div>
 
