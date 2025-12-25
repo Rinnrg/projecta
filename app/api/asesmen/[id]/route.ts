@@ -45,21 +45,6 @@ export async function GET(
             tanggal: 'desc',
           },
         },
-        pengumpulanProyek: {
-          include: {
-            siswa: {
-              select: {
-                id: true,
-                nama: true,
-                email: true,
-                foto: true,
-              },
-            },
-          },
-          orderBy: {
-            tgl_unggah: 'desc',
-          },
-        },
       },
     })
 
@@ -98,7 +83,8 @@ export async function PUT(
       tgl_mulai,
       tgl_selesai,
       lampiran,
-      courseId 
+      courseId,
+      soal // Array of questions for KUIS
     } = body
 
     // Validate dates if provided
@@ -132,35 +118,74 @@ export async function PUT(
       }
     }
 
-    const asesmen = await prisma.asesmen.update({
-      where: { id },
-      data: {
-        ...(nama && { nama }),
-        ...(deskripsi !== undefined && { deskripsi }),
-        ...(tipe && { tipe }),
-        ...(tipePengerjaan !== undefined && { tipePengerjaan }),
-        ...(jml_soal !== undefined && { jml_soal }),
-        ...(durasi !== undefined && { durasi }),
-        ...(tgl_mulai !== undefined && { tgl_mulai: startDate }),
-        ...(tgl_selesai !== undefined && { tgl_selesai: endDate }),
-        ...(lampiran !== undefined && { lampiran }),
-        ...(courseId && { courseId }),
-      },
-      include: {
-        guru: {
-          select: {
-            id: true,
-            nama: true,
-            email: true,
+    // Use transaction to update asesmen and soal
+    const asesmen = await prisma.$transaction(async (tx) => {
+      // Update asesmen
+      const updatedAsesmen = await tx.asesmen.update({
+        where: { id },
+        data: {
+          ...(nama && { nama }),
+          ...(deskripsi !== undefined && { deskripsi }),
+          ...(tipe && { tipe }),
+          ...(tipePengerjaan !== undefined && { tipePengerjaan }),
+          ...(jml_soal !== undefined && { jml_soal: tipe === 'KUIS' && soal ? soal.length : jml_soal }),
+          ...(durasi !== undefined && { durasi }),
+          ...(tgl_mulai !== undefined && { tgl_mulai: startDate }),
+          ...(tgl_selesai !== undefined && { tgl_selesai: endDate }),
+          ...(lampiran !== undefined && { lampiran }),
+          ...(courseId && { courseId }),
+        },
+      })
+
+      // Handle soal for KUIS
+      if (tipe === 'KUIS' && soal && Array.isArray(soal)) {
+        // Delete existing soal (will cascade delete opsi)
+        await tx.soal.deleteMany({
+          where: { asesmenId: id }
+        })
+
+        // Create new soal with opsi
+        for (const soalItem of soal) {
+          await tx.soal.create({
+            data: {
+              pertanyaan: soalItem.pertanyaan,
+              bobot: soalItem.bobot || 10,
+              asesmenId: id,
+              opsi: {
+                create: soalItem.opsi.map((opsiItem: any) => ({
+                  teks: opsiItem.teks,
+                  isBenar: opsiItem.isBenar,
+                }))
+              }
+            }
+          })
+        }
+      }
+
+      // Fetch updated asesmen with all relations
+      return await tx.asesmen.findUnique({
+        where: { id },
+        include: {
+          guru: {
+            select: {
+              id: true,
+              nama: true,
+              email: true,
+            },
+          },
+          course: {
+            select: {
+              id: true,
+              judul: true,
+            },
+          },
+          soal: {
+            include: {
+              opsi: true,
+            },
           },
         },
-        course: {
-          select: {
-            id: true,
-            judul: true,
-          },
-        },
-      },
+      })
     })
 
     return NextResponse.json({ asesmen })

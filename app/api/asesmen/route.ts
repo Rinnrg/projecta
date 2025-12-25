@@ -58,7 +58,8 @@ export async function POST(request: NextRequest) {
       durasi,
       lampiran,
       courseId,
-      guruId 
+      guruId,
+      soal // Array of questions for KUIS
     } = body
 
     // Validasi field wajib
@@ -100,34 +101,68 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const asesmen = await prisma.asesmen.create({
-      data: {
-        nama,
-        deskripsi,
-        tipe,
-        tipePengerjaan: tipe === 'TUGAS' ? tipePengerjaan : null,
-        ...(durasi && { durasi: parseInt(durasi) }),
-        tgl_mulai: startDate,
-        tgl_selesai: endDate,
-        lampiran: lampiran || null,
-        guruId: guruId,
-        courseId,
-      },
-      include: {
-        guru: {
-          select: {
-            id: true,
-            nama: true,
-            email: true,
+    // Use transaction to create asesmen with soal
+    const asesmen = await prisma.$transaction(async (tx) => {
+      // Create asesmen
+      const newAsesmen = await tx.asesmen.create({
+        data: {
+          nama,
+          deskripsi,
+          tipe,
+          tipePengerjaan: tipe === 'TUGAS' ? tipePengerjaan : null,
+          jml_soal: tipe === 'KUIS' && soal ? soal.length : null,
+          ...(durasi && { durasi: parseInt(durasi) }),
+          tgl_mulai: startDate,
+          tgl_selesai: endDate,
+          lampiran: lampiran || null,
+          guruId: guruId,
+          courseId,
+        },
+      })
+
+      // Create soal for KUIS
+      if (tipe === 'KUIS' && soal && Array.isArray(soal)) {
+        for (const soalItem of soal) {
+          await tx.soal.create({
+            data: {
+              pertanyaan: soalItem.pertanyaan,
+              bobot: soalItem.bobot || 10,
+              asesmenId: newAsesmen.id,
+              opsi: {
+                create: soalItem.opsi.map((opsiItem: any) => ({
+                  teks: opsiItem.teks,
+                  isBenar: opsiItem.isBenar,
+                }))
+              }
+            }
+          })
+        }
+      }
+
+      // Return asesmen with relations
+      return await tx.asesmen.findUnique({
+        where: { id: newAsesmen.id },
+        include: {
+          guru: {
+            select: {
+              id: true,
+              nama: true,
+              email: true,
+            },
+          },
+          course: {
+            select: {
+              id: true,
+              judul: true,
+            },
+          },
+          soal: {
+            include: {
+              opsi: true,
+            },
           },
         },
-        course: {
-          select: {
-            id: true,
-            judul: true,
-          },
-        },
-      },
+      })
     })
 
     return NextResponse.json({ asesmen }, { status: 201 })
