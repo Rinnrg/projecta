@@ -231,8 +231,17 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
         guruId: user.id,
       }
 
-      console.log('Sending data:', bodyData)
-      console.log('User info:', { id: user.id, nama: user.nama, role: user.role })
+      console.log('=== DEBUG INFO ===')
+      console.log('Form Data:', formData)
+      console.log('Course ID:', courseId)
+      console.log('User:', user)
+      console.log('Body Data to be sent:', bodyData)
+      console.log('Validation check:')
+      console.log('  - nama:', bodyData.nama, 'valid:', !!bodyData.nama)
+      console.log('  - tipe:', bodyData.tipe, 'valid:', !!bodyData.tipe)
+      console.log('  - courseId:', bodyData.courseId, 'valid:', !!bodyData.courseId)
+      console.log('  - guruId:', bodyData.guruId, 'valid:', !!bodyData.guruId)
+      console.log('===================')
 
       // Tambahkan soal untuk KUIS
       if (formData.tipe === 'KUIS') {

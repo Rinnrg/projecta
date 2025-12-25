@@ -32,15 +32,15 @@ export function FileUploadField({
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Check file size (max 5MB for base64)
-    const maxSize = 5 * 1024 * 1024 // 5MB
+    
+    const maxSize = 5 * 1024 * 1024 
     if (file.size > maxSize) {
       toast({
         title: "Error",
         description: "Ukuran file terlalu besar. Maksimal 5MB",
         variant: "destructive",
       })
-      e.target.value = '' // Reset input
+      e.target.value = '' 
       return
     }
 

@@ -48,6 +48,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    
+    console.log('=== API RECEIVED DATA ===')
+    console.log('Full body:', body)
+    console.log('========================')
+    
     const { 
       nama, 
       deskripsi, 
@@ -62,8 +67,16 @@ export async function POST(request: NextRequest) {
       soal // Array of questions for KUIS
     } = body
 
+    console.log('=== EXTRACTED VALUES ===')
+    console.log('nama:', nama, 'valid:', !!nama)
+    console.log('tipe:', tipe, 'valid:', !!tipe)
+    console.log('courseId:', courseId, 'valid:', !!courseId)
+    console.log('guruId:', guruId, 'valid:', !!guruId)
+    console.log('========================')
+
     // Validasi field wajib
     if (!nama || !tipe || !courseId || !guruId) {
+      console.error('Validation failed:', { nama: !!nama, tipe: !!tipe, courseId: !!courseId, guruId: !!guruId })
       return NextResponse.json(
         { error: 'Data tidak lengkap (nama, tipe, courseId, guruId wajib diisi)' },
         { status: 400 }
