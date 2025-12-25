@@ -124,7 +124,7 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
           </div>
           <CardTitle>Informasi Asesmen</CardTitle>
           <CardDescription>
-            Buat asesmen baru untuk course {courseTitle}
+            {courseTitle ? `Buat asesmen baru untuk course ${courseTitle}` : 'Buat asesmen baru untuk course ini'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

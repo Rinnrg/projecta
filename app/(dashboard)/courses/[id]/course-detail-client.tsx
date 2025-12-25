@@ -333,7 +333,7 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
             <h2 className="text-base font-semibold sm:text-lg">Materi Pembelajaran</h2>
             {isTeacherOrAdmin && (
               <Button size="sm" className="w-full sm:w-auto" asChild>
-                <Link href={`/materi/new/${course.id}`}>
+                <Link href={`/courses/${course.id}/materi/new`}>
                   <Plus className="mr-2 h-4 w-4" />
                   Tambah Materi
                 </Link>

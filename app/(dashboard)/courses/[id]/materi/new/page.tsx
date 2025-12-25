@@ -3,14 +3,14 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import AddAsesmenForm from "./add-asesmen-form"
+import AddMateriForm from "./add-materi-form"
 import { Loader2 } from "lucide-react"
 
 interface PageProps {
   params: { id: string }
 }
 
-export default function AddAsesmenPage({ params }: PageProps) {
+export default function AddMateriPage({ params }: PageProps) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
 
@@ -48,12 +48,12 @@ export default function AddAsesmenPage({ params }: PageProps) {
   return (
     <div className="container max-w-3xl py-6 sm:py-8">
       <div className="mb-6 space-y-1">
-        <h1 className="text-2xl font-bold sm:text-3xl">Buat Asesmen Baru</h1>
+        <h1 className="text-2xl font-bold sm:text-3xl">Tambah Materi Baru</h1>
         <p className="text-muted-foreground">
-          Buat asesmen (kuis atau tugas) untuk course ini
+          Tambah materi pembelajaran untuk course ini
         </p>
       </div>
-      <AddAsesmenForm courseId={params.id} courseTitle="" />
+      <AddMateriForm courseId={params.id} courseTitle="" />
     </div>
   )
 }
