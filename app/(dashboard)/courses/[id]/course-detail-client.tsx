@@ -136,13 +136,21 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
       cancelText: "Batal",
       type: "warning",
       onConfirm: async () => {
-        // TODO: Implement delete API call
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        try {
+          const response = await fetch(`/api/materi/${materiId}`, {
+            method: "DELETE",
+          })
+          if (!response.ok) throw new Error("Failed to delete materi")
+        } catch (error) {
+          throw error
+        }
       },
     })
 
     if (confirmed) {
-      success("Berhasil", `Materi "${materiTitle}" berhasil dihapus`)
+      await success("Berhasil", `Materi "${materiTitle}" berhasil dihapus`)
+      // Refresh the page to show updated data
+      router.refresh()
     }
   }
 
@@ -154,13 +162,21 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
       cancelText: "Batal",
       type: "warning",
       onConfirm: async () => {
-        // TODO: Implement delete API call
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        try {
+          const response = await fetch(`/api/asesmen/${asesmenId}`, {
+            method: "DELETE",
+          })
+          if (!response.ok) throw new Error("Failed to delete asesmen")
+        } catch (error) {
+          throw error
+        }
       },
     })
 
     if (confirmed) {
-      success("Berhasil", `Asesmen "${asesmenName}" berhasil dihapus`)
+      await success("Berhasil", `Asesmen "${asesmenName}" berhasil dihapus`)
+      // Refresh the page to show updated data
+      router.refresh()
     }
   }
 
