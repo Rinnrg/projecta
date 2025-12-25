@@ -1,0 +1,133 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const guruId = searchParams.get('guruId')
+    const siswaId = searchParams.get('siswaId')
+
+    let courses
+
+    if (guruId) {
+      // Get courses by teacher
+      courses = await prisma.course.findMany({
+        where: { guruId },
+        include: {
+          guru: {
+            select: {
+              id: true,
+              nama: true,
+              email: true,
+              foto: true,
+            },
+          },
+          materi: true,
+          asesmen: true,
+          enrollments: true,
+        },
+        orderBy: {
+          judul: 'asc',
+        },
+      })
+    } else if (siswaId) {
+      // Get enrolled courses by student
+      const enrollments = await prisma.enrollment.findMany({
+        where: { siswaId },
+        include: {
+          course: {
+            include: {
+              guru: {
+                select: {
+                  id: true,
+                  nama: true,
+                  email: true,
+                  foto: true,
+                },
+              },
+              materi: true,
+              asesmen: true,
+            },
+          },
+        },
+        orderBy: {
+          enrolledAt: 'desc',
+        },
+      })
+      
+      courses = enrollments.map(e => ({
+        ...e.course,
+        progress: e.progress,
+        enrolledAt: e.enrolledAt,
+      }))
+    } else {
+      // Get all courses
+      courses = await prisma.course.findMany({
+        include: {
+          guru: {
+            select: {
+              id: true,
+              nama: true,
+              email: true,
+              foto: true,
+            },
+          },
+          materi: true,
+          asesmen: true,
+        },
+        orderBy: {
+          judul: 'asc',
+        },
+      })
+    }
+
+    return NextResponse.json({ courses })
+  } catch (error) {
+    console.error('Error fetching courses:', error)
+    return NextResponse.json(
+      { error: 'Gagal mengambil data courses' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { judul, gambar, kategori, guruId } = body
+
+    if (!judul || !kategori || !guruId) {
+      return NextResponse.json(
+        { error: 'Data tidak lengkap' },
+        { status: 400 }
+      )
+    }
+
+    const course = await prisma.course.create({
+      data: {
+        judul,
+        gambar: gambar || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=300&fit=crop',
+        kategori,
+        guruId,
+      },
+      include: {
+        guru: {
+          select: {
+            id: true,
+            nama: true,
+            email: true,
+            foto: true,
+          },
+        },
+      },
+    })
+
+    return NextResponse.json({ course }, { status: 201 })
+  } catch (error) {
+    console.error('Error creating course:', error)
+    return NextResponse.json(
+      { error: 'Gagal membuat course' },
+      { status: 500 }
+    )
+  }
+}

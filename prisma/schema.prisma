@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ADMIN
+  GURU
+  SISWA
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String?  @unique
+  email     String   @unique
+  nama      String
+  password  String?
+  role      Role     @default(SISWA)
+  foto      String?
+  createdAt DateTime @default(now())
+
+  course        Course[]
+  proyekDibuat  Proyek[]
+  asesmenDibuat Asesmen[]
+
+  nilai           Nilai[]
+  anggotaKelompok AnggotaKelompok[]
+  profileShowcase ProfileShowcase[]
+  enrollments     Enrollment[]
+}
+
+model Course {
+  id       String @id @default(cuid())
+  judul    String
+  gambar   String
+  kategori String
+
+  guruId String
+  guru   User   @relation(fields: [guruId], references: [id])
+
+  asesmen     Asesmen[]
+  materi      Materi[]
+  enrollments Enrollment[]
+}
+
+model Materi {
+  id         String   @id @default(cuid())
+  judul      String
+  deskripsi  String?  @db.Text
+  tgl_unggah DateTime @default(now())
+  lampiran   String?
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model Asesmen {
+  id        String  @id @default(cuid())
+  nama      String
+  deskripsi String?
+  jml_soal  Int
+  durasi    Int
+
+  guruId String
+  guru   User   @relation(fields: [guruId], references: [id])
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  soal Soal[]
+
+  nilai Nilai[]
+}
+
+model Soal {
+  id         String @id @default(cuid())
+  pertanyaan String @db.Text
+  bobot      Int    @default(10)
+
+  asesmenId String
+  asesmen   Asesmen @relation(fields: [asesmenId], references: [id], onDelete: Cascade)
+
+  opsi Opsi[]
+}
+
+model Opsi {
+  id      String  @id @default(cuid())
+  teks    String
+  isBenar Boolean @default(false)
+
+  soalId String
+  soal   Soal   @relation(fields: [soalId], references: [id], onDelete: Cascade)
+}
+
+model Nilai {
+  id      String   @id @default(cuid())
+  skor    Float
+  tanggal DateTime @default(now())
+
+  siswaId String
+  siswa   User   @relation(fields: [siswaId], references: [id])
+
+  asesmenId String
+  asesmen   Asesmen @relation(fields: [asesmenId], references: [id])
+}
+
+model Proyek {
+  id          String   @id @default(cuid())
+  judul       String
+  deskripsi   String   @db.Text
+  tgl_mulai   DateTime
+  tgl_selesai DateTime
+  lampiran    String?
+
+  guruId String
+  guru   User   @relation(fields: [guruId], references: [id])
+
+  kelompok Kelompok[]
+}
+
+model Kelompok {
+  id   String @id @default(cuid())
+  nama String
+
+  proyekId String
+  proyek   Proyek @relation(fields: [proyekId], references: [id])
+
+  anggota     AnggotaKelompok[]
+  pengumpulan PengumpulanProyek[]
+}
+
+model AnggotaKelompok {
+  id String @id @default(cuid())
+
+  kelompokId String
+  kelompok   Kelompok @relation(fields: [kelompokId], references: [id])
+
+  siswaId String
+  siswa   User   @relation(fields: [siswaId], references: [id])
+}
+
+model PengumpulanProyek {
+  id         String   @id @default(cuid())
+  link       String?
+  catatan    String?  @db.Text
+  sourceCode String?  @db.Text
+  output     String?  @db.Text
+  tgl_unggah DateTime @default(now())
+  nilai      Float?
+  kelompokId String
+  kelompok   Kelompok @relation(fields: [kelompokId], references: [id])
+
+  profileShowcase ProfileShowcase?
+}
+
+model ProfileShowcase {
+  id             String   @id @default(cuid())
+  judul          String
+  deskripsi      String?  @db.Text
+  nilai          Float
+  tanggalDinilai DateTime @default(now())
+  isPublic       Boolean  @default(true)
+
+  siswaId String
+  siswa   User   @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+
+  pengumpulanProyekId String            @unique
+  pengumpulanProyek   PengumpulanProyek @relation(fields: [pengumpulanProyekId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Enrollment {
+  id         String   @id @default(cuid())
+  enrolledAt DateTime @default(now())
+  progress   Int      @default(0)
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  siswaId String
+  siswa   User   @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, siswaId])
+}

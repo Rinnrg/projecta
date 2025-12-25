@@ -1,0 +1,374 @@
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
+import { 
+  ArrowLeft,
+  BookOpen, 
+  PlayCircle, 
+  FileText, 
+  ChevronRight, 
+  Download, 
+  Link as LinkIcon,
+  Pencil,
+  Trash2,
+  MoreHorizontal,
+  ExternalLink,
+  Calendar,
+  User,
+} from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import Link from "next/link"
+import { useSweetAlert } from "@/components/ui/sweet-alert"
+
+interface MateriDetailClientProps {
+  materi: {
+    id: string
+    judul: string
+    deskripsi: string | null
+    tgl_unggah: Date
+    lampiran: string | null
+    courseId: string
+    course: {
+      id: string
+      judul: string
+      guru: {
+        id: string
+        nama: string
+        email: string
+        foto: string | null
+      }
+    }
+  }
+  allMateri: {
+    id: string
+    judul: string
+    tgl_unggah: Date
+  }[]
+  courseId: string
+}
+
+export default function MateriDetailClient({ materi, allMateri, courseId }: MateriDetailClientProps) {
+  const router = useRouter()
+  const { user } = useAuth()
+  const { confirm, success: showSuccess, error: showError, AlertComponent } = useSweetAlert()
+  const [selectedMateriId, setSelectedMateriId] = useState(materi.id)
+
+  const isTeacherOrAdmin = user?.role === "GURU" || user?.role === "ADMIN"
+
+  const getFileIcon = (url: string | null) => {
+    if (!url) return <FileText className="h-6 w-6" />
+    if (url.includes("youtube") || url.includes("youtu.be") || url.endsWith(".mp4") || url.endsWith(".webm")) {
+      return <PlayCircle className="h-6 w-6" />
+    }
+    if (url.endsWith(".pdf")) return <FileText className="h-6 w-6" />
+    return <LinkIcon className="h-6 w-6" />
+  }
+
+  const getBgColor = (url: string | null) => {
+    if (!url) return "bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
+    if (url.includes("youtube") || url.includes("youtu.be")) {
+      return "bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400"
+    }
+    if (url.endsWith(".pdf")) return "bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400"
+    if (url.endsWith(".mp4") || url.endsWith(".webm")) {
+      return "bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400"
+    }
+    return "bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
+  }
+
+  const getFileType = (url: string | null) => {
+    if (!url) return "Tidak ada lampiran"
+    if (url.includes("youtube") || url.includes("youtu.be")) return "Video YouTube"
+    if (url.endsWith(".pdf")) return "Dokumen PDF"
+    if (url.endsWith(".mp4") || url.endsWith(".webm")) return "Video"
+    return "Link External"
+  }
+
+  const handleDeleteMateri = async () => {
+    const confirmed = await confirm("Hapus Materi", {
+      description: `Apakah Anda yakin ingin menghapus materi "${materi.judul}"?`,
+      confirmText: "Hapus",
+      cancelText: "Batal",
+      type: "warning",
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/materi/${materi.id}`, {
+            method: "DELETE",
+          })
+
+          if (!response.ok) {
+            throw new Error("Gagal menghapus materi")
+          }
+        } catch (error) {
+          console.error("Error deleting materi:", error)
+          throw error
+        }
+      },
+    })
+
+    if (confirmed) {
+      showSuccess("Berhasil", `Materi "${materi.judul}" berhasil dihapus`)
+      router.push(`/courses/${courseId}`)
+    }
+  }
+
+  const handleMateriChange = (materiId: string) => {
+    setSelectedMateriId(materiId)
+    router.push(`/courses/${courseId}/materi/${materiId}`)
+  }
+
+  const handleEditMateri = () => {
+    router.push(`/materi/${materi.id}/edit`)
+  }
+
+  return (
+    <div className="flex h-[calc(100vh-4rem)] -m-6 sm:-m-8">
+      <AlertComponent />
+
+      {/* Sidebar - Materi List */}
+      <div className="w-80 border-r bg-card/50 flex flex-col hidden lg:flex">
+        <div className="p-4 sm:p-6 border-b">
+          <Button variant="ghost" size="sm" asChild className="mb-4 -ml-2">
+            <Link href={`/courses/${courseId}`}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Kembali ke Kursus
+            </Link>
+          </Button>
+          <h2 className="font-semibold text-lg mb-1">Daftar Materi</h2>
+          <p className="text-sm text-muted-foreground">Pilih materi untuk melihat detail</p>
+        </div>
+
+        <ScrollArea className="flex-1">
+          <div className="p-3 sm:p-4 space-y-2">
+            {allMateri.map((m, index) => (
+              <button
+                key={m.id}
+                onClick={() => handleMateriChange(m.id)}
+                className={`w-full text-left p-3 sm:p-4 rounded-lg border transition-all hover:border-primary/50 ${
+                  selectedMateriId === m.id
+                    ? "bg-primary/10 border-primary shadow-sm"
+                    : "bg-background border-transparent hover:bg-accent"
+                }`}
+              >
+                <div className="flex justify-between items-start mb-1">
+                  <div className="flex items-start gap-2 flex-1">
+                    <span className="text-xs font-medium text-muted-foreground mt-0.5">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span className={`font-medium line-clamp-2 text-sm ${selectedMateriId === m.id ? "text-primary" : ""}`}>
+                      {m.judul}
+                    </span>
+                  </div>
+                  {selectedMateriId === m.id && <ChevronRight className="h-4 w-4 text-primary shrink-0 ml-2" />}
+                </div>
+                <p className="text-xs text-muted-foreground ml-6">
+                  {new Date(m.tgl_unggah).toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                  })}
+                </p>
+              </button>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Main Content - Materi Detail */}
+      <div className="flex-1 overflow-auto bg-background">
+        <div className="p-4 sm:p-8 max-w-4xl mx-auto space-y-6 sm:space-y-8">
+          
+          {/* Mobile Back Button */}
+          <div className="lg:hidden">
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`/courses/${courseId}`}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Kembali
+              </Link>
+            </Button>
+          </div>
+
+          {/* Header Section */}
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 space-y-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5">
+                    Materi Pembelajaran
+                  </Badge>
+                  <Badge variant="secondary" className="gap-1">
+                    <Calendar className="h-3 w-3" />
+                    {new Date(materi.tgl_unggah).toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </Badge>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                  {materi.judul}
+                </h1>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <User className="h-4 w-4" />
+                  <span>Oleh: {materi.course.guru.nama}</span>
+                </div>
+              </div>
+
+              {isTeacherOrAdmin && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" className="shrink-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleEditMateri}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit Materi
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive" onClick={handleDeleteMateri}>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Hapus
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Description */}
+            {materi.deskripsi && (
+              <div className="prose dark:prose-invert max-w-none">
+                <div className="p-4 sm:p-6 rounded-lg bg-muted/30 border">
+                  <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
+                    <BookOpen className="h-4 w-4 text-primary" />
+                    Deskripsi Materi
+                  </h3>
+                  <p className="text-sm sm:text-base text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                    {materi.deskripsi}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Lampiran Section */}
+          <div className="space-y-4 sm:space-y-6">
+            <h3 className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              Lampiran & Sumber Belajar
+            </h3>
+
+            {materi.lampiran ? (
+              <div className="grid gap-4">
+                <Card className="group hover:border-primary/50 transition-all hover:shadow-md">
+                  <CardContent className="p-4 sm:p-6 flex items-start gap-4">
+                    <div className={`p-3 rounded-lg shrink-0 transition-transform group-hover:scale-110 ${getBgColor(materi.lampiran)}`}>
+                      {getFileIcon(materi.lampiran)}
+                    </div>
+                    <div className="flex-1 space-y-2 min-w-0">
+                      <h4 className="font-semibold text-base group-hover:text-primary transition-colors">
+                        {getFileType(materi.lampiran)}
+                      </h4>
+                      <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                        <LinkIcon className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{materi.lampiran}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Klik tombol di samping untuk membuka atau mengunduh lampiran
+                      </p>
+                    </div>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="shrink-0 gap-2"
+                      asChild
+                    >
+                      <a href={materi.lampiran} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4" />
+                        Buka
+                      </a>
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* YouTube Embed if it's a YouTube link */}
+                {(materi.lampiran.includes("youtube.com") || materi.lampiran.includes("youtu.be")) && (
+                  <Card>
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="aspect-video w-full rounded-lg overflow-hidden bg-muted">
+                        <iframe
+                          src={materi.lampiran.replace("watch?v=", "embed/")}
+                          title={materi.judul}
+                          className="w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center border-2 border-dashed rounded-xl bg-muted/30">
+                <div className="p-4 rounded-full bg-muted mb-4">
+                  <FileText className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="font-semibold text-base sm:text-lg mb-2">Belum ada lampiran</h3>
+                <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+                  Pengajar tidak menyertakan file lampiran untuk materi ini
+                </p>
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Course Info Card */}
+          <Card className="border-border/50 bg-muted/30">
+            <CardContent className="p-4 sm:p-6">
+              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-primary" />
+                Informasi Kursus
+              </h3>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <p className="text-sm text-muted-foreground">Nama Kursus</p>
+                  <p className="font-semibold text-base">{materi.course.judul}</p>
+                </div>
+                <Separator />
+                <div className="space-y-1.5">
+                  <p className="text-sm text-muted-foreground">Pengajar</p>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                      {materi.course.guru.nama.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-base">{materi.course.guru.nama}</p>
+                      <p className="text-sm text-muted-foreground">{materi.course.guru.email}</p>
+                    </div>
+                  </div>
+                </div>
+                <Separator />
+                <Button className="w-full" asChild>
+                  <Link href={`/courses/${courseId}`}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Kembali ke Kursus
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+}
