@@ -83,6 +83,10 @@ export async function POST(request: NextRequest) {
       tgl_selesai,
       durasi,
       lampiran,
+      fileData,
+      fileName,
+      fileType,
+      fileSize,
       courseId,
       guruId,
       soal // Array of questions for KUIS
@@ -112,6 +116,14 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
+    }
+
+    // Convert base64 file data to Buffer if provided
+    let fileBuffer = null
+    if (fileData) {
+      // Remove data URL prefix if exists (e.g., "data:application/pdf;base64,")
+      const base64Data = fileData.includes(',') ? fileData.split(',')[1] : fileData
+      fileBuffer = Buffer.from(base64Data, 'base64')
     }
 
     // Validate dates if provided
@@ -158,7 +170,11 @@ export async function POST(request: NextRequest) {
           ...(durasi && { durasi: parseInt(durasi) }),
           tgl_mulai: startDate,
           tgl_selesai: endDate,
-          lampiran: tipe === 'TUGAS' ? (lampiran || null) : null, // Only save lampiran for TUGAS
+          lampiran: tipe === 'TUGAS' ? (lampiran || null) : null,
+          fileData: tipe === 'TUGAS' ? fileBuffer : null,
+          fileName: tipe === 'TUGAS' ? fileName : null,
+          fileType: tipe === 'TUGAS' ? fileType : null,
+          fileSize: tipe === 'TUGAS' ? fileSize : null,
           guruId: guruId,
           courseId,
         },

@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { judul, deskripsi, tgl_mulai, tgl_selesai, lampiran, guruId } = body
+    const { judul, deskripsi, tgl_mulai, tgl_selesai, lampiran, fileData, fileName, fileType, fileSize, guruId } = body
 
     if (!judul || !deskripsi || !tgl_mulai || !tgl_selesai || !guruId) {
       return NextResponse.json(
@@ -61,13 +61,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Convert base64 file data to Buffer if provided
+    let fileBuffer = null
+    if (fileData) {
+      // Remove data URL prefix if exists (e.g., "data:application/pdf;base64,")
+      const base64Data = fileData.includes(',') ? fileData.split(',')[1] : fileData
+      fileBuffer = Buffer.from(base64Data, 'base64')
+    }
+
     const proyek = await prisma.proyek.create({
       data: {
         judul,
         deskripsi,
         tgl_mulai: new Date(tgl_mulai),
         tgl_selesai: new Date(tgl_selesai),
-        lampiran,
+        lampiran: lampiran || null,
+        fileData: fileBuffer,
+        fileName: fileName || null,
+        fileType: fileType || null,
+        fileSize: fileSize || null,
         guruId,
       },
       include: {

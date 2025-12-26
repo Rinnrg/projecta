@@ -44,17 +44,45 @@ export default function AddMateriForm({ courseId, courseTitle }: AddMateriFormPr
 
     setIsLoading(true)
     try {
+      // Prepare the data to send
+      let bodyData: any = {
+        judul: formData.judul,
+        deskripsi: formData.deskripsi || null,
+        courseId: courseId,
+      }
+
+      // Check if lampiran is a data URL (uploaded file)
+      if (formData.lampiran) {
+        if (formData.lampiran.startsWith('data:')) {
+          // Extract file type from data URL
+          const matches = formData.lampiran.match(/^data:(.+?);base64,(.+)$/)
+          if (matches) {
+            const fileType = matches[1]
+            const fileData = matches[2]
+            
+            // Get file size from base64 string
+            const fileSize = Math.round((fileData.length * 3) / 4)
+            
+            bodyData.fileData = fileData
+            bodyData.fileType = fileType
+            bodyData.fileSize = fileSize
+            bodyData.fileName = `file_${Date.now()}`
+            bodyData.lampiran = null
+          }
+        } else {
+          // It's a URL
+          bodyData.lampiran = formData.lampiran
+        }
+      } else {
+        bodyData.lampiran = null
+      }
+
       const response = await fetch('/api/materi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          judul: formData.judul,
-          deskripsi: formData.deskripsi || null,
-          lampiran: formData.lampiran || null,
-          courseId: courseId,
-        }),
+        body: JSON.stringify(bodyData),
       })
 
       if (!response.ok) {

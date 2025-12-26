@@ -228,9 +228,34 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
         tgl_mulai: formData.tgl_mulai || null,
         tgl_selesai: formData.tgl_selesai || null,
         durasi: formData.durasi || null, // Send as string, API will parse it
-        lampiran: formData.lampiran || null,
         courseId: courseId,
         guruId: user.id,
+      }
+
+      // Handle file upload for TUGAS
+      if (formData.tipe === 'TUGAS' && formData.lampiran) {
+        if (formData.lampiran.startsWith('data:')) {
+          // Extract file type from data URL
+          const matches = formData.lampiran.match(/^data:(.+?);base64,(.+)$/)
+          if (matches) {
+            const fileType = matches[1]
+            const fileData = matches[2]
+            
+            // Get file size from base64 string
+            const fileSize = Math.round((fileData.length * 3) / 4)
+            
+            bodyData.fileData = fileData
+            bodyData.fileType = fileType
+            bodyData.fileSize = fileSize
+            bodyData.fileName = `file_${Date.now()}`
+            bodyData.lampiran = null
+          }
+        } else {
+          // It's a URL
+          bodyData.lampiran = formData.lampiran
+        }
+      } else {
+        bodyData.lampiran = null
       }
 
       // Tambahkan soal untuk KUIS

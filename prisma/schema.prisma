@@ -94,6 +94,12 @@ model Asesmen {
   tgl_selesai    DateTime?
   lampiran       String?         @db.Text // URL or base64 for file attachment
 
+  // File storage fields (untuk file yang diupload)
+  fileData       Bytes?   // Binary file data stored in database
+  fileName       String?  // Original filename
+  fileType       String?  // MIME type
+  fileSize       Int?     // File size in bytes
+
   guruId String
   guru   User   @relation(fields: [guruId], references: [id])
 
@@ -170,6 +176,12 @@ model Proyek {
   tgl_mulai   DateTime
   tgl_selesai DateTime
   lampiran    String?
+
+  // File storage fields (untuk file yang diupload)
+  fileData       Bytes?   // Binary file data stored in database
+  fileName       String?  // Original filename
+  fileType       String?  // MIME type
+  fileSize       Int?     // File size in bytes
 
   guruId String
   guru   User   @relation(fields: [guruId], references: [id])
