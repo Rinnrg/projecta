@@ -8,32 +8,39 @@ export async function GET(request: NextRequest) {
     const asesmenId = searchParams.get('asesmenId')
     const proyekId = searchParams.get('proyekId')
 
-    console.log('=== API Pengumpulan GET ===')
-    console.log('siswaId:', siswaId)
-    console.log('asesmenId:', asesmenId)
-    console.log('proyekId:', proyekId)
-
     const where: any = {}
     if (siswaId) where.siswaId = siswaId
     if (asesmenId) where.asesmenId = asesmenId
     if (proyekId) where.proyekId = proyekId
 
-    console.log('Where clause:', where)
-
     const pengumpulan = await prisma.pengumpulanProyek.findMany({
       where,
       include: {
-        siswa: true,
-        asesmen: true,
-        kelompok: true,
+        siswa: {
+          select: {
+            id: true,
+            nama: true,
+            email: true,
+            foto: true,
+          },
+        },
+        asesmen: {
+          select: {
+            id: true,
+            nama: true,
+          },
+        },
+        kelompok: {
+          select: {
+            id: true,
+            nama: true,
+          },
+        },
       },
       orderBy: {
         tgl_unggah: 'desc',
       },
     })
-
-    console.log('Found pengumpulan:', pengumpulan.length, 'records')
-    console.log('Pengumpulan data:', JSON.stringify(pengumpulan, null, 2))
 
     return NextResponse.json({ pengumpulan })
   } catch (error) {

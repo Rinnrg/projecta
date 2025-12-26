@@ -62,10 +62,17 @@ export default function AsesmenDetailPage({ params }: PageProps) {
       return
     }
 
-    // Fetch asesmen data
+    // Fetch asesmen data with optimized query
     const fetchAsesmen = async () => {
       try {
-        const response = await fetch(`/api/asesmen/${asesmenId}`)
+        // Build optimized query URL with user context
+        const queryParams = new URLSearchParams({
+          userId: user.id,
+          userRole: user.role,
+        })
+        
+        const response = await fetch(`/api/asesmen/${asesmenId}?${queryParams}`)
+        
         if (response.ok) {
           const data = await response.json()
           const asesmenData = data.asesmen
@@ -78,39 +85,16 @@ export default function AsesmenDetailPage({ params }: PageProps) {
           
           setAsesmen(asesmenData)
           
-          // Jika siswa, fetch status penilaian mereka
-          if (user && user.role === 'SISWA') {
-            // Fetch nilai siswa untuk kuis
-            try {
-              const nilaiResponse = await fetch(`/api/nilai?siswaId=${user.id}&asesmenId=${asesmenId}`)
-              if (nilaiResponse.ok) {
-                const nilaiData = await nilaiResponse.json()
-                if (nilaiData.nilai && nilaiData.nilai.length > 0) {
-                  setStudentNilai(nilaiData.nilai[0])
-                }
-              }
-            } catch (err) {
-              console.error('Error fetching nilai:', err)
+          // For students, extract their data from the response
+          if (user.role === 'SISWA') {
+            // Extract nilai from the response (already filtered by API)
+            if (asesmenData.nilai && asesmenData.nilai.length > 0) {
+              setStudentNilai(asesmenData.nilai[0])
             }
             
-            // Fetch pengumpulan siswa untuk tugas
-            try {
-              const pengumpulanResponse = await fetch(`/api/pengumpulan?siswaId=${user.id}&asesmenId=${asesmenId}`)
-              console.log('Fetching pengumpulan:', `/api/pengumpulan?siswaId=${user.id}&asesmenId=${asesmenId}`)
-              if (pengumpulanResponse.ok) {
-                const pengumpulanData = await pengumpulanResponse.json()
-                console.log('Pengumpulan data:', pengumpulanData)
-                if (pengumpulanData.pengumpulan && pengumpulanData.pengumpulan.length > 0) {
-                  console.log('Setting student pengumpulan:', pengumpulanData.pengumpulan[0])
-                  setStudentPengumpulan(pengumpulanData.pengumpulan[0])
-                } else {
-                  console.log('No pengumpulan found')
-                }
-              } else {
-                console.log('Pengumpulan response not ok:', pengumpulanResponse.status)
-              }
-            } catch (err) {
-              console.error('Error fetching pengumpulan:', err)
+            // Extract pengumpulan from the response (already filtered by API)
+            if (asesmenData.pengumpulanProyek && asesmenData.pengumpulanProyek.length > 0) {
+              setStudentPengumpulan(asesmenData.pengumpulanProyek[0])
             }
           }
         } else {
@@ -129,8 +113,20 @@ export default function AsesmenDetailPage({ params }: PageProps) {
 
   if (authLoading || loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="container max-w-6xl py-6 sm:py-8 space-y-6">
+        <div className="space-y-4">
+          <div className="h-10 w-32 bg-muted animate-pulse rounded" />
+          <div className="space-y-2">
+            <div className="h-8 w-3/4 bg-muted animate-pulse rounded" />
+            <div className="h-4 w-1/2 bg-muted animate-pulse rounded" />
+          </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
+          ))}
+        </div>
+        <div className="h-64 bg-muted animate-pulse rounded-lg" />
       </div>
     )
   }
@@ -219,7 +215,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                 )}
               </>
             )}
-            {isStudent && asesmen.tipe === 'KUIS' && !isDeadlinePassed && asesmen.soal && asesmen.soal.length > 0 && (
+            {isStudent && asesmen.tipe === 'KUIS' && !isDeadlinePassed && (asesmen.soalCount > 0 || (asesmen.soal && asesmen.soal.length > 0)) && (
               <Button asChild>
                 <Link href={`/courses/${courseId}/asesmen/${asesmenId}/kerjakan`}>
                   <FileText className="mr-2 h-4 w-4" />
@@ -256,7 +252,9 @@ export default function AsesmenDetailPage({ params }: PageProps) {
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{asesmen.soal.length}</div>
+              <div className="text-2xl font-bold">
+                {asesmen.soalCount ?? asesmen.soal?.length ?? 0}
+              </div>
             </CardContent>
           </Card>
           <Card>

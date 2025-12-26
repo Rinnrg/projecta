@@ -8,59 +8,89 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const asesmen = await prisma.asesmen.findUnique({
-      where: { id },
-      include: {
-        guru: {
-          select: {
-            id: true,
-            nama: true,
-            email: true,
-          },
-        },
-        course: {
-          select: {
-            id: true,
-            judul: true,
-            kategori: true,
-          },
-        },
-        soal: {
-          include: {
-            opsi: true,
-          },
-        },
-        nilai: {
-          include: {
-            siswa: {
-              select: {
-                id: true,
-                nama: true,
-                email: true,
-                foto: true,
-              },
-            },
-          },
-          orderBy: {
-            tanggal: 'desc',
-          },
-        },
-        pengumpulanProyek: {
-          include: {
-            siswa: {
-              select: {
-                id: true,
-                nama: true,
-                email: true,
-                foto: true,
-              },
-            },
-          },
-          orderBy: {
-            tgl_unggah: 'desc',
-          },
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
+    const userRole = searchParams.get('userRole')
+    const includeStats = searchParams.get('includeStats') === 'true'
+    
+    // Optimized query - only fetch what's needed
+    const includeOptions: any = {
+      guru: {
+        select: {
+          id: true,
+          nama: true,
+          email: true,
         },
       },
+      course: {
+        select: {
+          id: true,
+          judul: true,
+          kategori: true,
+        },
+      },
+    }
+
+    // For students, only include their own submissions and scores
+    if (userRole === 'SISWA' && userId) {
+      includeOptions.nilai = {
+        where: {
+          siswaId: userId,
+        },
+        select: {
+          id: true,
+          nilai: true,
+          tanggal: true,
+          siswaId: true,
+        },
+        take: 1,
+      }
+      includeOptions.pengumpulanProyek = {
+        where: {
+          siswaId: userId,
+        },
+        select: {
+          id: true,
+          file: true,
+          tgl_unggah: true,
+          siswaId: true,
+          nilai: true,
+        },
+        take: 1,
+      }
+      // For KUIS, only include count of soal, not the actual questions
+      includeOptions._count = {
+        select: {
+          soal: true,
+        },
+      }
+    } else if (includeStats) {
+      // For teachers/admins requesting full stats
+      includeOptions.soal = {
+        include: {
+          opsi: true,
+        },
+      }
+      includeOptions._count = {
+        select: {
+          nilai: true,
+          pengumpulanProyek: true,
+        },
+      }
+    } else {
+      // Default: just counts
+      includeOptions._count = {
+        select: {
+          soal: true,
+          nilai: true,
+          pengumpulanProyek: true,
+        },
+      }
+    }
+
+    const asesmen = await prisma.asesmen.findUnique({
+      where: { id },
+      include: includeOptions,
     } as any)
 
     if (!asesmen) {
@@ -70,7 +100,20 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ asesmen })
+    // Transform response for students
+    if (userRole === 'SISWA' && asesmen._count) {
+      // Replace soal array with just the count for students
+      const soalCount = asesmen._count.soal
+      delete asesmen._count
+      asesmen.soalCount = soalCount
+    }
+
+    // Add cache headers for better performance
+    return NextResponse.json({ asesmen }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=59',
+      },
+    })
   } catch (error) {
     console.error('Error fetching asesmen:', error)
     return NextResponse.json(
