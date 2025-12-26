@@ -268,12 +268,20 @@ export async function PUT(
       updateData.jml_soal = soal.length
     }
     if (durasi !== undefined) updateData.durasi = durasi
-    if (tgl_mulai !== undefined) updateData.tgl_mulai = startDate
-    if (tgl_selesai !== undefined) updateData.tgl_selesai = endDate
+    
+    // Handle dates - allow null values
+    if (tgl_mulai !== undefined) {
+      updateData.tgl_mulai = startDate // Can be null or Date
+    }
+    if (tgl_selesai !== undefined) {
+      updateData.tgl_selesai = endDate // Can be null or Date
+    }
+    
     if (lampiran !== undefined) updateData.lampiran = lampiran
     if (courseId !== undefined) updateData.courseId = courseId
     
-    console.log('Update data:', updateData)
+    console.log('Update data:', JSON.stringify(updateData, null, 2))
+    console.log('Date values - tgl_mulai:', updateData.tgl_mulai, 'tgl_selesai:', updateData.tgl_selesai)
 
     // Update asesmen
     const updatedAsesmen = await prisma.asesmen.update({

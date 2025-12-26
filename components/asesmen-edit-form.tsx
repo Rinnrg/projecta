@@ -231,6 +231,11 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
         lampiran: formData.lampiran || null,
         courseId: formData.courseId,
       }
+      
+      console.log('=== SUBMIT DATA ===')
+      console.log('Form state tgl_mulai:', formData.tgl_mulai)
+      console.log('Form state tgl_selesai:', formData.tgl_selesai)
+      console.log('Body data being sent:', JSON.stringify(bodyData, null, 2))
 
       // Tambahkan soal untuk KUIS
       if (formData.tipe === 'KUIS') {
