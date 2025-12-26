@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { FileUploadField } from "@/components/file-upload-field"
+import { useAuth } from "@/lib/auth-context"
 
 const SINTAKS_MAP: Record<string, string> = {
   sintaks_1: "Orientasi Masalah",
@@ -30,8 +31,9 @@ const SINTAKS_MAP: Record<string, string> = {
 export default function AddProyekPage({ params }: { params: Promise<{ sintaks: string }> }) {
   const resolvedParams = use(params)
   const router = useRouter()
+  const { user, isAuthenticated } = useAuth()
   const sintaks = resolvedParams.sintaks
-  const { success, error: showError, AlertComponent } = useSweetAlert()
+  const { success, error: showError, warning, AlertComponent } = useSweetAlert()
   
   const [loading, setLoading] = useState(false)
   const [tglMulai, setTglMulai] = useState<Date>()
@@ -40,11 +42,31 @@ export default function AddProyekPage({ params }: { params: Promise<{ sintaks: s
 
   const judulProyek = SINTAKS_MAP[sintaks] || "Tahapan Proyek"
 
+  // Check authentication and role
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      showError("Tidak Terautentikasi", "Silakan login terlebih dahulu")
+      router.push("/login")
+      return
+    }
+    
+    if (user?.role !== "GURU") {
+      showError("Akses Ditolak", "Hanya guru yang dapat menambahkan proyek")
+      router.push("/projects")
+      return
+    }
+  }, [isAuthenticated, user, router, showError])
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     
+    if (!user?.id) {
+      showError("Error", "User ID tidak ditemukan")
+      return
+    }
+    
     if (!tglMulai || !tglSelesai) {
-      showError("Tanggal Belum Lengkap", "Silakan pilih tanggal mulai dan selesai")
+      warning("Tanggal Belum Lengkap", "Silakan pilih tanggal mulai dan selesai")
       return
     }
 
@@ -86,7 +108,8 @@ export default function AddProyekPage({ params }: { params: Promise<{ sintaks: s
         fileData,
         fileName,
         fileType,
-        fileSize
+        fileSize,
+        guruId: user.id // ✅ Menambahkan guruId dari user yang login
       }
 
       const response = await fetch("/api/proyek", {
