@@ -7,6 +7,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+    
+    console.log('Fetching file for materi:', id)
 
     const materi = await prisma.materi.findUnique({
       where: { id },
@@ -19,14 +21,22 @@ export async function GET(
     })
 
     if (!materi || !materi.fileData) {
+      console.log('File not found or no fileData for materi:', id)
       return NextResponse.json(
         { error: 'File tidak ditemukan' },
         { status: 404 }
       )
     }
 
+    console.log('Serving file:', {
+      fileName: materi.fileName,
+      fileType: materi.fileType,
+      fileSize: materi.fileSize,
+      dataLength: materi.fileData.length
+    })
+
     // Return file with proper headers
-    return new NextResponse(materi.fileData, {
+    return new NextResponse(Buffer.from(materi.fileData), {
       headers: {
         'Content-Type': materi.fileType || 'application/octet-stream',
         'Content-Disposition': `inline; filename="${materi.fileName || 'file'}"`,

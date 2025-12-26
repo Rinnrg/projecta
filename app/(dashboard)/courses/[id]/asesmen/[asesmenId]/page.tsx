@@ -476,13 +476,51 @@ export default function AsesmenDetailPage({ params }: PageProps) {
             >
               {/* PDF Preview for database files */}
               {asesmen.fileData && asesmen.fileType === 'application/pdf' && (
-                <div className="border rounded-lg overflow-hidden bg-muted" style={{ height: '800px' }}>
-                  <iframe
-                    src={`/api/asesmen/${asesmen.id}/file#toolbar=0&navpanes=0&scrollbar=1`}
-                    title={`Lampiran ${asesmen.nama}`}
-                    className="w-full h-full border-0"
-                    style={{ minHeight: '800px' }}
-                  />
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">Preview PDF</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                    >
+                      <a 
+                        href={`/api/asesmen/${asesmen.id}/file`}
+                        download={asesmen.fileName || 'document.pdf'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download PDF
+                      </a>
+                    </Button>
+                  </div>
+                  <div className="border rounded-lg overflow-hidden bg-muted" style={{ height: '800px' }}>
+                    <object
+                      data={`/api/asesmen/${asesmen.id}/file`}
+                      type="application/pdf"
+                      className="w-full h-full"
+                      style={{ minHeight: '800px' }}
+                    >
+                      <iframe
+                        src={`/api/asesmen/${asesmen.id}/file#toolbar=0&navpanes=0&scrollbar=1`}
+                        title={`Lampiran ${asesmen.nama}`}
+                        className="w-full h-full border-0"
+                        style={{ minHeight: '800px' }}
+                      >
+                        <p className="p-4">
+                          Browser Anda tidak mendukung tampilan PDF. 
+                          <a 
+                            href={`/api/asesmen/${asesmen.id}/file`}
+                            className="text-primary underline ml-1"
+                            download
+                          >
+                            Klik di sini untuk download
+                          </a>
+                        </p>
+                      </iframe>
+                    </object>
+                  </div>
                 </div>
               )}
 
@@ -504,24 +542,54 @@ export default function AsesmenDetailPage({ params }: PageProps) {
               {/* PDF Preview for base64 PDF */}
               {!asesmen.fileData && asesmen.lampiran && asesmen.lampiran.startsWith('data:application/pdf') && (
                 <div className="border rounded-lg overflow-hidden bg-muted" style={{ height: '800px' }}>
-                  <iframe
-                    src={`${asesmen.lampiran}#toolbar=0&navpanes=0&scrollbar=1`}
-                    title={`Lampiran ${asesmen.nama}`}
-                    className="w-full h-full border-0"
+                  <object
+                    data={asesmen.lampiran}
+                    type="application/pdf"
+                    className="w-full h-full"
                     style={{ minHeight: '800px' }}
-                  />
+                  >
+                    <iframe
+                      src={`${asesmen.lampiran}#toolbar=0&navpanes=0&scrollbar=1`}
+                      title={`Lampiran ${asesmen.nama}`}
+                      className="w-full h-full border-0"
+                      style={{ minHeight: '800px' }}
+                    >
+                      <p className="p-4">
+                        Browser Anda tidak mendukung tampilan PDF.
+                      </p>
+                    </iframe>
+                  </object>
                 </div>
               )}
 
               {/* PDF Preview for URL PDF */}
               {!asesmen.fileData && asesmen.lampiran && asesmen.lampiran.endsWith('.pdf') && !asesmen.lampiran.startsWith('data:') && (
                 <div className="border rounded-lg overflow-hidden bg-muted" style={{ height: '800px' }}>
-                  <iframe
-                    src={`${asesmen.lampiran}#toolbar=0&navpanes=0&scrollbar=1`}
-                    title={`Lampiran ${asesmen.nama}`}
-                    className="w-full h-full border-0"
+                  <object
+                    data={asesmen.lampiran}
+                    type="application/pdf"
+                    className="w-full h-full"
                     style={{ minHeight: '800px' }}
-                  />
+                  >
+                    <iframe
+                      src={`${asesmen.lampiran}#toolbar=0&navpanes=0&scrollbar=1`}
+                      title={`Lampiran ${asesmen.nama}`}
+                      className="w-full h-full border-0"
+                      style={{ minHeight: '800px' }}
+                    >
+                      <p className="p-4">
+                        Browser Anda tidak mendukung tampilan PDF.
+                        <a 
+                          href={asesmen.lampiran}
+                          className="text-primary underline ml-1"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Klik di sini untuk membuka
+                        </a>
+                      </p>
+                    </iframe>
+                  </object>
                 </div>
               )}
 

@@ -7,6 +7,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+    
+    console.log('Fetching file for asesmen:', id)
 
     const asesmen = await prisma.asesmen.findUnique({
       where: { id },
@@ -16,17 +18,25 @@ export async function GET(
         fileType: true,
         fileSize: true,
       },
-    })
+    }) as any
 
     if (!asesmen || !asesmen.fileData) {
+      console.log('File not found or no fileData for asesmen:', id)
       return NextResponse.json(
         { error: 'File tidak ditemukan' },
         { status: 404 }
       )
     }
 
+    console.log('Serving file:', {
+      fileName: asesmen.fileName,
+      fileType: asesmen.fileType,
+      fileSize: asesmen.fileSize,
+      dataLength: asesmen.fileData.length
+    })
+
     // Return file with proper headers
-    return new NextResponse(asesmen.fileData, {
+    return new NextResponse(Buffer.from(asesmen.fileData), {
       headers: {
         'Content-Type': asesmen.fileType || 'application/octet-stream',
         'Content-Disposition': `inline; filename="${asesmen.fileName || 'file'}"`,

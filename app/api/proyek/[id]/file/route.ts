@@ -16,7 +16,7 @@ export async function GET(
         fileType: true,
         fileSize: true,
       },
-    })
+    }) as any
 
     if (!proyek || !proyek.fileData) {
       return NextResponse.json(
@@ -26,7 +26,7 @@ export async function GET(
     }
 
     // Return file with proper headers
-    return new NextResponse(proyek.fileData, {
+    return new NextResponse(Buffer.from(proyek.fileData), {
       headers: {
         'Content-Type': proyek.fileType || 'application/octet-stream',
         'Content-Disposition': `inline; filename="${proyek.fileName || 'file'}"`,

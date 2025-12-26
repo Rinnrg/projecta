@@ -413,13 +413,51 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
                   {materi.fileData && materi.fileType === 'application/pdf' && (
                     <Card>
                       <CardContent className="p-4 sm:p-6">
-                        <div className="w-full rounded-lg overflow-hidden bg-muted" style={{ height: '800px' }}>
-                          <iframe
-                            src={`/api/materi/${materi.id}/file#toolbar=0&navpanes=0&scrollbar=1`}
-                            title={materi.judul}
-                            className="w-full h-full border-0"
-                            style={{ minHeight: '800px' }}
-                          />
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm text-muted-foreground">Preview PDF</p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              asChild
+                            >
+                              <a 
+                                href={`/api/materi/${materi.id}/file`}
+                                download={materi.fileName || 'document.pdf'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                Download PDF
+                              </a>
+                            </Button>
+                          </div>
+                          <div className="w-full rounded-lg overflow-hidden bg-muted border" style={{ height: '800px' }}>
+                            <object
+                              data={`/api/materi/${materi.id}/file`}
+                              type="application/pdf"
+                              className="w-full h-full"
+                              style={{ minHeight: '800px' }}
+                            >
+                              <iframe
+                                src={`/api/materi/${materi.id}/file#toolbar=0&navpanes=0&scrollbar=1`}
+                                title={materi.judul}
+                                className="w-full h-full border-0"
+                                style={{ minHeight: '800px' }}
+                              >
+                                <p className="p-4">
+                                  Browser Anda tidak mendukung tampilan PDF. 
+                                  <a 
+                                    href={`/api/materi/${materi.id}/file`}
+                                    className="text-primary underline ml-1"
+                                    download
+                                  >
+                                    Klik di sini untuk download
+                                  </a>
+                                </p>
+                              </iframe>
+                            </object>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
