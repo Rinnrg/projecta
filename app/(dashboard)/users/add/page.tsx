@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, User, Mail, Lock, AtSign } from "lucide-react"
+import { ArrowLeft, User, Mail, Lock, AtSign, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { toast } from "@/hooks/use-toast"
 
 export default function AddUserPage() {
   const router = useRouter()
@@ -19,10 +20,79 @@ export default function AddUserPage() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [role, setRole] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    router.push("/users")
+    
+    // Validasi form
+    if (!nama.trim()) {
+      toast({
+        title: "Error",
+        description: "Full name is required",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!email.trim()) {
+      toast({
+        title: "Error",
+        description: "Email is required",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!role) {
+      toast({
+        title: "Error",
+        description: "Please select a role",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nama,
+          email,
+          username: username || email.split('@')[0], // Default username from email if not provided
+          password: password || "password123", // Default password if not provided
+          role,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create user")
+      }
+
+      toast({
+        title: "Success",
+        description: "User created successfully",
+      })
+
+      router.push("/users")
+      router.refresh()
+    } catch (error) {
+      console.error("Error creating user:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create user",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -118,11 +188,28 @@ export default function AddUserPage() {
             </div>
 
             <div className="flex gap-4">
-              <Button type="button" variant="outline" className="flex-1 bg-transparent" onClick={() => router.back()}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="flex-1 bg-transparent" 
+                onClick={() => router.back()}
+                disabled={isSubmitting}
+              >
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1">
-                Create User
+              <Button 
+                type="submit" 
+                className="flex-1"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create User"
+                )}
               </Button>
             </div>
           </form>
