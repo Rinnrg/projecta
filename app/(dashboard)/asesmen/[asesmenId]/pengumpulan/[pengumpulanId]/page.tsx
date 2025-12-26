@@ -21,6 +21,7 @@ import {
   Loader2,
   Save,
   ExternalLink,
+  Eye,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -36,13 +37,13 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
   const router = useRouter()
   const resolvedParams = use(params)
   const { asesmenId, pengumpulanId } = resolvedParams
-  const { success, error: showError, AlertComponent } = useSweetAlert()
+  const { success, error: showError, confirm, AlertComponent } = useSweetAlert()
   const [pengumpulan, setPengumpulan] = useState<any>(null)
   const [asesmen, setAsesmen] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
   const [nilai, setNilai] = useState<string>('')
   const [catatan, setCatatan] = useState<string>('')
+  const [showFileViewer, setShowFileViewer] = useState(false)
 
   useEffect(() => {
     if (authLoading) return
@@ -92,31 +93,42 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
       return
     }
 
-    setIsSaving(true)
-    try {
-      const response = await fetch(`/api/pengumpulan/${pengumpulanId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          nilai: nilaiNum,
-          catatan,
-        }),
-      })
+    // Konfirmasi dengan SweetAlert
+    const confirmed = await confirm("Simpan Nilai", {
+      description: `Apakah Anda yakin ingin menyimpan nilai ${nilaiNum} untuk ${pengumpulan.siswa?.nama || 'siswa ini'}?`,
+      confirmText: "Simpan",
+      cancelText: "Batal",
+      type: "warning",
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/pengumpulan/${pengumpulanId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              nilai: nilaiNum,
+              catatan,
+            }),
+          })
 
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to save')
-      }
+          if (!response.ok) {
+            const data = await response.json()
+            throw new Error(data.error || 'Failed to save')
+          }
+        } catch (error) {
+          console.error('Error saving nilai:', error)
+          throw error
+        }
+      },
+    })
 
-      success("Berhasil!", "Nilai berhasil disimpan")
-      fetchData()
-    } catch (error) {
-      console.error('Error saving nilai:', error)
-      showError("Error", "Gagal menyimpan nilai")
-    } finally {
-      setIsSaving(false)
+    if (confirmed) {
+      await success("Berhasil!", "Nilai berhasil disimpan dan akan ditampilkan di detail asesmen siswa")
+      // Redirect ke detail asesmen setelah 1 detik
+      setTimeout(() => {
+        router.push(`/asesmen/${asesmenId}`)
+      }, 1000)
     }
   }
 
@@ -240,9 +252,23 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
           {pengumpulan.fileUrl && (
             <>
               <Separator />
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label className="text-muted-foreground">File</Label>
                 <div className="flex items-center gap-2">
+                  {/* Tombol Lihat File - untuk PDF */}
+                  {(pengumpulan.fileUrl.startsWith('data:application/pdf') || 
+                    pengumpulan.fileUrl.endsWith('.pdf')) && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowFileViewer(!showFileViewer)}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      {showFileViewer ? 'Sembunyikan' : 'Lihat File'}
+                    </Button>
+                  )}
+                  
+                  {/* Tombol Unduh/Buka */}
                   {pengumpulan.fileUrl.startsWith('data:') ? (
                     <Button variant="outline" size="sm" asChild>
                       <a
@@ -269,6 +295,39 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
                         )}
                       </a>
                     </Button>
+                  )}
+                </div>
+
+                {/* PDF Viewer dengan animasi slide */}
+                <div 
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    showFileViewer ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+                >
+                  {/* PDF Preview for base64 PDF */}
+                  {pengumpulan.fileUrl.startsWith('data:application/pdf') && (
+                    <div className="border rounded-lg overflow-hidden bg-muted mt-3">
+                      <div className="aspect-[3/4] w-full">
+                        <iframe
+                          src={pengumpulan.fileUrl}
+                          title="Submission File"
+                          className="w-full h-full"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* PDF Preview for URL PDF */}
+                  {pengumpulan.fileUrl.endsWith('.pdf') && !pengumpulan.fileUrl.startsWith('data:') && (
+                    <div className="border rounded-lg overflow-hidden bg-muted mt-3">
+                      <div className="aspect-[3/4] w-full">
+                        <iframe
+                          src={pengumpulan.fileUrl}
+                          title="Submission File"
+                          className="w-full h-full"
+                        />
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
@@ -347,18 +406,9 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
               />
             </div>
 
-            <Button onClick={handleSaveNilai} disabled={isSaving}>
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Menyimpan...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Simpan Nilai
-                </>
-              )}
+            <Button onClick={handleSaveNilai}>
+              <Save className="mr-2 h-4 w-4" />
+              Simpan Nilai
             </Button>
           </CardContent>
         </Card>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useAuth } from "@/lib/auth-context"
+import { useRouter } from "next/navigation"
 import { StatsCard } from "@/components/ui/stats-card"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -31,6 +32,7 @@ export default function DashboardPage() {
   const { user } = useAuth()
   const { t, locale: currentLocale } = useAutoTranslate()
   const dateLocale = currentLocale === 'id' ? localeId : enUS
+  const router = useRouter()
 
   // State untuk data dari API
   const [stats, setStats] = useState<any>(null)
@@ -39,6 +41,13 @@ export default function DashboardPage() {
   const [asesmenList, setAsesmenList] = useState<any[]>([])
   const [activities, setActivities] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Redirect to login if no user
+  useEffect(() => {
+    if (!user) {
+      router.push('/login')
+    }
+  }, [user, router])
 
   useEffect(() => {
     if (!user) return
@@ -62,19 +71,21 @@ export default function DashboardPage() {
           }),
           user.role === 'GURU'
             ? fetch(`/api/asesmen?guruId=${user.id}`, { next: { revalidate: 120 } })
+            : user.role === 'SISWA'
+            ? fetch(`/api/asesmen?siswaId=${user.id}`, { next: { revalidate: 120 } })
             : fetch('/api/asesmen', { next: { revalidate: 120 } }),
           fetch(`/api/activity?userId=${user.id}&role=${user.role}`, { 
             next: { revalidate: 60 } 
           }),
         ])
 
-        // Parse semua response secara paralel
+        // Parse semua response secara paralel dengan error handling
         const [statsData, coursesData, scheduleData, asesmenData, activityData] = await Promise.all([
-          statsRes.json(),
-          coursesRes.json(),
-          scheduleRes.json(),
-          asesmenRes.json(),
-          activityRes.json(),
+          statsRes.ok ? statsRes.json() : { stats: null },
+          coursesRes.ok ? coursesRes.json() : { courses: [] },
+          scheduleRes.ok ? scheduleRes.json() : { schedule: [] },
+          asesmenRes.ok ? asesmenRes.json() : { asesmen: [] },
+          activityRes.ok ? activityRes.json() : { activities: [] },
         ])
 
         // Set semua state
@@ -92,11 +103,10 @@ export default function DashboardPage() {
     }
 
     fetchDashboardData()
-  }, [user])
+  }, [user, router])
 
-  if (!user) return null
-
-  if (loading) {
+  // Show loading while checking auth or fetching data
+  if (!user || loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

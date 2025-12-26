@@ -5,9 +5,34 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const courseId = searchParams.get('courseId')
+    const guruId = searchParams.get('guruId')
+    const siswaId = searchParams.get('siswaId')
+
+    let whereClause: any = {}
+
+    if (courseId) {
+      whereClause.courseId = courseId
+    }
+
+    if (guruId) {
+      whereClause.guruId = guruId
+    }
+
+    // If siswaId is provided, only get asesmen from enrolled courses
+    if (siswaId) {
+      const enrollments = await prisma.enrollment.findMany({
+        where: { siswaId },
+        select: { courseId: true }
+      })
+      const enrolledCourseIds = enrollments.map(e => e.courseId)
+      
+      whereClause.courseId = {
+        in: enrolledCourseIds
+      }
+    }
 
     const asesmen = await prisma.asesmen.findMany({
-      where: courseId ? { courseId } : {},
+      where: whereClause,
       include: {
         guru: {
           select: {

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
+import Link from "next/link"
 import {
   ChevronLeft,
   ChevronRight,
@@ -147,6 +148,21 @@ export default function SchedulePage() {
       .sort((a, b) => b.date.getTime() - a.date.getTime())
       .slice(0, 3)
   }, [allEvents])
+
+  // Helper function to get event link
+  const getEventLink = (event: ScheduleEvent) => {
+    if (event.type === 'assessment' && event.courseId) {
+      // Extract asesmenId from event.id (format: "asesmen-{id}")
+      const asesmenId = event.id.replace('asesmen-', '')
+      return `/courses/${event.courseId}/asesmen/${asesmenId}`
+    }
+    if (event.type === 'project') {
+      // Extract proyekId from event.id (format: "proyek-{id}")
+      const proyekId = event.id.replace('proyek-', '')
+      return `/projects/${proyekId}`
+    }
+    return null
+  }
 
   const monthEvents = useMemo(() => {
     const start = startOfMonth(currentMonth)
@@ -397,19 +413,32 @@ export default function SchedulePage() {
                       {selectedDateEvents.map((event) => {
                         const config = eventTypeConfig[event.type]
                         const Icon = config.icon
+                        const link = getEventLink(event)
 
-                        return (
-                          <div key={event.id} className={`rounded-lg border p-2 sm:p-3 ${config.color}`}>
-                            <div className="flex items-start gap-1.5 sm:gap-2">
-                              <Icon className="h-3.5 w-3.5 mt-0.5 sm:h-4 sm:w-4 shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium sm:text-sm">{event.title}</p>
-                                {event.course && <p className="text-xs opacity-80 truncate">{event.course}</p>}
-                                {event.description && (
-                                  <p className="text-xs opacity-70 mt-1 line-clamp-2">{event.description}</p>
-                                )}
-                              </div>
+                        const cardContent = (
+                          <div className="flex items-start gap-1.5 sm:gap-2">
+                            <Icon className="h-3.5 w-3.5 mt-0.5 sm:h-4 sm:w-4 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium sm:text-sm">{event.title}</p>
+                              {event.course && <p className="text-xs opacity-80 truncate">{event.course}</p>}
+                              {event.description && (
+                                <p className="text-xs opacity-70 mt-1 line-clamp-2">{event.description}</p>
+                              )}
                             </div>
+                          </div>
+                        )
+
+                        return link ? (
+                          <Link 
+                            key={event.id} 
+                            href={link}
+                            className={`block rounded-lg border p-2 sm:p-3 ${config.color} hover:opacity-80 transition-opacity cursor-pointer`}
+                          >
+                            {cardContent}
+                          </Link>
+                        ) : (
+                          <div key={event.id} className={`rounded-lg border p-2 sm:p-3 ${config.color}`}>
+                            {cardContent}
                           </div>
                         )
                       })}
@@ -436,12 +465,10 @@ export default function SchedulePage() {
                     {upcomingEvents.map((event) => {
                       const config = eventTypeConfig[event.type]
                       const Icon = config.icon
+                      const link = getEventLink(event)
 
-                      return (
-                        <div
-                          key={event.id}
-                          className="flex items-center gap-2 sm:gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
-                        >
+                      const content = (
+                        <>
                           <div className={`rounded-full p-1.5 sm:p-2 ${config.color}`}>
                             <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
                           </div>
@@ -451,6 +478,23 @@ export default function SchedulePage() {
                               {format(event.date, "EEEE, d MMM", { locale: dateLocale })}
                             </p>
                           </div>
+                        </>
+                      )
+
+                      return link ? (
+                        <Link
+                          key={event.id}
+                          href={link}
+                          className="flex items-center gap-2 sm:gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                        >
+                          {content}
+                        </Link>
+                      ) : (
+                        <div
+                          key={event.id}
+                          className="flex items-center gap-2 sm:gap-3 p-2 rounded-lg"
+                        >
+                          {content}
                         </div>
                       )
                     })}

@@ -685,6 +685,22 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                               )}
                             </div>
                           </div>
+
+                          {/* Catatan dari Guru */}
+                          {studentPengumpulan.catatan && (
+                            <>
+                              <Separator />
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-4 w-4 text-primary" />
+                                  <p className="text-sm font-medium">Catatan dari Guru:</p>
+                                </div>
+                                <div className="bg-background p-3 rounded-lg border border-primary/20">
+                                  <p className="text-sm whitespace-pre-wrap">{studentPengumpulan.catatan}</p>
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">

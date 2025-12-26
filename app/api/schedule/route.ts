@@ -53,19 +53,19 @@ export async function GET(request: NextRequest) {
 
       // Add assessments to schedule
       asesmen.forEach(a => {
-        // Create a due date (7 days from today for demo purposes)
-        const dueDate = new Date(today)
-        dueDate.setDate(dueDate.getDate() + 7)
-
-        scheduleEvents.push({
-          id: `asesmen-${a.id}`,
-          title: a.nama,
-          type: 'assessment',
-          date: dueDate.toISOString(),
-          description: a.deskripsi || `${a.jml_soal} soal, ${a.durasi} menit`,
-          course: a.course.judul,
-          status: 'upcoming'
-        })
+        // Use actual deadline if available, otherwise skip
+        if (a.tgl_selesai) {
+          scheduleEvents.push({
+            id: `asesmen-${a.id}`,
+            title: a.nama,
+            type: 'assessment',
+            date: a.tgl_selesai.toISOString(),
+            description: a.deskripsi || (a.tipe === 'KUIS' ? `${a.jml_soal || 0} soal, ${a.durasi || 0} menit` : 'Tugas'),
+            course: a.course.judul,
+            courseId: a.courseId,
+            status: a.tgl_selesai < today ? 'overdue' : (a.tgl_mulai && a.tgl_mulai <= today ? 'ongoing' : 'upcoming')
+          })
+        }
       })
 
       // Add projects to schedule
@@ -102,18 +102,19 @@ export async function GET(request: NextRequest) {
 
       // Add assessments to schedule
       asesmen.forEach(a => {
-        const dueDate = new Date(today)
-        dueDate.setDate(dueDate.getDate() + 7)
-
-        scheduleEvents.push({
-          id: `asesmen-${a.id}`,
-          title: a.nama,
-          type: 'assessment',
-          date: dueDate.toISOString(),
-          description: a.deskripsi || `${a.jml_soal} soal, ${a.durasi} menit`,
-          course: a.course.judul,
-          status: 'upcoming'
-        })
+        // Use actual deadline if available, otherwise skip
+        if (a.tgl_selesai) {
+          scheduleEvents.push({
+            id: `asesmen-${a.id}`,
+            title: a.nama,
+            type: 'assessment',
+            date: a.tgl_selesai.toISOString(),
+            description: a.deskripsi || (a.tipe === 'KUIS' ? `${a.jml_soal || 0} soal, ${a.durasi || 0} menit` : 'Tugas'),
+            course: a.course.judul,
+            courseId: a.courseId,
+            status: a.tgl_selesai < today ? 'overdue' : (a.tgl_mulai && a.tgl_mulai <= today ? 'ongoing' : 'upcoming')
+          })
+        }
       })
 
       // Add projects to schedule

@@ -8,6 +8,8 @@ import { useAutoTranslate } from "@/lib/auto-translate-context"
 import { Bell, Menu, Moon, Sun, Search, LogOut, User, Settings, Languages } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SearchDropdown } from "@/components/layout/search-dropdown"
+import { ActivityDropdown } from "@/components/layout/activity-dropdown"
+import Swal from 'sweetalert2'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,9 +44,33 @@ export function Header({ onMenuClick, isMobile }: HeaderProps) {
       .slice(0, 2)
   }
 
-  const handleLogout = () => {
-    logout()
-    router.push("/login")
+  const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: 'Konfirmasi Logout',
+      text: 'Apakah Anda yakin ingin keluar?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Ya, Keluar',
+      cancelButtonText: 'Batal'
+    })
+
+    if (result.isConfirmed) {
+      logout()
+      
+      Swal.fire({
+        title: 'Berhasil!',
+        text: 'Anda telah logout.',
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false
+      })
+
+      setTimeout(() => {
+        router.push("/login")
+      }, 1500)
+    }
   }
 
   return (
@@ -111,14 +137,7 @@ export function Header({ onMenuClick, isMobile }: HeaderProps) {
           <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all duration-300 dark:rotate-0 dark:scale-100" />
         </Button>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative h-9 w-9 text-muted-foreground hover:text-primary transition-colors duration-150 group"
-        >
-          <Bell className="h-5 w-5 transition-transform duration-150 group-hover:scale-110" />
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive animate-pulse-soft" />
-        </Button>
+        <ActivityDropdown />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
