@@ -58,11 +58,21 @@ export async function GET(
         },
         take: 1,
       }
-      // For KUIS, only include count of soal, not the actual questions
-      includeOptions._count = {
+      // For KUIS, if not yet submitted, include questions (but not correct answers)
+      includeOptions.soal = {
         select: {
-          soal: true,
-        },
+          id: true,
+          pertanyaan: true,
+          bobot: true,
+          tipeJawaban: true,
+          opsi: {
+            select: {
+              id: true,
+              teks: true,
+              // Don't include isBenar for students
+            }
+          }
+        }
       }
     } else if (includeStats) {
       // For teachers/admins requesting full stats
@@ -98,14 +108,6 @@ export async function GET(
         { error: 'Asesmen tidak ditemukan' },
         { status: 404 }
       )
-    }
-
-    // Transform response for students
-    if (userRole === 'SISWA' && asesmen._count) {
-      // Replace soal array with just the count for students
-      const soalCount = asesmen._count.soal
-      delete asesmen._count
-      asesmen.soalCount = soalCount
     }
 
     // Add cache headers for better performance

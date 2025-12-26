@@ -3,6 +3,7 @@
 export type UserRole = "ADMIN" | "GURU" | "SISWA"
 export type TipeAsesmen = "KUIS" | "TUGAS"
 export type TipePengerjaan = "INDIVIDU" | "KELOMPOK"
+export type TipeJawaban = "PILIHAN_GANDA" | "ISIAN"
 
 export interface User {
   id: string
@@ -56,8 +57,10 @@ export interface Soal {
   id: string
   pertanyaan: string
   bobot: number
+  tipeJawaban: TipeJawaban
   asesmenId: string
   opsi?: Opsi[]
+  jawabanSiswa?: JawabanSiswa[]
 }
 
 export interface Opsi {
@@ -73,6 +76,20 @@ export interface Nilai {
   tanggal: Date
   siswaId: string
   asesmenId: string
+  jawabanSiswa?: JawabanSiswa[]
+}
+
+export interface JawabanSiswa {
+  id: string
+  jawaban: string | null
+  isBenar: boolean | null
+  skorDidapat: number | null
+  tanggalJawab: Date
+  siswaId: string
+  soalId: string
+  nilaiId: string | null
+  siswa?: User
+  soal?: Soal
 }
 
 export interface PengumpulanProyek {
