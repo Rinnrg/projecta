@@ -50,6 +50,8 @@ export default function AsesmenDetailPage({ params }: PageProps) {
   const { id: courseId, asesmenId } = resolvedParams
   const [asesmen, setAsesmen] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [studentNilai, setStudentNilai] = useState<any>(null)
+  const [studentPengumpulan, setStudentPengumpulan] = useState<any>(null)
 
   useEffect(() => {
     if (authLoading) return
@@ -66,6 +68,27 @@ export default function AsesmenDetailPage({ params }: PageProps) {
         if (response.ok) {
           const data = await response.json()
           setAsesmen(data.asesmen)
+          
+          // Jika siswa, fetch status penilaian mereka
+          if (user.role === 'SISWA') {
+            // Fetch nilai siswa untuk kuis
+            const nilaiResponse = await fetch(`/api/nilai?siswaId=${user.id}&asesmenId=${asesmenId}`)
+            if (nilaiResponse.ok) {
+              const nilaiData = await nilaiResponse.json()
+              if (nilaiData.nilai && nilaiData.nilai.length > 0) {
+                setStudentNilai(nilaiData.nilai[0])
+              }
+            }
+            
+            // Fetch pengumpulan siswa untuk tugas
+            const pengumpulanResponse = await fetch(`/api/pengumpulan?siswaId=${user.id}&asesmenId=${asesmenId}`)
+            if (pengumpulanResponse.ok) {
+              const pengumpulanData = await pengumpulanResponse.json()
+              if (pengumpulanData.pengumpulan && pengumpulanData.pengumpulan.length > 0) {
+                setStudentPengumpulan(pengumpulanData.pengumpulan[0])
+              }
+            }
+          }
         } else {
           router.push('/courses')
         }
@@ -348,26 +371,89 @@ export default function AsesmenDetailPage({ params }: PageProps) {
       {asesmen.lampiran && (
         <Card>
           <CardHeader>
-            <CardTitle>Lampiran</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Lampiran & Dokumen
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            {asesmen.lampiran.startsWith('data:') ? (
-              <Button variant="outline" size="sm" asChild>
-                <a
-                  href={asesmen.lampiran}
-                  download={`lampiran-${asesmen.nama}.${asesmen.lampiran.split(';')[0].split('/')[1]}`}
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Unduh File
-                </a>
-              </Button>
-            ) : (
-              <Button variant="outline" size="sm" asChild>
-                <a href={asesmen.lampiran} target="_blank" rel="noopener noreferrer">
-                  <Download className="mr-2 h-4 w-4" />
-                  {asesmen.lampiran.startsWith('http') ? 'Buka Link' : 'Unduh Lampiran'}
-                </a>
-              </Button>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400">
+                  <FileText className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="font-medium">
+                    {asesmen.lampiran.startsWith('data:') 
+                      ? `Lampiran ${asesmen.nama}.${asesmen.lampiran.split(';')[0].split('/')[1]}`
+                      : asesmen.lampiran.startsWith('http') ? 'Link External' : 'Lampiran'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {asesmen.lampiran.startsWith('data:') 
+                      ? 'File tersimpan (base64)'
+                      : asesmen.lampiran.startsWith('http') ? 'Link ke sumber external' : 'Dokumen lampiran'}
+                  </p>
+                </div>
+              </div>
+              {asesmen.lampiran.startsWith('data:') ? (
+                <Button variant="outline" size="sm" asChild>
+                  <a
+                    href={asesmen.lampiran}
+                    download={`lampiran-${asesmen.nama}.${asesmen.lampiran.split(';')[0].split('/')[1]}`}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Unduh File
+                  </a>
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" asChild>
+                  <a href={asesmen.lampiran} target="_blank" rel="noopener noreferrer">
+                    <Download className="mr-2 h-4 w-4" />
+                    {asesmen.lampiran.startsWith('http') ? 'Buka Link' : 'Unduh Lampiran'}
+                  </a>
+                </Button>
+              )}
+            </div>
+
+            {/* PDF Preview for base64 PDF */}
+            {asesmen.lampiran.startsWith('data:application/pdf') && (
+              <div className="border rounded-lg overflow-hidden bg-muted">
+                <div className="aspect-[3/4] w-full">
+                  <iframe
+                    src={asesmen.lampiran}
+                    title={`Lampiran ${asesmen.nama}`}
+                    className="w-full h-full"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* PDF Preview for URL PDF */}
+            {asesmen.lampiran.endsWith('.pdf') && !asesmen.lampiran.startsWith('data:') && (
+              <div className="border rounded-lg overflow-hidden bg-muted">
+                <div className="aspect-[3/4] w-full">
+                  <iframe
+                    src={asesmen.lampiran}
+                    title={`Lampiran ${asesmen.nama}`}
+                    className="w-full h-full"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* YouTube Embed if it's a YouTube link */}
+            {asesmen.lampiran && (asesmen.lampiran.includes("youtube.com") || asesmen.lampiran.includes("youtu.be")) && (
+              <div className="border rounded-lg overflow-hidden bg-muted">
+                <div className="aspect-video w-full">
+                  <iframe
+                    src={asesmen.lampiran.replace("watch?v=", "embed/")}
+                    title={asesmen.nama}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -637,6 +723,192 @@ export default function AsesmenDetailPage({ params }: PageProps) {
             )}
           </TabsContent>
         </Tabs>
+      )}
+
+      {/* Status Penilaian untuk Siswa */}
+      {isStudent && (studentNilai || studentPengumpulan) && (
+        <Card className="border-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ClipboardList className="h-5 w-5" />
+              Status Penilaian
+            </CardTitle>
+            <CardDescription>
+              Informasi mengenai penilaian {asesmen.tipe === 'KUIS' ? 'kuis' : 'tugas'} Anda
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Status untuk KUIS */}
+            {asesmen.tipe === 'KUIS' && studentNilai && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">Tanggal Pengerjaan</p>
+                    <p className="font-medium">
+                      {new Date(studentNilai.tanggal).toLocaleString('id-ID', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                  <div className="text-right space-y-1">
+                    <p className="text-sm text-muted-foreground">Nilai Anda</p>
+                    <div className="text-3xl font-bold">
+                      <Badge 
+                        variant={studentNilai.skor >= 75 ? 'default' : 'secondary'}
+                        className="text-xl px-4 py-2"
+                      >
+                        {studentNilai.skor}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {studentNilai.skor >= 75 ? (
+                      <>
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        <div>
+                          <p className="font-medium text-green-700">Selamat! Anda Lulus</p>
+                          <p className="text-sm text-muted-foreground">
+                            Nilai Anda memenuhi standar kelulusan (≥75)
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="h-5 w-5 text-orange-500" />
+                        <div>
+                          <p className="font-medium text-orange-700">Belum Lulus</p>
+                          <p className="text-sm text-muted-foreground">
+                            Nilai Anda belum memenuhi standar kelulusan (≥75)
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Status untuk TUGAS */}
+            {asesmen.tipe === 'TUGAS' && studentPengumpulan && (
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="p-4 bg-muted rounded-lg space-y-1">
+                    <p className="text-sm text-muted-foreground">Tanggal Pengumpulan</p>
+                    <p className="font-medium">
+                      {new Date(studentPengumpulan.tgl_unggah).toLocaleString('id-ID', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                  
+                  <div className="p-4 bg-muted rounded-lg space-y-1">
+                    <p className="text-sm text-muted-foreground">Status Pengumpulan</p>
+                    <Badge variant="default" className="bg-green-600">
+                      <CheckCircle2 className="mr-1 h-3 w-3" />
+                      Sudah Dikumpulkan
+                    </Badge>
+                  </div>
+                </div>
+
+                {studentPengumpulan.namaKelompok && (
+                  <div className="p-4 bg-muted rounded-lg space-y-2">
+                    <p className="text-sm text-muted-foreground">Informasi Kelompok</p>
+                    <div className="space-y-1">
+                      <p className="font-medium">Nama Kelompok: {studentPengumpulan.namaKelompok}</p>
+                      {studentPengumpulan.ketua && (
+                        <p className="text-sm">Ketua: {studentPengumpulan.ketua}</p>
+                      )}
+                      {studentPengumpulan.anggota && (
+                        <p className="text-sm">Anggota: {studentPengumpulan.anggota}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                <Separator />
+                
+                <div className="p-4 bg-muted rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Status Penilaian</p>
+                      {studentPengumpulan.nilai !== null && studentPengumpulan.nilai !== undefined ? (
+                        <div className="flex items-center gap-4">
+                          <div>
+                            <p className="text-sm font-medium mb-1">Nilai Anda:</p>
+                            <Badge 
+                              variant={studentPengumpulan.nilai >= 75 ? 'default' : 'secondary'}
+                              className="text-xl px-4 py-2"
+                            >
+                              {studentPengumpulan.nilai}
+                            </Badge>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            {studentPengumpulan.nilai >= 75 ? (
+                              <>
+                                <CheckCircle2 className="h-5 w-5 text-green-500 mt-1" />
+                                <div>
+                                  <p className="font-medium text-green-700">Lulus</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Nilai memenuhi standar
+                                  </p>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle className="h-5 w-5 text-orange-500 mt-1" />
+                                <div>
+                                  <p className="font-medium text-orange-700">Belum Lulus</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Nilai belum memenuhi standar
+                                  </p>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-5 w-5 text-blue-500" />
+                          <div>
+                            <p className="font-medium text-blue-700">Menunggu Penilaian</p>
+                            <p className="text-sm text-muted-foreground">
+                              Tugas Anda sedang dalam proses penilaian oleh guru
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {studentPengumpulan.catatan && (
+                  <div className="p-4 bg-muted rounded-lg space-y-2">
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Catatan dari Guru
+                    </p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {studentPengumpulan.catatan}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
     </div>
   )
