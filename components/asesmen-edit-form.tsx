@@ -92,13 +92,28 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
       
       // Set form data
       const asesmen = asesmenData.asesmen
+      
+      console.log('Raw asesmen data:', asesmen)
+      console.log('tgl_mulai raw:', asesmen.tgl_mulai)
+      console.log('tgl_selesai raw:', asesmen.tgl_selesai)
+      
+      const tglMulaiFormatted = asesmen.tgl_mulai 
+        ? new Date(asesmen.tgl_mulai).toISOString().slice(0, 16) 
+        : ""
+      const tglSelesaiFormatted = asesmen.tgl_selesai 
+        ? new Date(asesmen.tgl_selesai).toISOString().slice(0, 16) 
+        : ""
+      
+      console.log('tgl_mulai formatted:', tglMulaiFormatted)
+      console.log('tgl_selesai formatted:', tglSelesaiFormatted)
+      
       setFormData({
         nama: asesmen.nama || "",
         deskripsi: asesmen.deskripsi || "",
         tipe: asesmen.tipe || "",
         tipePengerjaan: asesmen.tipePengerjaan || "",
-        tgl_mulai: asesmen.tgl_mulai ? new Date(asesmen.tgl_mulai).toISOString().slice(0, 16) : "",
-        tgl_selesai: asesmen.tgl_selesai ? new Date(asesmen.tgl_selesai).toISOString().slice(0, 16) : "",
+        tgl_mulai: tglMulaiFormatted,
+        tgl_selesai: tglSelesaiFormatted,
         durasi: asesmen.durasi?.toString() || "",
         lampiran: asesmen.lampiran || "",
         courseId: asesmen.courseId || "",
@@ -536,8 +551,15 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
                 id="tgl_mulai"
                 type="datetime-local"
                 value={formData.tgl_mulai}
-                onChange={(e) => setFormData({ ...formData, tgl_mulai: e.target.value })}
+                onChange={(e) => {
+                  console.log('tgl_mulai onChange:', e.target.value)
+                  setFormData({ ...formData, tgl_mulai: e.target.value })
+                }}
+                className="cursor-pointer"
               />
+              <p className="text-xs text-muted-foreground">
+                Current: {formData.tgl_mulai || 'Not set'}
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -546,8 +568,15 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
                 id="tgl_selesai"
                 type="datetime-local"
                 value={formData.tgl_selesai}
-                onChange={(e) => setFormData({ ...formData, tgl_selesai: e.target.value })}
+                onChange={(e) => {
+                  console.log('tgl_selesai onChange:', e.target.value)
+                  setFormData({ ...formData, tgl_selesai: e.target.value })
+                }}
+                className="cursor-pointer"
               />
+              <p className="text-xs text-muted-foreground">
+                Current: {formData.tgl_selesai || 'Not set'}
+              </p>
             </div>
           </div>
 
