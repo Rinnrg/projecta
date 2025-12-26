@@ -96,6 +96,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validasi khusus untuk TUGAS
+    if (tipe === 'TUGAS' && !tipePengerjaan) {
+      return NextResponse.json(
+        { error: 'Tipe pengerjaan wajib diisi untuk tugas' },
+        { status: 400 }
+      )
+    }
+
+    // Validasi khusus untuk KUIS
+    if (tipe === 'KUIS') {
+      if (!soal || !Array.isArray(soal) || soal.length === 0) {
+        return NextResponse.json(
+          { error: 'Minimal harus ada 1 soal untuk kuis' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Validate dates if provided
     let startDate = null
     let endDate = null
@@ -140,7 +158,7 @@ export async function POST(request: NextRequest) {
           ...(durasi && { durasi: parseInt(durasi) }),
           tgl_mulai: startDate,
           tgl_selesai: endDate,
-          lampiran: lampiran || null,
+          lampiran: tipe === 'TUGAS' ? (lampiran || null) : null, // Only save lampiran for TUGAS
           guruId: guruId,
           courseId,
         },
@@ -149,19 +167,27 @@ export async function POST(request: NextRequest) {
       // Create soal for KUIS
       if (tipe === 'KUIS' && soal && Array.isArray(soal)) {
         for (const soalItem of soal) {
-          await tx.soal.create({
+          const createdSoal = await tx.soal.create({
             data: {
               pertanyaan: soalItem.pertanyaan,
               bobot: soalItem.bobot || 10,
+              tipeJawaban: soalItem.tipeJawaban || 'PILIHAN_GANDA',
               asesmenId: newAsesmen.id,
-              opsi: {
-                create: soalItem.opsi.map((opsiItem: any) => ({
-                  teks: opsiItem.teks,
-                  isBenar: opsiItem.isBenar,
-                }))
-              }
             }
           })
+
+          // Create opsi only for PILIHAN_GANDA
+          if (soalItem.tipeJawaban === 'PILIHAN_GANDA' && soalItem.opsi && Array.isArray(soalItem.opsi)) {
+            for (const opsiItem of soalItem.opsi) {
+              await tx.opsi.create({
+                data: {
+                  teks: opsiItem.teks,
+                  isBenar: opsiItem.isBenar,
+                  soalId: createdSoal.id,
+                }
+              })
+            }
+          }
         }
       }
 

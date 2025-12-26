@@ -36,6 +36,7 @@ interface Opsi {
 interface Soal {
   pertanyaan: string
   bobot: number
+  tipeJawaban: 'PILIHAN_GANDA' | 'ISIAN'
   opsi: Opsi[]
 }
 
@@ -49,6 +50,7 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
   const [currentSoal, setCurrentSoal] = useState<Soal>({
     pertanyaan: "",
     bobot: 10,
+    tipeJawaban: 'PILIHAN_GANDA',
     opsi: [
       { teks: "", isBenar: false },
       { teks: "", isBenar: false },
@@ -75,7 +77,6 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
       </div>
     )
   }
-
   const handleAddSoal = () => {
     // Validasi soal
     if (!currentSoal.pertanyaan.trim()) {
@@ -87,24 +88,27 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
       return
     }
 
-    const filledOpsi = currentSoal.opsi.filter(o => o.teks.trim() !== "")
-    if (filledOpsi.length < 2) {
-      toast({
-        title: "Error",
-        description: "Minimal 2 pilihan jawaban harus diisi",
-        variant: "destructive",
-      })
-      return
-    }
+    // Validasi untuk pilihan ganda
+    if (currentSoal.tipeJawaban === 'PILIHAN_GANDA') {
+      const filledOpsi = currentSoal.opsi.filter(o => o.teks.trim() !== "")
+      if (filledOpsi.length < 2) {
+        toast({
+          title: "Error",
+          description: "Minimal 2 pilihan jawaban harus diisi untuk pilihan ganda",
+          variant: "destructive",
+        })
+        return
+      }
 
-    const hasCorrectAnswer = currentSoal.opsi.some(o => o.isBenar)
-    if (!hasCorrectAnswer) {
-      toast({
-        title: "Error",
-        description: "Harus ada minimal 1 jawaban yang benar",
-        variant: "destructive",
-      })
-      return
+      const hasCorrectAnswer = currentSoal.opsi.some(o => o.isBenar)
+      if (!hasCorrectAnswer) {
+        toast({
+          title: "Error",
+          description: "Harus ada minimal 1 jawaban yang benar",
+          variant: "destructive",
+        })
+        return
+      }
     }
 
     // Add soal to list
@@ -114,6 +118,7 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
     setCurrentSoal({
       pertanyaan: "",
       bobot: 10,
+      tipeJawaban: 'PILIHAN_GANDA',
       opsi: [
         { teks: "", isBenar: false },
         { teks: "", isBenar: false },
@@ -232,10 +237,13 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
         bodyData.soal = soalList.map(s => ({
           pertanyaan: s.pertanyaan,
           bobot: s.bobot,
-          opsi: s.opsi.filter(o => o.teks.trim() !== "").map(o => ({
-            teks: o.teks,
-            isBenar: o.isBenar
-          }))
+          tipeJawaban: s.tipeJawaban,
+          opsi: s.tipeJawaban === 'PILIHAN_GANDA' 
+            ? s.opsi.filter(o => o.teks.trim() !== "").map(o => ({
+                teks: o.teks,
+                isBenar: o.isBenar
+              }))
+            : []
         }))
       }
 
@@ -307,22 +315,27 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
                       <div className="flex items-center gap-2 mb-2">
                         <Badge variant="secondary">Soal {index + 1}</Badge>
                         <Badge variant="outline">{soal.bobot} poin</Badge>
+                        <Badge variant={soal.tipeJawaban === 'PILIHAN_GANDA' ? 'default' : 'secondary'}>
+                          {soal.tipeJawaban === 'PILIHAN_GANDA' ? 'Pilihan Ganda' : 'Isian'}
+                        </Badge>
                       </div>
                       <p className="font-medium mb-2">{soal.pertanyaan}</p>
-                      <div className="space-y-1 pl-4">
-                        {soal.opsi.filter(o => o.teks.trim() !== "").map((opsi, opsiIndex) => (
-                          <div key={opsiIndex} className="flex items-center gap-2 text-sm">
-                            {opsi.isBenar ? (
-                              <Check className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <X className="h-4 w-4 text-gray-400" />
-                            )}
-                            <span className={opsi.isBenar ? "text-green-600 font-medium" : ""}>
-                              {opsi.teks}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                      {soal.tipeJawaban === 'PILIHAN_GANDA' && (
+                        <div className="space-y-1 pl-4">
+                          {soal.opsi.filter(o => o.teks.trim() !== "").map((opsi, opsiIndex) => (
+                            <div key={opsiIndex} className="flex items-center gap-2 text-sm">
+                              {opsi.isBenar ? (
+                                <Check className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <X className="h-4 w-4 text-gray-400" />
+                              )}
+                              <span className={opsi.isBenar ? "text-green-600 font-medium" : ""}>
+                                {opsi.teks}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <Button
                       variant="ghost"
@@ -343,7 +356,7 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
         <Card>
           <CardHeader>
             <CardTitle>Tambah Soal Baru</CardTitle>
-            <CardDescription>Buat soal pilihan ganda seperti Kahoot</CardDescription>
+            <CardDescription>Buat soal pilihan ganda atau isian</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -357,45 +370,87 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="bobot">Poin *</Label>
-              <Input
-                id="bobot"
-                type="number"
-                value={currentSoal.bobot}
-                onChange={(e) => setCurrentSoal({ ...currentSoal, bobot: parseInt(e.target.value) || 10 })}
-                placeholder="10"
-                min="1"
-              />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="tipeJawaban">Tipe Soal *</Label>
+                <Select
+                  value={currentSoal.tipeJawaban}
+                  onValueChange={(value: 'PILIHAN_GANDA' | 'ISIAN') => 
+                    setCurrentSoal({ 
+                      ...currentSoal, 
+                      tipeJawaban: value,
+                      opsi: value === 'ISIAN' ? [] : [
+                        { teks: "", isBenar: false },
+                        { teks: "", isBenar: false },
+                        { teks: "", isBenar: false },
+                        { teks: "", isBenar: false },
+                      ]
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih tipe soal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PILIHAN_GANDA">Pilihan Ganda</SelectItem>
+                    <SelectItem value="ISIAN">Isian</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bobot">Poin *</Label>
+                <Input
+                  id="bobot"
+                  type="number"
+                  value={currentSoal.bobot}
+                  onChange={(e) => setCurrentSoal({ ...currentSoal, bobot: parseInt(e.target.value) || 10 })}
+                  placeholder="10"
+                  min="1"
+                />
+              </div>
             </div>
 
-            <Separator />
+            {currentSoal.tipeJawaban === 'PILIHAN_GANDA' && (
+              <>
+                <Separator />
 
-            <div className="space-y-3">
-              <Label>Pilihan Jawaban *</Label>
-              <p className="text-sm text-muted-foreground">
-                Klik tombol centang untuk menandai jawaban yang benar
-              </p>
-              {currentSoal.opsi.map((opsi, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant={opsi.isBenar ? "default" : "outline"}
-                    size="sm"
-                    className="shrink-0"
-                    onClick={() => handleCorrectAnswerChange(index)}
-                  >
-                    {opsi.isBenar ? <Check className="h-4 w-4" /> : <span className="h-4 w-4" />}
-                  </Button>
-                  <Input
-                    value={opsi.teks}
-                    onChange={(e) => handleOpsiChange(index, e.target.value)}
-                    placeholder={`Pilihan ${index + 1}`}
-                    className={opsi.isBenar ? "border-green-500" : ""}
-                  />
+                <div className="space-y-3">
+                  <Label>Pilihan Jawaban *</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Klik tombol centang untuk menandai jawaban yang benar
+                  </p>
+                  {currentSoal.opsi.map((opsi, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant={opsi.isBenar ? "default" : "outline"}
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() => handleCorrectAnswerChange(index)}
+                      >
+                        {opsi.isBenar ? <Check className="h-4 w-4" /> : <span className="h-4 w-4" />}
+                      </Button>
+                      <Input
+                        value={opsi.teks}
+                        onChange={(e) => handleOpsiChange(index, e.target.value)}
+                        placeholder={`Pilihan ${index + 1}`}
+                        className={opsi.isBenar ? "border-green-500" : ""}
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
+
+            {currentSoal.tipeJawaban === 'ISIAN' && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Soal isian akan dinilai secara manual oleh guru setelah siswa mengumpulkan.
+                </AlertDescription>
+              </Alert>
+            )}
 
             <Button
               type="button"
@@ -562,13 +617,15 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
             </div>
           </div>
 
-          <FileUploadField
-            label="Lampiran"
-            description="Upload file atau masukkan link URL"
-            value={formData.lampiran}
-            onChange={(value) => setFormData({ ...formData, lampiran: value })}
-            accept=".pdf,.doc,.docx,.ppt,.pptx,.zip"
-          />
+          {formData.tipe === 'TUGAS' && (
+            <FileUploadField
+              label="Lampiran"
+              description="Upload file atau masukkan link URL"
+              value={formData.lampiran}
+              onChange={(value) => setFormData({ ...formData, lampiran: value })}
+              accept=".pdf,.doc,.docx,.ppt,.pptx,.zip"
+            />
+          )}
 
           <div className="flex gap-2 justify-end pt-4">
             <Button

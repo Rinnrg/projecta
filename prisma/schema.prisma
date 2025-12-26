@@ -24,6 +24,11 @@ enum TipePengerjaan {
   KELOMPOK
 }
 
+enum TipeJawaban {
+  PILIHAN_GANDA
+  ISIAN
+}
+
 model User {
   id        String   @id @default(uuid())
   username  String?  @unique
@@ -43,6 +48,7 @@ model User {
   profileShowcase ProfileShowcase[]
   enrollments     Enrollment[]
   pengumpulanProyek PengumpulanProyek[] // For individual task submissions
+  jawabanSiswa    JawabanSiswa[]
 }
 
 model Course {
@@ -101,14 +107,16 @@ model Asesmen {
 }
 
 model Soal {
-  id         String @id @default(cuid())
-  pertanyaan String @db.Text
-  bobot      Int    @default(10)
+  id          String       @id @default(cuid())
+  pertanyaan  String       @db.Text
+  bobot       Int          @default(10)
+  tipeJawaban TipeJawaban  @default(PILIHAN_GANDA)
 
   asesmenId String
   asesmen   Asesmen @relation(fields: [asesmenId], references: [id], onDelete: Cascade)
 
-  opsi Opsi[]
+  opsi          Opsi[]
+  jawabanSiswa  JawabanSiswa[]
 }
 
 model Opsi {
@@ -118,6 +126,25 @@ model Opsi {
 
   soalId String
   soal   Soal   @relation(fields: [soalId], references: [id], onDelete: Cascade)
+}
+
+model JawabanSiswa {
+  id            String   @id @default(cuid())
+  jawaban       String?  @db.Text // Untuk isian atau pilihan yang dipilih
+  isBenar       Boolean? // Auto-scored untuk pilihan ganda, manual untuk isian
+  skorDidapat   Float?   // Skor yang didapat untuk soal ini
+  tanggalJawab  DateTime @default(now())
+
+  siswaId String
+  siswa   User   @relation(fields: [siswaId], references: [id])
+
+  soalId String
+  soal   Soal   @relation(fields: [soalId], references: [id], onDelete: Cascade)
+
+  nilaiId String?
+  nilai   Nilai?  @relation(fields: [nilaiId], references: [id], onDelete: Cascade)
+
+  @@unique([siswaId, soalId], name: "siswaId_soalId")
 }
 
 model Nilai {
@@ -130,6 +157,8 @@ model Nilai {
 
   asesmenId String
   asesmen   Asesmen @relation(fields: [asesmenId], references: [id])
+
+  jawabanSiswa JawabanSiswa[]
 
   @@unique([siswaId, asesmenId], name: "siswaId_asesmenId")
 }
