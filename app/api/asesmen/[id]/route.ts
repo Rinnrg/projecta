@@ -79,7 +79,7 @@ export async function GET(
         },
         select: {
           id: true,
-          nilai: true,
+          skor: true,
           tanggal: true,
           siswaId: true,
         },
@@ -91,10 +91,14 @@ export async function GET(
         },
         select: {
           id: true,
-          file: true,
+          fileUrl: true,
           tgl_unggah: true,
           siswaId: true,
           nilai: true,
+          namaKelompok: true,
+          ketua: true,
+          anggota: true,
+          catatan: true,
         },
         take: 1,
       }
