@@ -147,32 +147,3 @@ export async function POST(
     )
   }
 }
-      )
-    }
-
-    // Check deadline
-    if (asesmen.tgl_selesai && new Date(asesmen.tgl_selesai) < new Date()) {
-      return NextResponse.json(
-        { error: 'Waktu pengerjaan telah berakhir' },
-        { status: 400 }
-      )
-    }
-
-    // Save score
-    const nilai = await prisma.nilai.create({
-      data: {
-        skor,
-        asesmenId: id,
-        siswaId,
-      },
-    })
-
-    return NextResponse.json({ nilai }, { status: 201 })
-  } catch (error) {
-    console.error('Error submitting quiz:', error)
-    return NextResponse.json(
-      { error: 'Gagal menyimpan nilai' },
-      { status: 500 }
-    )
-  }
-}
