@@ -48,8 +48,8 @@ const mockGroups = [
   },
 ]
 
-export default async function ProjectDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params
+export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
 
   if (SINTAKS_MAP[id as SintaksKey]) {
     redirect(`/projects/${id}`)

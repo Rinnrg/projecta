@@ -46,13 +46,18 @@ export default function AddMateriForm({ courseId, courseTitle }: AddMateriFormPr
     try {
       // Prepare the data to send
       let bodyData: any = {
-        judul: formData.judul,
-        deskripsi: formData.deskripsi || null,
+        judul: formData.judul.trim(),
+        deskripsi: formData.deskripsi?.trim() || null,
         courseId: courseId,
+        lampiran: null,
+        fileData: null,
+        fileName: null,
+        fileType: null,
+        fileSize: null,
       }
 
       // Check if lampiran is a data URL (uploaded file)
-      if (formData.lampiran) {
+      if (formData.lampiran && formData.lampiran.trim()) {
         if (formData.lampiran.startsWith('data:')) {
           // Extract file type from data URL
           const matches = formData.lampiran.match(/^data:(.+?);base64,(.+)$/)
@@ -67,14 +72,11 @@ export default function AddMateriForm({ courseId, courseTitle }: AddMateriFormPr
             bodyData.fileType = fileType
             bodyData.fileSize = fileSize
             bodyData.fileName = `file_${Date.now()}`
-            bodyData.lampiran = null
           }
         } else {
           // It's a URL
           bodyData.lampiran = formData.lampiran
         }
-      } else {
-        bodyData.lampiran = null
       }
 
       const response = await fetch('/api/materi', {

@@ -1,18 +1,22 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import AddMateriForm from "./add-materi-form"
 import { Loader2 } from "lucide-react"
 
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default function AddMateriPage({ params }: PageProps) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
+  
+  // Unwrap the Promise using React's use() hook
+  const resolvedParams = use(params)
+  const courseId = resolvedParams.id
 
   useEffect(() => {
     // Check authentication and authorization
@@ -53,7 +57,7 @@ export default function AddMateriPage({ params }: PageProps) {
           Tambah materi pembelajaran untuk course ini
         </p>
       </div>
-      <AddMateriForm courseId={params.id} courseTitle="" />
+      <AddMateriForm courseId={courseId} courseTitle="" />
     </div>
   )
 }
