@@ -55,6 +55,7 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
   const searchParams = useSearchParams()
   const { confirm, success, error: showError, AlertComponent } = useSweetAlert()
   const [activeTab, setActiveTab] = useState("materials")
+  const [tabKey, setTabKey] = useState(0) // For re-render animation
   const [addStudentOpen, setAddStudentOpen] = useState(false)
   const [editTeacherOpen, setEditTeacherOpen] = useState(false)
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
@@ -310,7 +311,10 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+      <Tabs value={activeTab} onValueChange={(value) => {
+        setActiveTab(value)
+        setTabKey(prev => prev + 1) // Trigger re-render for animation
+      }} className="space-y-4 sm:space-y-6">
         <div className="overflow-x-auto pb-2 scrollbar-hide">
           <TabsList className="inline-flex w-max bg-muted/50 sm:w-auto">
             <TabsTrigger value="materials" className="text-xs sm:text-sm">
@@ -328,7 +332,7 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
         </div>
 
         {/* Materials Tab */}
-        <TabsContent value="materials" className="space-y-3 sm:space-y-4">
+        <TabsContent value="materials" key={`materials-${tabKey}`} className="space-y-3 sm:space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <h2 className="text-base font-semibold sm:text-lg">Materi Pembelajaran</h2>
             {isTeacherOrAdmin && (
@@ -423,7 +427,7 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
         </TabsContent>
 
         {/* Assessments Tab */}
-        <TabsContent value="assessments" className="space-y-3 sm:space-y-4">
+        <TabsContent value="assessments" key={`assessments-${tabKey}`} className="space-y-3 sm:space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <h2 className="text-base font-semibold sm:text-lg">Daftar Asesmen</h2>
             {isTeacherOrAdmin && (
@@ -518,7 +522,7 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
 
         {/* Students Tab (Teachers/Admin only) */}
         {isTeacherOrAdmin && (
-          <TabsContent value="students" className="space-y-3 sm:space-y-4">
+          <TabsContent value="students" key={`students-${tabKey}`} className="space-y-3 sm:space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold sm:text-lg">Siswa Terdaftar</h2>
               <div className="flex items-center gap-2">

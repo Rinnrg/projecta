@@ -50,6 +50,8 @@ const extendedShowcase = [
 export default function ProfilePage() {
   const { user } = useAuth()
   const { t, locale } = useAutoTranslate()
+  const [activeTab, setActiveTab] = useState("showcase")
+  const [tabKey, setTabKey] = useState(0) // For re-render animation
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState("newest")
 
@@ -207,7 +209,10 @@ export default function ProfilePage() {
       )}
 
       <AnimateIn stagger={5}>
-        <Tabs defaultValue="showcase" className="space-y-4 sm:space-y-6">
+        <Tabs value={activeTab} onValueChange={(value) => {
+          setActiveTab(value)
+          setTabKey(prev => prev + 1) // Trigger re-render for animation
+        }} className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto pb-2 scrollbar-hide">
             <TabsList className="inline-flex w-max sm:w-auto">
               <TabsTrigger value="showcase" className="gap-1.5 text-xs sm:gap-2 sm:text-sm">
@@ -222,7 +227,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Showcase Tab */}
-          <TabsContent value="showcase" className="space-y-4 sm:space-y-6">
+          <TabsContent value="showcase" key={`showcase-${tabKey}`} className="space-y-4 sm:space-y-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
             <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -293,7 +298,7 @@ export default function ProfilePage() {
           </TabsContent>
 
           {/* Courses Tab */}
-          <TabsContent value="courses" className="space-y-4 sm:space-y-6">
+          <TabsContent value="courses" key={`courses-${tabKey}`} className="space-y-4 sm:space-y-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {mockCourses.map((course, index) => (
                 <AnimateIn key={course.id} stagger={6 + index}>

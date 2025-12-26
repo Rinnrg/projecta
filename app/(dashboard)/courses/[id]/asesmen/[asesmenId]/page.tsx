@@ -53,6 +53,8 @@ export default function AsesmenDetailPage({ params }: PageProps) {
   const [studentNilai, setStudentNilai] = useState<any>(null)
   const [studentPengumpulan, setStudentPengumpulan] = useState<any>(null)
   const [showPdfViewer, setShowPdfViewer] = useState(false)
+  const [activeTab, setActiveTab] = useState("info")
+  const [tabKey, setTabKey] = useState(0) // For re-render animation
 
   useEffect(() => {
     if (authLoading) return
@@ -384,7 +386,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
       </Card>
 
       {/* Lampiran Section */}
-      {asesmen.lampiran && (
+      {(asesmen.lampiran || asesmen.fileData) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -400,23 +402,30 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                 </div>
                 <div>
                   <p className="font-medium">
-                    {asesmen.lampiran.startsWith('data:') 
+                    {asesmen.fileData
+                      ? `File: ${asesmen.fileName || 'dokumen'}`
+                      : asesmen.lampiran.startsWith('data:') 
                       ? `Lampiran ${asesmen.nama}.${asesmen.lampiran.split(';')[0].split('/')[1]}`
                       : asesmen.lampiran.startsWith('http') ? 'Link External' : 'Lampiran'}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {asesmen.lampiran.startsWith('data:') 
+                    {asesmen.fileData
+                      ? `Disimpan di database (${asesmen.fileType})`
+                      : asesmen.lampiran.startsWith('data:') 
                       ? 'File tersimpan (base64)'
                       : asesmen.lampiran.startsWith('http') ? 'Link ke sumber external' : 'Dokumen lampiran'}
                   </p>
                 </div>
               </div>
               <div className="flex gap-2">
-                {/* Tombol Lihat Lampiran - hanya untuk PDF */}
-                {(asesmen.lampiran.startsWith('data:application/pdf') || 
-                  (asesmen.lampiran.endsWith('.pdf') && !asesmen.lampiran.startsWith('data:')) ||
-                  asesmen.lampiran.includes("youtube.com") || 
-                  asesmen.lampiran.includes("youtu.be")) && (
+                {/* Tombol Lihat Lampiran - untuk PDF, video, dan YouTube */}
+                {((asesmen.fileData && (asesmen.fileType === 'application/pdf' || asesmen.fileType?.startsWith('video/'))) ||
+                  (asesmen.lampiran && (
+                    asesmen.lampiran.startsWith('data:application/pdf') || 
+                    (asesmen.lampiran.endsWith('.pdf') && !asesmen.lampiran.startsWith('data:')) ||
+                    asesmen.lampiran.includes("youtube.com") || 
+                    asesmen.lampiran.includes("youtu.be")
+                  ))) && (
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -428,7 +437,17 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                 )}
                 
                 {/* Tombol Unduh/Buka */}
-                {asesmen.lampiran.startsWith('data:') ? (
+                {asesmen.fileData ? (
+                  <Button variant="outline" size="sm" asChild>
+                    <a
+                      href={`/api/asesmen/${asesmen.id}/file`}
+                      download={asesmen.fileName || 'lampiran'}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Unduh
+                    </a>
+                  </Button>
+                ) : asesmen.lampiran.startsWith('data:') ? (
                   <Button variant="outline" size="sm" asChild>
                     <a
                       href={asesmen.lampiran}
@@ -455,8 +474,36 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                 showPdfViewer ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
               }`}
             >
+              {/* PDF Preview for database files */}
+              {asesmen.fileData && asesmen.fileType === 'application/pdf' && (
+                <div className="border rounded-lg overflow-hidden bg-muted">
+                  <div className="aspect-[3/4] w-full">
+                    <iframe
+                      src={`/api/asesmen/${asesmen.id}/file`}
+                      title={`Lampiran ${asesmen.nama}`}
+                      className="w-full h-full"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Video Preview for database video files */}
+              {asesmen.fileData && asesmen.fileType?.startsWith('video/') && (
+                <div className="border rounded-lg overflow-hidden bg-muted">
+                  <div className="aspect-video w-full">
+                    <video
+                      src={`/api/asesmen/${asesmen.id}/file`}
+                      controls
+                      className="w-full h-full"
+                    >
+                      Browser Anda tidak mendukung tag video.
+                    </video>
+                  </div>
+                </div>
+              )}
+
               {/* PDF Preview for base64 PDF */}
-              {asesmen.lampiran.startsWith('data:application/pdf') && (
+              {!asesmen.fileData && asesmen.lampiran && asesmen.lampiran.startsWith('data:application/pdf') && (
                 <div className="border rounded-lg overflow-hidden bg-muted">
                   <div className="aspect-[3/4] w-full">
                     <iframe
@@ -469,7 +516,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
               )}
 
               {/* PDF Preview for URL PDF */}
-              {asesmen.lampiran.endsWith('.pdf') && !asesmen.lampiran.startsWith('data:') && (
+              {!asesmen.fileData && asesmen.lampiran && asesmen.lampiran.endsWith('.pdf') && !asesmen.lampiran.startsWith('data:') && (
                 <div className="border rounded-lg overflow-hidden bg-muted">
                   <div className="aspect-[3/4] w-full">
                     <iframe
@@ -482,7 +529,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
               )}
 
               {/* YouTube Embed if it's a YouTube link */}
-              {asesmen.lampiran && (asesmen.lampiran.includes("youtube.com") || asesmen.lampiran.includes("youtu.be")) && (
+              {!asesmen.fileData && asesmen.lampiran && (asesmen.lampiran.includes("youtube.com") || asesmen.lampiran.includes("youtu.be")) && (
                 <div className="border rounded-lg overflow-hidden bg-muted">
                   <div className="aspect-video w-full">
                     <iframe
@@ -745,7 +792,14 @@ export default function AsesmenDetailPage({ params }: PageProps) {
 
       {/* Tabs for Teacher/Admin */}
       {isTeacherOrAdmin && (
-        <Tabs defaultValue="info" className="space-y-4">
+        <Tabs 
+          value={activeTab} 
+          onValueChange={(value) => {
+            setActiveTab(value)
+            setTabKey(prev => prev + 1) // Trigger re-render for animation
+          }}
+          className="space-y-4"
+        >
           <TabsList>
             <TabsTrigger value="info">
               <FileText className="mr-2 h-4 w-4" />
@@ -757,7 +811,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="info" className="space-y-4">
+          <TabsContent value="info" key={`info-${tabKey}`} className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
             {/* Nilai Table (For KUIS) */}
             {asesmen.tipe === 'KUIS' && (
               <Card>
@@ -820,7 +874,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
             )}
           </TabsContent>
 
-          <TabsContent value="rekap" className="space-y-4">
+          <TabsContent value="rekap" key={`rekap-${tabKey}`} className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
             {/* Submissions Table (For TUGAS) */}
             {asesmen.tipe === 'TUGAS' && (
               <Card>

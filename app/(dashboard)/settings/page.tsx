@@ -25,6 +25,8 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
   const { t } = useAutoTranslate()
   const { locale, setLocale } = useAutoTranslate()
+  const [activeTab, setActiveTab] = useState("profile")
+  const [tabKey, setTabKey] = useState(0) // For re-render animation
   const [nama, setNama] = useState(user?.nama || "")
   const [email, setEmail] = useState(user?.email || "")
   const [bio, setBio] = useState("")
@@ -160,7 +162,10 @@ export default function SettingsPage() {
       </AnimateIn>
 
       <AnimateIn stagger={1}>
-        <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
+        <Tabs value={activeTab} onValueChange={(value) => {
+          setActiveTab(value)
+          setTabKey(prev => prev + 1) // Trigger re-render for animation
+        }} className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto pb-2 scrollbar-hide">
             <TabsList className="inline-flex w-max sm:w-auto">
               <TabsTrigger value="profile" className="gap-1.5 text-xs sm:gap-2 sm:text-sm">
@@ -182,7 +187,7 @@ export default function SettingsPage() {
             </TabsList>
           </div>
 
-          <TabsContent value="profile">
+          <TabsContent value="profile" key={`profile-${tabKey}`} className="animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
             <AnimateIn stagger={2}>
               <Card>
                 <CardHeader className="pb-4 sm:pb-6">
@@ -306,7 +311,7 @@ export default function SettingsPage() {
             </AnimateIn>
           </TabsContent>
 
-          <TabsContent value="notifications">
+          <TabsContent value="notifications" key={`notifications-${tabKey}`} className="animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
             <AnimateIn stagger={2}>
               <Card>
                 <CardHeader className="pb-4 sm:pb-6">
@@ -328,7 +333,7 @@ export default function SettingsPage() {
             </AnimateIn>
           </TabsContent>
 
-          <TabsContent value="appearance">
+          <TabsContent value="appearance" key={`appearance-${tabKey}`} className="animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
             <AnimateIn stagger={2}>
               <Card>
                 <CardHeader className="pb-4 sm:pb-6">
@@ -384,7 +389,7 @@ export default function SettingsPage() {
             </AnimateIn>
           </TabsContent>
 
-          <TabsContent value="security">
+          <TabsContent value="security" key={`security-${tabKey}`} className="animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
             <AnimateIn stagger={2}>
               <Card>
                 <CardHeader className="pb-4 sm:pb-6">
