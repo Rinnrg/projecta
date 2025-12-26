@@ -1,45 +1,47 @@
-import { prisma } from "@/lib/prisma"
+"use client"
+
+import { useState, useEffect } from "react"
+import { useAuth } from "@/lib/auth-context"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Download, Upload, FileText, AlertCircle, Plus, Pencil } from "lucide-react"
 import Link from "next/link"
-import { redirect } from "next/navigation"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 
-export default async function Sintaks4Page() {
-  const session = await getServerSession(authOptions)
+export default function Sintaks4Page() {
+  const { user, isAuthenticated } = useAuth()
+  const router = useRouter()
+  const [proyek, setProyek] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  if (!session?.user?.email) {
-    redirect("/login")
-  }
-
-  const currentUser = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { 
-      id: true, 
-      role: true 
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/login")
+      return
     }
-  })
 
-  if (!currentUser) {
-    redirect("/login")
-  }
-
-  const isGuruOrAdmin = currentUser.role === "GURU" || currentUser.role === "ADMIN"
-
-  const proyek = await prisma.proyek.findFirst({
-    where: {
-      judul: "Monitoring Pelaksanaan"
-    },
-    include: {
-      guru: {
-        select: {
-          nama: true
+    async function fetchProyek() {
+      try {
+        const response = await fetch("/api/proyek?judul=Monitoring Pelaksanaan")
+        if (response.ok) {
+          const data = await response.json()
+          setProyek(data)
         }
+      } catch (error) {
+        console.error("Error fetching proyek:", error)
+      } finally {
+        setIsLoading(false)
       }
     }
-  })
+
+    fetchProyek()
+  }, [isAuthenticated, router])
+
+  if (!isAuthenticated || isLoading) {
+    return <div>Loading...</div>
+  }
+
+  const isGuruOrAdmin = user?.role === "GURU" || user?.role === "ADMIN"
 
   if (!proyek) {
     return (
@@ -99,7 +101,7 @@ export default async function Sintaks4Page() {
           <CardHeader>
             <CardTitle>{proyek.judul}</CardTitle>
             <CardDescription>
-              Guru : {proyek.guru.nama}
+              Guru : {proyek.guru?.nama || "Tidak tersedia"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -113,10 +115,10 @@ export default async function Sintaks4Page() {
             <div className="space-y-2 pt-4">
               <h3 className="font-semibold text-lg">Tujuan Pembelajaran</h3>
               <ul className="list-disc pl-5 text-muted-foreground space-y-1">
-                <li>Memantau progress pengerjaan proyek</li>
-                <li>Mengidentifikasi dan mengatasi kendala</li>
-                <li>Melakukan testing dan debugging</li>
-                <li>Menyesuaikan rencana sesuai kebutuhan</li>
+                <li>Memahami konsep masalah dalam pemrograman berorientasi objek</li>
+                <li>Mengidentifikasi komponen-komponen utama masalah</li>
+                <li>Menganalisis kebutuhan sistem</li>
+                <li>Merumuskan solusi berbasis objek</li>
               </ul>
             </div>
           </CardContent>

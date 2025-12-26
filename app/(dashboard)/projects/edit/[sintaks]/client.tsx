@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import Swal from "sweetalert2"
+import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { FileUploadField } from "@/components/file-upload-field"
 
 type ProyekWithGuru = {
@@ -40,6 +40,7 @@ interface EditProyekClientProps {
 
 export default function EditProyekClient({ proyek, sintaks, judulProyek }: EditProyekClientProps) {
   const router = useRouter()
+  const { success, error: showError, confirm, AlertComponent } = useSweetAlert()
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [tglMulai, setTglMulai] = useState<Date | undefined>(new Date(proyek.tgl_mulai))
@@ -54,20 +55,12 @@ export default function EditProyekClient({ proyek, sintaks, judulProyek }: EditP
     event.preventDefault()
     
     if (!tglMulai || !tglSelesai) {
-      Swal.fire({
-        icon: "warning",
-        title: "Tanggal Belum Lengkap",
-        text: "Silakan pilih tanggal mulai dan selesai",
-      })
+      showError("Tanggal Belum Lengkap", "Silakan pilih tanggal mulai dan selesai")
       return
     }
 
     if (tglSelesai < tglMulai) {
-      Swal.fire({
-        icon: "error",
-        title: "Tanggal Tidak Valid",
-        text: "Tanggal selesai tidak boleh lebih awal dari tanggal mulai",
-      })
+      showError("Tanggal Tidak Valid", "Tanggal selesai tidak boleh lebih awal dari tanggal mulai")
       return
     }
 
@@ -118,20 +111,9 @@ export default function EditProyekClient({ proyek, sintaks, judulProyek }: EditP
       const result = await response.json()
 
       if (!response.ok || result.error) {
-        await Swal.fire({
-          icon: "error",
-          title: "Gagal Update Tahapan Proyek",
-          text: result.error || "Terjadi kesalahan",
-        })
+        showError("Gagal Memperbarui Tahapan Proyek", result.error || "Terjadi kesalahan")
       } else {
-        await Swal.fire({
-          icon: "success",
-          title: "Berhasil",
-          text: "Tahapan proyek berhasil diperbarui!",
-          showConfirmButton: false,
-          timer: 2000,
-          timerProgressBar: true,
-        })
+        success("Berhasil", "Tahapan proyek berhasil diperbarui!")
         
         setTimeout(() => {
           router.push(`/projects/${sintaks}`)
@@ -141,30 +123,24 @@ export default function EditProyekClient({ proyek, sintaks, judulProyek }: EditP
 
     } catch (error) {
       console.error(error)
-      
-      await Swal.fire({
-        icon: "error",
-        title: "Terjadi Kesalahan",
-        text: error instanceof Error ? error.message : "Terjadi kesalahan yang tidak diketahui",
-      })
+      showError("Terjadi Kesalahan", error instanceof Error ? error.message : "Terjadi kesalahan yang tidak diketahui")
     } finally {
       setLoading(false)
     }
   }
 
   async function handleDelete() {
-    const result = await Swal.fire({
-      title: "Hapus Tahapan Proyek?",
-      text: "Tindakan ini tidak dapat dibatalkan!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#ef4444",
-      cancelButtonColor: "#6b7280",
-      confirmButtonText: "Ya, Hapus!",
-      cancelButtonText: "Batal",
-    })
+    const confirmed = await confirm(
+      "Hapus Tahapan Proyek?",
+      {
+        description: "Tindakan ini tidak dapat dibatalkan!",
+        confirmText: "Ya, Hapus!",
+        cancelText: "Batal",
+        type: "warning"
+      }
+    )
 
-    if (result.isConfirmed) {
+    if (confirmed) {
       setDeleting(true)
       try {
         const response = await fetch(`/api/proyek/${proyek.id}`, {
@@ -174,20 +150,9 @@ export default function EditProyekClient({ proyek, sintaks, judulProyek }: EditP
         const deleteResult = await response.json()
 
         if (!response.ok || deleteResult.error) {
-          await Swal.fire({
-            icon: "error",
-            title: "Gagal Menghapus",
-            text: deleteResult.error || "Terjadi kesalahan",
-          })
+          showError("Gagal Menghapus", deleteResult.error || "Terjadi kesalahan")
         } else {
-          await Swal.fire({
-            icon: "success",
-            title: "Berhasil",
-            text: "Tahapan proyek berhasil dihapus!",
-            showConfirmButton: false,
-            timer: 2000,
-            timerProgressBar: true,
-          })
+          success("Berhasil", "Tahapan proyek berhasil dihapus!")
 
           setTimeout(() => {
             router.push(`/projects/${sintaks}`)
@@ -196,11 +161,7 @@ export default function EditProyekClient({ proyek, sintaks, judulProyek }: EditP
         }
       } catch (error) {
         console.error(error)
-        await Swal.fire({
-          icon: "error",
-          title: "Terjadi Kesalahan",
-          text: "Gagal menghapus tahapan proyek",
-        })
+        showError("Terjadi Kesalahan", "Gagal menghapus tahapan proyek")
       } finally {
         setDeleting(false)
       }
@@ -209,6 +170,7 @@ export default function EditProyekClient({ proyek, sintaks, judulProyek }: EditP
 
   return (
     <div className="space-y-6">
+      <AlertComponent />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Edit Tahapan Proyek</h1>
@@ -314,7 +276,6 @@ export default function EditProyekClient({ proyek, sintaks, judulProyek }: EditP
                   value={lampiran}
                   onChange={setLampiran}
                   accept=".pdf,.doc,.docx"
-                  maxSize={10}
                   label="Klik untuk upload file jobsheet"
                   description="PDF, DOC, DOCX (Max 10MB)"
                 />

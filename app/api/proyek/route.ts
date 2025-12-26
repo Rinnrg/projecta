@@ -5,6 +5,24 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const guruId = searchParams.get('guruId')
+    const judul = searchParams.get('judul')
+
+    // If judul is specified, return single proyek
+    if (judul) {
+      const proyek = await prisma.proyek.findFirst({
+        where: { judul },
+        include: {
+          guru: {
+            select: {
+              id: true,
+              nama: true,
+              email: true,
+            },
+          },
+        },
+      })
+      return NextResponse.json(proyek)
+    }
 
     const proyek = await prisma.proyek.findMany({
       where: guruId ? { guruId } : {},

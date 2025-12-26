@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import Swal from "sweetalert2"
+import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { FileUploadField } from "@/components/file-upload-field"
 
 const SINTAKS_MAP: Record<string, string> = {
@@ -31,6 +31,7 @@ export default function AddProyekPage({ params }: { params: Promise<{ sintaks: s
   const resolvedParams = use(params)
   const router = useRouter()
   const sintaks = resolvedParams.sintaks
+  const { success, error: showError, AlertComponent } = useSweetAlert()
   
   const [loading, setLoading] = useState(false)
   const [tglMulai, setTglMulai] = useState<Date>()
@@ -43,20 +44,12 @@ export default function AddProyekPage({ params }: { params: Promise<{ sintaks: s
     event.preventDefault()
     
     if (!tglMulai || !tglSelesai) {
-      Swal.fire({
-        icon: "warning",
-        title: "Tanggal Belum Lengkap",
-        text: "Silakan pilih tanggal mulai dan selesai",
-      })
+      showError("Tanggal Belum Lengkap", "Silakan pilih tanggal mulai dan selesai")
       return
     }
 
     if (tglSelesai < tglMulai) {
-      Swal.fire({
-        icon: "error",
-        title: "Tanggal Tidak Valid",
-        text: "Tanggal selesai tidak boleh lebih awal dari tanggal mulai",
-      })
+      showError("Tanggal Tidak Valid", "Tanggal selesai tidak boleh lebih awal dari tanggal mulai")
       return
     }
 
@@ -107,20 +100,9 @@ export default function AddProyekPage({ params }: { params: Promise<{ sintaks: s
       const result = await response.json()
 
       if (!response.ok || result.error) {
-        await Swal.fire({
-          icon: "error",
-          title: "Gagal Menambah Tahapan Proyek",
-          text: result.error || "Terjadi kesalahan",
-        })
+        showError("Gagal Menambah Tahapan Proyek", result.error || "Terjadi kesalahan")
       } else {
-        await Swal.fire({
-          icon: "success",
-          title: "Berhasil",
-          text: "Tahapan proyek berhasil ditambahkan!",
-          showConfirmButton: false,
-          timer: 2000,
-          timerProgressBar: true,
-        })
+        success("Berhasil", "Tahapan proyek berhasil ditambahkan!")
         
         setTimeout(() => {
           router.push(`/projects/${sintaks}`)
@@ -130,12 +112,7 @@ export default function AddProyekPage({ params }: { params: Promise<{ sintaks: s
 
     } catch (error) {
       console.error(error)
-      
-      await Swal.fire({
-        icon: "error",
-        title: "Terjadi Kesalahan",
-        text: error instanceof Error ? error.message : "Terjadi kesalahan yang tidak diketahui",
-      })
+      showError("Terjadi Kesalahan", error instanceof Error ? error.message : "Terjadi kesalahan yang tidak diketahui")
     } finally {
       setLoading(false)
     }
@@ -143,6 +120,7 @@ export default function AddProyekPage({ params }: { params: Promise<{ sintaks: s
 
   return (
     <div className="space-y-6">
+      <AlertComponent />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Tambah Tahapan Proyek</h1>
@@ -247,7 +225,6 @@ export default function AddProyekPage({ params }: { params: Promise<{ sintaks: s
                   value={lampiran}
                   onChange={setLampiran}
                   accept=".pdf,.doc,.docx"
-                  maxSize={10}
                   label="Klik untuk upload file jobsheet"
                   description="PDF, DOC, DOCX (Max 10MB)"
                 />
