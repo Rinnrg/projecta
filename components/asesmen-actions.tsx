@@ -26,9 +26,10 @@ interface AsesmenActionsProps {
   asesmenId: string
   asesmenNama: string
   userRole: string
+  courseId: string
 }
 
-export function AsesmenActions({ asesmenId, asesmenNama, userRole }: AsesmenActionsProps) {
+export function AsesmenActions({ asesmenId, asesmenNama, userRole, courseId }: AsesmenActionsProps) {
   const router = useRouter()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -71,7 +72,7 @@ export function AsesmenActions({ asesmenId, asesmenNama, userRole }: AsesmenActi
   }
 
   const handleEdit = () => {
-    router.push(`/asesmen/${asesmenId}/edit`)
+    router.push(`/courses/${courseId}/asesmen/${asesmenId}/edit`)
   }
 
   return (

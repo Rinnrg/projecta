@@ -154,7 +154,7 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
   }
 
   const handleEditMateri = () => {
-    router.push(`/materi/${materi.id}/edit`)
+    router.push(`/courses/${courseId}/materi/${materi.id}/edit`)
   }
 
   return (

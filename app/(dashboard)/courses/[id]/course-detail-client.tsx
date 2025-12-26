@@ -392,7 +392,7 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link href={`/materi/${material.id}/edit`}>
+                            <Link href={`/courses/${course.id}/materi/${material.id}/edit`}>
                               <Pencil className="mr-2 h-4 w-4" />
                               Edit Materi
                             </Link>
