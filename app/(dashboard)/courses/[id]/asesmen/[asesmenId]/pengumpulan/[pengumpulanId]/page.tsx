@@ -27,6 +27,7 @@ import Link from "next/link"
 
 interface PageProps {
   params: Promise<{ 
+    id: string
     asesmenId: string
     pengumpulanId: string
   }>
@@ -36,7 +37,7 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
   const { user, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const resolvedParams = use(params)
-  const { asesmenId, pengumpulanId } = resolvedParams
+  const { id: courseId, asesmenId, pengumpulanId } = resolvedParams
   const { success, error: showError, confirm, AlertComponent } = useSweetAlert()
   const [pengumpulan, setPengumpulan] = useState<any>(null)
   const [asesmen, setAsesmen] = useState<any>(null)
@@ -127,7 +128,7 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
       await success("Berhasil!", "Nilai berhasil disimpan dan akan ditampilkan di detail asesmen siswa")
       // Redirect ke detail asesmen setelah 1 detik
       setTimeout(() => {
-        router.push(`/asesmen/${asesmenId}`)
+        router.push(`/courses/${courseId}/asesmen/${asesmenId}`)
       }, 1000)
     }
   }
@@ -153,7 +154,7 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
       {/* Header */}
       <div className="space-y-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/asesmen/${asesmenId}`}>
+          <Link href={`/courses/${courseId}/asesmen/${asesmenId}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Kembali ke Asesmen
           </Link>

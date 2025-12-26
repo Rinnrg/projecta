@@ -899,7 +899,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                             </TableCell>
                             <TableCell className="text-right">
                               <Button variant="ghost" size="sm" asChild>
-                                <Link href={`/asesmen/${asesmen.id}/pengumpulan/${pengumpulan.id}`}>
+                                <Link href={`/courses/${courseId}/asesmen/${asesmen.id}/pengumpulan/${pengumpulan.id}`}>
                                   <Eye className="mr-2 h-4 w-4" />
                                   Lihat Detail
                                 </Link>

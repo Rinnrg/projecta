@@ -384,7 +384,7 @@ export default function DashboardPage() {
                       className="h-6 text-[10px] shrink-0 sm:h-7 sm:text-xs"
                       asChild
                     >
-                      <Link href={`/asesmen/${asesmen.id}`}>
+                      <Link href={`/courses/${asesmen.courseId}/asesmen/${asesmen.id}`}>
                         {user.role === "SISWA" ? t("common.start") : t("Edit")}
                       </Link>
                     </Button>

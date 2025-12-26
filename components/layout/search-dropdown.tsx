@@ -281,7 +281,7 @@ export function SearchDropdown() {
         title: asesmen.nama,
         description: `${asesmen.course.judul} • ${asesmen.deskripsi?.substring(0, 50) || tipeLabel}`,
         icon: asesmen.tipe === 'KUIS' ? FileText : ClipboardList,
-        href: `/asesmen/${asesmen.id}`,
+        href: `/courses/${asesmen.courseId}/asesmen/${asesmen.id}`,
         category: t("Asesmen"),
         badge: badge,
         badgeVariant: asesmen.tipe === 'KUIS' ? 'default' : 'secondary',
