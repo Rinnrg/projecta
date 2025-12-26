@@ -10,22 +10,92 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, X, ImageIcon } from "lucide-react"
+import { ArrowLeft, X, ImageIcon, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { useAuth } from "@/lib/auth-context"
+import { toast } from "@/hooks/use-toast"
 
 const categories = ["Programming", "Database", "Design", "Networking", "Security", "DevOps"]
 
 export default function AddCoursePage() {
   const router = useRouter()
+  const { user } = useAuth()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [category, setCategory] = useState("")
   const [thumbnail, setThumbnail] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // In a real app, this would save to database
-    router.push("/courses")
+    
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create a course",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validasi form
+    if (!title.trim()) {
+      toast({
+        title: "Error",
+        description: "Course title is required",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!category) {
+      toast({
+        title: "Error",
+        description: "Please select a category",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch("/api/courses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          judul: title,
+          gambar: thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=300&fit=crop",
+          kategori: category,
+          guruId: user.id,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create course")
+      }
+
+      toast({
+        title: "Success",
+        description: "Course created successfully",
+      })
+
+      router.push("/courses")
+      router.refresh()
+    } catch (error) {
+      console.error("Error creating course:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create course",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -140,11 +210,28 @@ export default function AddCoursePage() {
 
             {/* Actions */}
             <div className="flex gap-4">
-              <Button type="button" variant="outline" className="flex-1 bg-transparent" onClick={() => router.back()}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="flex-1 bg-transparent" 
+                onClick={() => router.back()}
+                disabled={isSubmitting}
+              >
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1">
-                Create Course
+              <Button 
+                type="submit" 
+                className="flex-1"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Course"
+                )}
               </Button>
             </div>
           </form>
