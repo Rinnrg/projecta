@@ -66,14 +66,34 @@ export default function AddCoursePage() {
                   </Button>
                 </div>
               ) : (
-                <div
+                <label
+                  htmlFor="thumbnail-upload"
                   className="flex aspect-video cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 transition-colors hover:border-primary/50"
-                  onClick={() => setThumbnail("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=300&fit=crop")}
                 >
                   <ImageIcon className="h-10 w-10 text-muted-foreground" />
                   <p className="mt-2 text-sm text-muted-foreground">Click to upload thumbnail</p>
                   <p className="text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
-                </div>
+                  <input
+                    id="thumbnail-upload"
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        if (file.size > 5 * 1024 * 1024) {
+                          alert("File size must be less than 5MB")
+                          return
+                        }
+                        const reader = new FileReader()
+                        reader.onloadend = () => {
+                          setThumbnail(reader.result as string)
+                        }
+                        reader.readAsDataURL(file)
+                      }
+                    }}
+                  />
+                </label>
               )}
             </div>
 
