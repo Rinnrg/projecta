@@ -227,7 +227,7 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
         tipePengerjaan: formData.tipe === 'TUGAS' ? formData.tipePengerjaan : null,
         tgl_mulai: formData.tgl_mulai || null,
         tgl_selesai: formData.tgl_selesai || null,
-        durasi: formData.durasi ? parseInt(formData.durasi) : null,
+        durasi: formData.durasi || null, // Send as string, API will parse it
         lampiran: formData.lampiran || null,
         courseId: courseId,
         guruId: user.id,
