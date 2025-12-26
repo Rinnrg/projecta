@@ -50,8 +50,8 @@ export default function AddProyekPage({ params }: { params: Promise<{ sintaks: s
       return
     }
     
-    if (user?.role !== "GURU") {
-      showError("Akses Ditolak", "Hanya guru yang dapat menambahkan proyek")
+    if (user?.role !== "GURU" && user?.role !== "ADMIN") {
+      showError("Akses Ditolak", "Hanya admin dan guru yang dapat menambahkan proyek")
       router.push("/projects")
       return
     }
@@ -112,6 +112,8 @@ export default function AddProyekPage({ params }: { params: Promise<{ sintaks: s
         guruId: user.id // ✅ Menambahkan guruId dari user yang login
       }
 
+      console.log('Sending data:', { ...data, fileData: fileData ? 'base64...' : null })
+
       const response = await fetch("/api/proyek", {
         method: "POST",
         headers: {
@@ -121,9 +123,10 @@ export default function AddProyekPage({ params }: { params: Promise<{ sintaks: s
       })
 
       const result = await response.json()
+      console.log('Response:', result)
 
       if (!response.ok || result.error) {
-        showError("Gagal Menambah Tahapan Proyek", result.error || "Terjadi kesalahan")
+        showError("Gagal Menambah Tahapan Proyek", result.error || `HTTP ${response.status}: Terjadi kesalahan`)
       } else {
         success("Berhasil", "Tahapan proyek berhasil ditambahkan!")
         
