@@ -94,13 +94,6 @@ export default function CreateProjectPage() {
       router.refresh()
     } catch (error) {
       console.error("Error creating project:", error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create project",
-        variant: "destructive",
-      })
-    } catch (error) {
-      console.error("Error creating project:", error)
       showError("Error", error instanceof Error ? error.message : "Failed to create project")
     } finally {
       setIsSubmitting(false)
