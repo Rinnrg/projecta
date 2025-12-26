@@ -9,7 +9,7 @@ import { Bell, Menu, Moon, Sun, Search, LogOut, User, Settings, Languages } from
 import { Button } from "@/components/ui/button"
 import { SearchDropdown } from "@/components/layout/search-dropdown"
 import { ActivityDropdown } from "@/components/layout/activity-dropdown"
-import Swal from 'sweetalert2'
+import { SweetAlert } from "@/components/ui/sweet-alert"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +31,8 @@ export function Header({ onMenuClick, isMobile }: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const { locale, setLocale, t } = useAutoTranslate()
   const router = useRouter()
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [showLogoutSuccess, setShowLogoutSuccess] = useState(false)
 
   // HAPUS: roleLabels tidak lagi dibutuhkan karena dropdown dihapus
   // const roleLabels: Record<UserRole, string> = { ... }
@@ -44,33 +46,19 @@ export function Header({ onMenuClick, isMobile }: HeaderProps) {
       .slice(0, 2)
   }
 
-  const handleLogout = async () => {
-    const result = await Swal.fire({
-      title: 'Konfirmasi Logout',
-      text: 'Apakah Anda yakin ingin keluar?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Ya, Keluar',
-      cancelButtonText: 'Batal'
-    })
+  const handleLogout = () => {
+    setShowLogoutConfirm(true)
+  }
 
-    if (result.isConfirmed) {
-      logout()
-      
-      Swal.fire({
-        title: 'Berhasil!',
-        text: 'Anda telah logout.',
-        icon: 'success',
-        timer: 1500,
-        showConfirmButton: false
-      })
-
-      setTimeout(() => {
-        router.push("/login")
-      }, 1500)
-    }
+  const handleConfirmLogout = () => {
+    logout()
+    setShowLogoutConfirm(false)
+    setShowLogoutSuccess(true)
+    
+    setTimeout(() => {
+      setShowLogoutSuccess(false)
+      router.push("/login")
+    }, 1500)
   }
 
   return (
@@ -191,6 +179,29 @@ export function Header({ onMenuClick, isMobile }: HeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Logout Confirmation Dialog */}
+      <SweetAlert
+        open={showLogoutConfirm}
+        onOpenChange={setShowLogoutConfirm}
+        type="question"
+        title="Konfirmasi Logout"
+        description="Apakah Anda yakin ingin keluar?"
+        confirmText="Ya, Keluar"
+        cancelText="Batal"
+        showCancelButton={true}
+        onConfirm={handleConfirmLogout}
+      />
+
+      {/* Logout Success Dialog */}
+      <SweetAlert
+        open={showLogoutSuccess}
+        onOpenChange={setShowLogoutSuccess}
+        type="success"
+        title="Berhasil!"
+        description="Anda telah logout."
+        confirmText="OK"
+      />
     </header>
   )
 }
