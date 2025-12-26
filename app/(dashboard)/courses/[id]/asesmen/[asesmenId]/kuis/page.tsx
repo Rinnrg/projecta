@@ -84,16 +84,32 @@ export default function KuisPage({ params }: PageProps) {
         const response = await fetch(`/api/asesmen/${asesmenId}?userId=${user.id}&userRole=${user.role}`)
         if (response.ok) {
           const data = await response.json()
-          setAsesmen(data.asesmen)
+          const asesmenData = data.asesmen
+          
+          // Check if asesmen has started
+          if (asesmenData.tgl_mulai && new Date(asesmenData.tgl_mulai) > new Date()) {
+            showError("Belum Dimulai", "Kuis ini belum bisa dimulai")
+            router.push(`/courses/${courseId}/asesmen/${asesmenId}`)
+            return
+          }
+          
+          // Check if deadline has passed
+          if (asesmenData.tgl_selesai && new Date(asesmenData.tgl_selesai) < new Date()) {
+            showError("Sudah Ditutup", "Kuis ini sudah ditutup")
+            router.push(`/courses/${courseId}/asesmen/${asesmenId}`)
+            return
+          }
+          
+          setAsesmen(asesmenData)
           
           // Check if already submitted
-          if (data.asesmen.nilai && data.asesmen.nilai.length > 0) {
+          if (asesmenData.nilai && asesmenData.nilai.length > 0) {
             setHasSubmitted(true)
           }
           
           // Initialize jawaban array
-          if (data.asesmen.soal) {
-            setJawaban(data.asesmen.soal.map((s: Soal) => ({
+          if (asesmenData.soal) {
+            setJawaban(asesmenData.soal.map((s: Soal) => ({
               soalId: s.id,
               jawaban: ''
             })))

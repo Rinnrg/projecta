@@ -197,52 +197,56 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Use transaction to create asesmen with soal
-    const asesmen = await prisma.$transaction(async (tx) => {
-      console.log('Creating asesmen in transaction...')
-      
-      // Create asesmen
-      const asesmenData: any = {
-        nama,
-        deskripsi,
-        tipe,
-        jml_soal: tipe === 'KUIS' && soal ? soal.length : null,
-        tgl_mulai: startDate,
-        tgl_selesai: endDate,
-        guruId: guruId,
-        courseId,
-      }
-      
-      // Add tipePengerjaan only for TUGAS
-      if (tipe === 'TUGAS') {
-        asesmenData.tipePengerjaan = tipePengerjaan || 'INDIVIDU'
-        asesmenData.lampiran = lampiran || null
-        asesmenData.fileData = fileBuffer
-        asesmenData.fileName = fileName
-        asesmenData.fileType = fileType
-        asesmenData.fileSize = fileSize
-      }
-      
-      // Add durasi if provided
-      if (durasi) {
-        asesmenData.durasi = parseInt(durasi)
-      }
-      
-      console.log('Asesmen data to create:', {
-        ...asesmenData,
-        fileData: asesmenData.fileData ? '(buffer)' : null
-      })
-      
-      const newAsesmen = await tx.asesmen.create({
+    console.log('Starting asesmen creation process...')
+    
+    // Create asesmen first
+    const asesmenData: any = {
+      nama,
+      deskripsi,
+      tipe,
+      jml_soal: tipe === 'KUIS' && soal ? soal.length : null,
+      tgl_mulai: startDate,
+      tgl_selesai: endDate,
+      guruId: guruId,
+      courseId,
+    }
+    
+    // Add tipePengerjaan only for TUGAS
+    if (tipe === 'TUGAS') {
+      asesmenData.tipePengerjaan = tipePengerjaan || 'INDIVIDU'
+      asesmenData.lampiran = lampiran || null
+      asesmenData.fileData = fileBuffer
+      asesmenData.fileName = fileName
+      asesmenData.fileType = fileType
+      asesmenData.fileSize = fileSize
+    }
+    
+    // Add durasi if provided
+    if (durasi) {
+      asesmenData.durasi = parseInt(durasi)
+    }
+    
+    console.log('Asesmen data to create:', {
+      ...asesmenData,
+      fileData: asesmenData.fileData ? '(buffer)' : null
+    })
+    
+    let newAsesmen
+    try {
+      newAsesmen = await prisma.asesmen.create({
         data: asesmenData,
       })
-      
       console.log(`✓ Asesmen created with ID: ${newAsesmen.id}`)
+    } catch (createError: any) {
+      console.error('Failed to create asesmen:', createError)
+      throw createError
+    }
 
-      // Create soal for KUIS
-      if (tipe === 'KUIS' && soal && Array.isArray(soal)) {
-        console.log(`Creating ${soal.length} questions...`)
-        
+    // Create soal for KUIS
+    if (tipe === 'KUIS' && soal && Array.isArray(soal)) {
+      console.log(`Creating ${soal.length} questions...`)
+      
+      try {
         for (let i = 0; i < soal.length; i++) {
           const soalItem = soal[i]
           console.log(`Creating question ${i + 1}/${soal.length}`)
@@ -255,7 +259,7 @@ export async function POST(request: NextRequest) {
           }
           
           // @ts-ignore - Prisma client type issue, will be fixed after regeneration
-          const createdSoal = await tx.soal.create({
+          const createdSoal = await prisma.soal.create({
             data: soalData
           })
           
@@ -267,7 +271,7 @@ export async function POST(request: NextRequest) {
             
             for (let j = 0; j < soalItem.opsi.length; j++) {
               const opsiItem = soalItem.opsi[j]
-              await tx.opsi.create({
+              await prisma.opsi.create({
                 data: {
                   teks: opsiItem.teks,
                   isBenar: opsiItem.isBenar,
@@ -281,35 +285,44 @@ export async function POST(request: NextRequest) {
         }
         
         console.log(`✓ All ${soal.length} questions created successfully`)
+      } catch (soalError: any) {
+        // Rollback: delete the created asesmen
+        console.error('Error creating questions, rolling back asesmen:', soalError)
+        try {
+          await prisma.asesmen.delete({
+            where: { id: newAsesmen.id }
+          })
+          console.log('✓ Rollback successful: asesmen deleted')
+        } catch (rollbackError) {
+          console.error('Failed to rollback asesmen:', rollbackError)
+        }
+        throw soalError
       }
+    }
 
-      // Return asesmen with relations
-      const result = await tx.asesmen.findUnique({
-        where: { id: newAsesmen.id },
-        include: {
-          guru: {
-            select: {
-              id: true,
-              nama: true,
-              email: true,
-            },
-          },
-          course: {
-            select: {
-              id: true,
-              judul: true,
-            },
-          },
-          soal: {
-            include: {
-              opsi: true,
-            },
+    // Fetch the complete asesmen with relations
+    const asesmen = await prisma.asesmen.findUnique({
+      where: { id: newAsesmen.id },
+      include: {
+        guru: {
+          select: {
+            id: true,
+            nama: true,
+            email: true,
           },
         },
-      })
-      
-      console.log('✓ Transaction completed successfully')
-      return result
+        course: {
+          select: {
+            id: true,
+            judul: true,
+          },
+        },
+        soal: {
+          include: {
+            opsi: true,
+          },
+        },
+      },
     })
 
     console.log('=== POST /api/asesmen - Success, returning asesmen:', asesmen?.id)
@@ -318,6 +331,7 @@ export async function POST(request: NextRequest) {
     console.error('=== POST /api/asesmen - Error:', error)
     console.error('Error message:', error?.message)
     console.error('Error stack:', error?.stack)
+    console.error('Error code:', error?.code)
     
     // Check for specific Prisma errors
     if (error?.code === 'P2002') {
@@ -331,6 +345,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Referensi data tidak valid (courseId atau guruId tidak ditemukan)', details: error?.message },
         { status: 400 }
+      )
+    }
+    
+    // Check for transaction errors
+    if (error?.message?.includes('Transaction')) {
+      console.error('Transaction error detected. Attempting to reconnect...')
+      
+      // Try to reconnect Prisma
+      try {
+        await prisma.$disconnect()
+        await prisma.$connect()
+        console.log('Prisma reconnected successfully')
+      } catch (reconnectError) {
+        console.error('Failed to reconnect Prisma:', reconnectError)
+      }
+      
+      return NextResponse.json(
+        { 
+          error: 'Terjadi masalah dengan koneksi database', 
+          details: 'Silakan coba lagi. Jika masalah berlanjut, hubungi administrator.',
+          technicalDetails: error?.message 
+        },
+        { status: 500 }
       )
     }
     

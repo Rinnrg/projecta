@@ -150,6 +150,11 @@ export default function AsesmenDetailPage({ params }: PageProps) {
     ? new Date(asesmen.tgl_selesai) < new Date() 
     : false
 
+  // Check if asesmen has started
+  const hasStarted = asesmen.tgl_mulai
+    ? new Date(asesmen.tgl_mulai) <= new Date()
+    : true // If no start time, assume it has started
+
   const isTeacherOrAdmin = user && (user.role === 'GURU' || user.role === 'ADMIN')
   const isStudent = user && user.role === 'SISWA'
 
@@ -199,6 +204,14 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                     <CheckCircle2 className="mr-2 h-4 w-4" />
                     Sudah Diserahkan
                   </Button>
+                ) : !hasStarted ? (
+                  <Button 
+                    disabled
+                    variant="secondary"
+                  >
+                    <Clock className="mr-2 h-4 w-4" />
+                    Belum Dimulai
+                  </Button>
                 ) : isDeadlinePassed ? (
                   <Button 
                     disabled
@@ -217,13 +230,33 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                 )}
               </>
             )}
-            {isStudent && asesmen.tipe === 'KUIS' && !isDeadlinePassed && (asesmen.soalCount > 0 || (asesmen.soal && asesmen.soal.length > 0)) && (
-              <Button asChild>
-                <Link href={`/courses/${courseId}/asesmen/${asesmenId}/kerjakan`}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  Kerjakan Kuis
-                </Link>
-              </Button>
+            {isStudent && asesmen.tipe === 'KUIS' && (asesmen.soalCount > 0 || (asesmen.soal && asesmen.soal.length > 0)) && (
+              <>
+                {!hasStarted ? (
+                  <Button 
+                    disabled
+                    variant="secondary"
+                  >
+                    <Clock className="mr-2 h-4 w-4" />
+                    Kuis Belum Bisa Dimulai
+                  </Button>
+                ) : isDeadlinePassed ? (
+                  <Button 
+                    disabled
+                    variant="secondary"
+                  >
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Kuis Sudah Ditutup
+                  </Button>
+                ) : (
+                  <Button asChild>
+                    <Link href={`/courses/${courseId}/asesmen/${asesmenId}/kuis`}>
+                      <FileText className="mr-2 h-4 w-4" />
+                      Kerjakan Kuis
+                    </Link>
+                  </Button>
+                )}
+              </>
             )}
             {isTeacherOrAdmin && asesmen.tipe === 'KUIS' && (
               <Button asChild>
@@ -244,6 +277,24 @@ export default function AsesmenDetailPage({ params }: PageProps) {
           </div>
         </div>
       </div>
+
+      {/* Alert jika belum dimulai - untuk SISWA */}
+      {isStudent && !hasStarted && asesmen.tgl_mulai && (
+        <Alert className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
+          <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+          <AlertDescription className="text-yellow-800 dark:text-yellow-200">
+            <strong>Belum Dimulai:</strong> {asesmen.tipe === 'KUIS' ? 'Kuis' : 'Tugas'} ini akan dimulai pada{' '}
+            {new Date(asesmen.tgl_mulai).toLocaleString('id-ID', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Stats Cards - For KUIS */}
       {asesmen.tipe === 'KUIS' && (

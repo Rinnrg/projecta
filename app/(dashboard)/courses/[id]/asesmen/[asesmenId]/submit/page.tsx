@@ -67,10 +67,26 @@ export default function SubmitAsesmenPage({ params }: PageProps) {
         const response = await fetch(`/api/asesmen/${asesmenId}`)
         if (response.ok) {
           const data = await response.json()
-          setAsesmen(data.asesmen)
+          const asesmenData = data.asesmen
+          
+          // Check if asesmen has started
+          if (asesmenData.tgl_mulai && new Date(asesmenData.tgl_mulai) > new Date()) {
+            showError("Belum Dimulai", "Tugas ini belum bisa dikumpulkan karena belum dimulai")
+            router.push(`/courses/${courseId}/asesmen/${asesmenId}`)
+            return
+          }
+          
+          // Check if deadline has passed
+          if (asesmenData.tgl_selesai && new Date(asesmenData.tgl_selesai) < new Date()) {
+            showError("Deadline Terlewat", "Tugas ini sudah melewati deadline")
+            router.push(`/courses/${courseId}/asesmen/${asesmenId}`)
+            return
+          }
+          
+          setAsesmen(asesmenData)
           
           // Check if student already submitted
-          const submission = data.asesmen.pengumpulanProyek?.find(
+          const submission = asesmenData.pengumpulanProyek?.find(
             (p: any) => p.siswaId === user.id
           )
           
