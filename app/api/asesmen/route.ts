@@ -74,6 +74,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
+    console.log('Received body:', JSON.stringify(body, null, 2))
+    
     const { 
       nama, 
       deskripsi, 
@@ -148,6 +150,20 @@ export async function POST(request: NextRequest) {
     // Use transaction to create asesmen with soal
     const asesmen = await prisma.$transaction(async (tx) => {
       // Create asesmen
+      console.log('Creating asesmen with data:', {
+        nama,
+        deskripsi,
+        tipe,
+        tipePengerjaan: tipe === 'TUGAS' ? tipePengerjaan : null,
+        jml_soal: tipe === 'KUIS' && soal ? soal.length : null,
+        durasi: durasi ? parseInt(durasi) : null,
+        tgl_mulai: startDate,
+        tgl_selesai: endDate,
+        lampiran: tipe === 'TUGAS' ? (lampiran || null) : null,
+        guruId: guruId,
+        courseId,
+      })
+      
       const newAsesmen = await tx.asesmen.create({
         data: {
           nama,
@@ -164,9 +180,13 @@ export async function POST(request: NextRequest) {
         },
       })
 
+      console.log('Asesmen created:', newAsesmen.id)
+
       // Create soal for KUIS
       if (tipe === 'KUIS' && soal && Array.isArray(soal)) {
+        console.log('Creating soal, count:', soal.length)
         for (const soalItem of soal) {
+          console.log('Creating soal:', soalItem)
           const createdSoal = await tx.soal.create({
             data: {
               pertanyaan: soalItem.pertanyaan,
@@ -176,8 +196,11 @@ export async function POST(request: NextRequest) {
             }
           })
 
+          console.log('Soal created:', createdSoal.id, 'type:', createdSoal.tipeJawaban)
+
           // Create opsi only for PILIHAN_GANDA
           if (soalItem.tipeJawaban === 'PILIHAN_GANDA' && soalItem.opsi && Array.isArray(soalItem.opsi)) {
+            console.log('Creating opsi, count:', soalItem.opsi.length)
             for (const opsiItem of soalItem.opsi) {
               await tx.opsi.create({
                 data: {
@@ -218,10 +241,12 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ asesmen }, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating asesmen:', error)
+    console.error('Error message:', error?.message)
+    console.error('Error stack:', error?.stack)
     return NextResponse.json(
-      { error: 'Gagal membuat asesmen' },
+      { error: 'Gagal membuat asesmen', details: error?.message },
       { status: 500 }
     )
   }

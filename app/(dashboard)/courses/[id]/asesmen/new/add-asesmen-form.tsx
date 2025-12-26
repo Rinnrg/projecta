@@ -246,7 +246,10 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
               }))
             : []
         }))
+        console.log('Soal data to send:', JSON.stringify(bodyData.soal, null, 2))
       }
+
+      console.log('Sending body:', JSON.stringify(bodyData, null, 2))
 
       const response = await fetch('/api/asesmen', {
         method: 'POST',
