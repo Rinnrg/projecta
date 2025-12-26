@@ -32,14 +32,14 @@ interface SidebarProps {
 }
 
 const SINTAKS_ITEMS = [
-  { key: "sintaks1", label: "Orientasi Masalah" },
-  { key: "sintaks2", label: "Rencana Proyek" },
-  { key: "sintaks3", label: "Jadwal Proyek" },
-  { key: "sintaks4", label: "Monitoring Pelaksanaan" },
-  { key: "sintaks5", label: "Pengumpulan" },
-  { key: "sintaks6", label: "Presentasi" },
-  { key: "sintaks7", label: "Penilaian & Evaluasi" },
-  { key: "sintaks8", label: "Refleksi" },
+  { key: "sintaks_1", label: "Orientasi Masalah" },
+  { key: "sintaks_2", label: "Rencana Proyek" },
+  { key: "sintaks_3", label: "Jadwal Proyek" },
+  { key: "sintaks_4", label: "Monitoring Pelaksanaan" },
+  { key: "sintaks_5", label: "Pengumpulan" },
+  { key: "sintaks_6", label: "Presentasi" },
+  { key: "sintaks_7", label: "Penilaian & Evaluasi" },
+  { key: "sintaks_8", label: "Refleksi" },
 ] as const
 
 export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, onNavClick }: SidebarProps) {
@@ -151,7 +151,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, onNavClick }: S
           <>
             {!isExpanded && !isMobile ? (
               <Link
-                href="/projects/sintaks/sintaks1"
+                href="/projects"
                 onClick={onNavClick}
                 className={cn(
                   "group relative flex items-center rounded-md py-2.5 px-2 text-sm font-medium transition-all duration-300 overflow-hidden",
@@ -201,7 +201,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, onNavClick }: S
                 <CollapsibleContent className="overflow-hidden transition-all duration-300 ease-in-out data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
                   <div className="mt-2 mb-1 space-y-0.5 ml-[46px] border-l-2 border-border pl-2">
                     {SINTAKS_ITEMS.map((sintaks) => {
-                      const href = `/projects/sintaks/${sintaks.key}`
+                      const href = `/projects/${sintaks.key}`
                       const isSubActive = pathname === href || pathname.startsWith(`${href}/`)
 
                       return (

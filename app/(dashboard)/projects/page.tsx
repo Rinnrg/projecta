@@ -242,7 +242,7 @@ export default function ProjectsPage() {
                       size="sm"
                       variant={status === "completed" || status === "submitted" ? "outline" : "default"}
                     >
-                      <Link href={`/projects/sintaks/${sintaksKey}`}>
+                      <Link href={`/projects/${sintaksKey}`}>
                         {status === "completed" || status === "submitted"
                           ? t("Lihat Detail")
                           : status === "active"
