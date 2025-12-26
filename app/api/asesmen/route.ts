@@ -74,6 +74,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
+    console.log('=== POST /api/asesmen - Request body:', JSON.stringify({
+      ...body,
+      fileData: body.fileData ? `(${body.fileData.length} chars)` : null
+    }))
+    
     const { 
       nama, 
       deskripsi, 
@@ -94,6 +99,7 @@ export async function POST(request: NextRequest) {
 
     // Validasi field wajib
     if (!nama || !tipe || !courseId || !guruId) {
+      console.error('Validation failed: Missing required fields', { nama, tipe, courseId, guruId })
       return NextResponse.json(
         { error: 'Data tidak lengkap (nama, tipe, courseId, guruId wajib diisi)' },
         { status: 400 }
@@ -111,11 +117,45 @@ export async function POST(request: NextRequest) {
     // Validasi khusus untuk KUIS
     if (tipe === 'KUIS') {
       if (!soal || !Array.isArray(soal) || soal.length === 0) {
+        console.error('Validation failed: No questions for KUIS', { soal })
         return NextResponse.json(
           { error: 'Minimal harus ada 1 soal untuk kuis' },
           { status: 400 }
         )
       }
+      
+      // Validasi struktur setiap soal
+      for (let i = 0; i < soal.length; i++) {
+        const s = soal[i]
+        if (!s.pertanyaan || !s.pertanyaan.trim()) {
+          console.error(`Validation failed: Question ${i + 1} is empty`)
+          return NextResponse.json(
+            { error: `Soal nomor ${i + 1}: pertanyaan tidak boleh kosong` },
+            { status: 400 }
+          )
+        }
+        
+        if (s.tipeJawaban === 'PILIHAN_GANDA') {
+          if (!s.opsi || !Array.isArray(s.opsi) || s.opsi.length < 2) {
+            console.error(`Validation failed: Question ${i + 1} has less than 2 options`)
+            return NextResponse.json(
+              { error: `Soal nomor ${i + 1}: minimal 2 pilihan untuk soal pilihan ganda` },
+              { status: 400 }
+            )
+          }
+          
+          const hasCorrectAnswer = s.opsi.some((o: any) => o.isBenar === true)
+          if (!hasCorrectAnswer) {
+            console.error(`Validation failed: Question ${i + 1} has no correct answer`)
+            return NextResponse.json(
+              { error: `Soal nomor ${i + 1}: harus ada minimal 1 jawaban yang benar` },
+              { status: 400 }
+            )
+          }
+        }
+      }
+      
+      console.log(`✓ KUIS validation passed: ${soal.length} questions`)
     }
 
     // Convert base64 file data to Buffer if provided
@@ -159,30 +199,54 @@ export async function POST(request: NextRequest) {
 
     // Use transaction to create asesmen with soal
     const asesmen = await prisma.$transaction(async (tx) => {
+      console.log('Creating asesmen in transaction...')
+      
       // Create asesmen
-      const newAsesmen = await tx.asesmen.create({
-        data: {
-          nama,
-          deskripsi,
-          tipe,
-          tipePengerjaan: tipe === 'TUGAS' ? tipePengerjaan : null,
-          jml_soal: tipe === 'KUIS' && soal ? soal.length : null,
-          ...(durasi && { durasi: parseInt(durasi) }),
-          tgl_mulai: startDate,
-          tgl_selesai: endDate,
-          lampiran: tipe === 'TUGAS' ? (lampiran || null) : null,
-          fileData: tipe === 'TUGAS' ? fileBuffer : null,
-          fileName: tipe === 'TUGAS' ? fileName : null,
-          fileType: tipe === 'TUGAS' ? fileType : null,
-          fileSize: tipe === 'TUGAS' ? fileSize : null,
-          guruId: guruId,
-          courseId,
-        },
+      const asesmenData: any = {
+        nama,
+        deskripsi,
+        tipe,
+        jml_soal: tipe === 'KUIS' && soal ? soal.length : null,
+        tgl_mulai: startDate,
+        tgl_selesai: endDate,
+        guruId: guruId,
+        courseId,
+      }
+      
+      // Add tipePengerjaan only for TUGAS
+      if (tipe === 'TUGAS') {
+        asesmenData.tipePengerjaan = tipePengerjaan || 'INDIVIDU'
+        asesmenData.lampiran = lampiran || null
+        asesmenData.fileData = fileBuffer
+        asesmenData.fileName = fileName
+        asesmenData.fileType = fileType
+        asesmenData.fileSize = fileSize
+      }
+      
+      // Add durasi if provided
+      if (durasi) {
+        asesmenData.durasi = parseInt(durasi)
+      }
+      
+      console.log('Asesmen data to create:', {
+        ...asesmenData,
+        fileData: asesmenData.fileData ? '(buffer)' : null
       })
+      
+      const newAsesmen = await tx.asesmen.create({
+        data: asesmenData,
+      })
+      
+      console.log(`✓ Asesmen created with ID: ${newAsesmen.id}`)
 
       // Create soal for KUIS
       if (tipe === 'KUIS' && soal && Array.isArray(soal)) {
-        for (const soalItem of soal) {
+        console.log(`Creating ${soal.length} questions...`)
+        
+        for (let i = 0; i < soal.length; i++) {
+          const soalItem = soal[i]
+          console.log(`Creating question ${i + 1}/${soal.length}`)
+          
           const createdSoal = await tx.soal.create({
             data: {
               pertanyaan: soalItem.pertanyaan,
@@ -191,10 +255,15 @@ export async function POST(request: NextRequest) {
               asesmenId: newAsesmen.id,
             }
           })
+          
+          console.log(`✓ Question ${i + 1} created with ID: ${createdSoal.id}`)
 
           // Create opsi only for PILIHAN_GANDA
           if (soalItem.tipeJawaban === 'PILIHAN_GANDA' && soalItem.opsi && Array.isArray(soalItem.opsi)) {
-            for (const opsiItem of soalItem.opsi) {
+            console.log(`Creating ${soalItem.opsi.length} options for question ${i + 1}`)
+            
+            for (let j = 0; j < soalItem.opsi.length; j++) {
+              const opsiItem = soalItem.opsi[j]
               await tx.opsi.create({
                 data: {
                   teks: opsiItem.teks,
@@ -203,12 +272,16 @@ export async function POST(request: NextRequest) {
                 }
               })
             }
+            
+            console.log(`✓ ${soalItem.opsi.length} options created for question ${i + 1}`)
           }
         }
+        
+        console.log(`✓ All ${soal.length} questions created successfully`)
       }
 
       // Return asesmen with relations
-      return await tx.asesmen.findUnique({
+      const result = await tx.asesmen.findUnique({
         where: { id: newAsesmen.id },
         include: {
           guru: {
@@ -231,13 +304,33 @@ export async function POST(request: NextRequest) {
           },
         },
       })
+      
+      console.log('✓ Transaction completed successfully')
+      return result
     })
 
+    console.log('=== POST /api/asesmen - Success, returning asesmen:', asesmen?.id)
     return NextResponse.json({ asesmen }, { status: 201 })
   } catch (error: any) {
-    console.error('Error creating asesmen:', error)
+    console.error('=== POST /api/asesmen - Error:', error)
     console.error('Error message:', error?.message)
     console.error('Error stack:', error?.stack)
+    
+    // Check for specific Prisma errors
+    if (error?.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'Data sudah ada (duplikat)', details: error?.message },
+        { status: 409 }
+      )
+    }
+    
+    if (error?.code === 'P2003') {
+      return NextResponse.json(
+        { error: 'Referensi data tidak valid (courseId atau guruId tidak ditemukan)', details: error?.message },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
       { error: 'Gagal membuat asesmen', details: error?.message },
       { status: 500 }

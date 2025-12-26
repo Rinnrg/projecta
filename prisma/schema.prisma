@@ -87,7 +87,7 @@ model Asesmen {
   nama           String
   deskripsi      String?
   tipe           TipeAsesmen     @default(KUIS)
-  tipePengerjaan TipePengerjaan? @default(INDIVIDU) // Hanya untuk TUGAS
+  tipePengerjaan TipePengerjaan? // Hanya untuk TUGAS, nullable untuk KUIS
   jml_soal       Int?            // Optional - untuk KUIS akan dihitung otomatis dari jumlah soal
   durasi         Int?            // Optional - untuk KUIS akan diisi jika ada waktu
   tgl_mulai      DateTime?
