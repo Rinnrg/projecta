@@ -32,6 +32,8 @@ export async function GET(
         'Content-Disposition': `inline; filename="${asesmen.fileName || 'file'}"`,
         'Content-Length': String(asesmen.fileSize || asesmen.fileData.length),
         'Cache-Control': 'public, max-age=31536000, immutable',
+        'X-Content-Type-Options': 'nosniff',
+        'Accept-Ranges': 'bytes',
       },
     })
   } catch (error) {

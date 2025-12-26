@@ -197,7 +197,7 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
       return
     }
 
-    if (!user.id || user.id === 'temp') {
+    if (!user.id) {
       console.error('User ID invalid:', user)
       toast({
         title: "Error",
@@ -207,6 +207,8 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
       router.push('/login')
       return
     }
+
+    console.log('Creating asesmen with user:', user)
 
     // Validasi untuk KUIS
     if (formData.tipe === 'KUIS' && soalList.length === 0) {
@@ -273,6 +275,11 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
         }))
       }
 
+      console.log('Sending data to API:', {
+        ...bodyData,
+        fileData: bodyData.fileData ? '(base64 data)' : null
+      })
+
       const response = await fetch('/api/asesmen', {
         method: 'POST',
         headers: {
@@ -281,9 +288,12 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
         body: JSON.stringify(bodyData),
       })
 
+      console.log('Response status:', response.status)
+      const responseData = await response.json()
+      console.log('Response data:', responseData)
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create asesmen')
+        throw new Error(responseData.error || responseData.details || 'Failed to create asesmen')
       }
 
       // Tampilkan Sweet Alert sukses

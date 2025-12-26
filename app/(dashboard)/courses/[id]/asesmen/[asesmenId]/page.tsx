@@ -471,19 +471,18 @@ export default function AsesmenDetailPage({ params }: PageProps) {
             {/* PDF/Video Preview dengan animasi slide */}
             <div 
               className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                showPdfViewer ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+                showPdfViewer ? 'max-h-[850px] opacity-100' : 'max-h-0 opacity-0'
               }`}
             >
               {/* PDF Preview for database files */}
               {asesmen.fileData && asesmen.fileType === 'application/pdf' && (
-                <div className="border rounded-lg overflow-hidden bg-muted">
-                  <div className="aspect-[3/4] w-full">
-                    <iframe
-                      src={`/api/asesmen/${asesmen.id}/file`}
-                      title={`Lampiran ${asesmen.nama}`}
-                      className="w-full h-full"
-                    />
-                  </div>
+                <div className="border rounded-lg overflow-hidden bg-muted" style={{ height: '800px' }}>
+                  <iframe
+                    src={`/api/asesmen/${asesmen.id}/file#toolbar=0&navpanes=0&scrollbar=1`}
+                    title={`Lampiran ${asesmen.nama}`}
+                    className="w-full h-full border-0"
+                    style={{ minHeight: '800px' }}
+                  />
                 </div>
               )}
 
@@ -504,27 +503,25 @@ export default function AsesmenDetailPage({ params }: PageProps) {
 
               {/* PDF Preview for base64 PDF */}
               {!asesmen.fileData && asesmen.lampiran && asesmen.lampiran.startsWith('data:application/pdf') && (
-                <div className="border rounded-lg overflow-hidden bg-muted">
-                  <div className="aspect-[3/4] w-full">
-                    <iframe
-                      src={asesmen.lampiran}
-                      title={`Lampiran ${asesmen.nama}`}
-                      className="w-full h-full"
-                    />
-                  </div>
+                <div className="border rounded-lg overflow-hidden bg-muted" style={{ height: '800px' }}>
+                  <iframe
+                    src={`${asesmen.lampiran}#toolbar=0&navpanes=0&scrollbar=1`}
+                    title={`Lampiran ${asesmen.nama}`}
+                    className="w-full h-full border-0"
+                    style={{ minHeight: '800px' }}
+                  />
                 </div>
               )}
 
               {/* PDF Preview for URL PDF */}
               {!asesmen.fileData && asesmen.lampiran && asesmen.lampiran.endsWith('.pdf') && !asesmen.lampiran.startsWith('data:') && (
-                <div className="border rounded-lg overflow-hidden bg-muted">
-                  <div className="aspect-[3/4] w-full">
-                    <iframe
-                      src={asesmen.lampiran}
-                      title={`Lampiran ${asesmen.nama}`}
-                      className="w-full h-full"
-                    />
-                  </div>
+                <div className="border rounded-lg overflow-hidden bg-muted" style={{ height: '800px' }}>
+                  <iframe
+                    src={`${asesmen.lampiran}#toolbar=0&navpanes=0&scrollbar=1`}
+                    title={`Lampiran ${asesmen.nama}`}
+                    className="w-full h-full border-0"
+                    style={{ minHeight: '800px' }}
+                  />
                 </div>
               )}
 

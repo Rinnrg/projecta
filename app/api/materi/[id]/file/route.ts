@@ -32,6 +32,8 @@ export async function GET(
         'Content-Disposition': `inline; filename="${materi.fileName || 'file'}"`,
         'Content-Length': String(materi.fileSize || materi.fileData.length),
         'Cache-Control': 'public, max-age=31536000, immutable',
+        'X-Content-Type-Options': 'nosniff',
+        'Accept-Ranges': 'bytes',
       },
     })
   } catch (error) {

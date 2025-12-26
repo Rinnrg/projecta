@@ -413,11 +413,12 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
                   {materi.fileData && materi.fileType === 'application/pdf' && (
                     <Card>
                       <CardContent className="p-4 sm:p-6">
-                        <div className="aspect-[3/4] w-full rounded-lg overflow-hidden bg-muted">
+                        <div className="w-full rounded-lg overflow-hidden bg-muted" style={{ height: '800px' }}>
                           <iframe
-                            src={`/api/materi/${materi.id}/file`}
+                            src={`/api/materi/${materi.id}/file#toolbar=0&navpanes=0&scrollbar=1`}
                             title={materi.judul}
-                            className="w-full h-full"
+                            className="w-full h-full border-0"
+                            style={{ minHeight: '800px' }}
                           />
                         </div>
                       </CardContent>
