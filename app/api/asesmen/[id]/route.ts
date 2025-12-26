@@ -114,21 +114,35 @@ export async function GET(
           }
         }
       }
-    } else if (includeStats) {
-      // For teachers/admins requesting full stats
+    } else {
+      // For teachers/admins - include full data
       includeOptions.soal = {
         include: {
           opsi: true,
         },
       }
-      includeOptions._count = {
-        select: {
-          nilai: true,
-          pengumpulanProyek: true,
-        },
+      includeOptions.nilai = {
+        include: {
+          siswa: {
+            select: {
+              id: true,
+              nama: true,
+              email: true,
+            }
+          }
+        }
       }
-    } else {
-      // Default: just counts
+      includeOptions.pengumpulanProyek = {
+        include: {
+          siswa: {
+            select: {
+              id: true,
+              nama: true,
+              email: true,
+            }
+          }
+        }
+      }
       includeOptions._count = {
         select: {
           soal: true,

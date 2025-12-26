@@ -255,7 +255,11 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                 )}
               </>
             )}
-            {isStudent && asesmen.tipe === 'KUIS' && (asesmen.soalCount > 0 || (asesmen.soal && asesmen.soal.length > 0)) && (
+            {isStudent && asesmen.tipe === 'KUIS' && (
+              (asesmen.soal && asesmen.soal.length > 0) || 
+              (asesmen._count && asesmen._count.soal > 0) ||
+              asesmen.soalCount > 0
+            ) && (
               <>
                 {!hasStarted ? (
                   <Button 
@@ -331,7 +335,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {asesmen.soalCount ?? asesmen.soal?.length ?? 0}
+                {asesmen._count?.soal ?? asesmen.soal?.length ?? asesmen.soalCount ?? 0}
               </div>
             </CardContent>
           </Card>
@@ -351,7 +355,9 @@ export default function AsesmenDetailPage({ params }: PageProps) {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {asesmen.soal?.reduce((acc: number, s: any) => acc + (s.bobot || 0), 0) || 0}
+                {(asesmen.soal && Array.isArray(asesmen.soal)) 
+                  ? asesmen.soal.reduce((acc: number, s: any) => acc + (s.bobot || 0), 0) 
+                  : 0}
               </div>
             </CardContent>
           </Card>
@@ -960,7 +966,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                   <CardTitle className="text-lg">Daftar Nilai Siswa</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {asesmen.nilai.length === 0 ? (
+                  {(!asesmen.nilai || asesmen.nilai.length === 0) ? (
                     <p className="text-center text-muted-foreground py-8">
                       Belum ada siswa yang mengerjakan kuis
                     </p>
@@ -1028,7 +1034,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {asesmen.pengumpulanProyek && asesmen.pengumpulanProyek.length === 0 ? (
+                  {(!asesmen.pengumpulanProyek || asesmen.pengumpulanProyek.length === 0) ? (
                     <p className="text-center text-muted-foreground py-8">
                       Belum ada siswa yang mengumpulkan tugas
                     </p>
@@ -1117,7 +1123,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {asesmen.nilai.length === 0 ? (
+                  {(!asesmen.nilai || asesmen.nilai.length === 0) ? (
                     <p className="text-center text-muted-foreground py-8">
                       Belum ada siswa yang mengerjakan kuis
                     </p>
