@@ -73,17 +73,27 @@ export default function AsesmenDetailPage({ params }: PageProps) {
           userRole: user.role,
         })
         
+        console.log(`Fetching asesmen ${asesmenId} for user ${user.id} (${user.role})`)
+        
         const response = await fetch(`/api/asesmen/${asesmenId}?${queryParams}`)
+        
+        console.log('Response status:', response.status)
         
         if (response.ok) {
           const data = await response.json()
           const asesmenData = data.asesmen
           
-          // Check permission untuk guru
+          console.log('Asesmen data received:', asesmenData)
+          
+          // Check permission untuk guru - only for teachers
           if (user.role === 'GURU' && asesmenData.guruId !== user.id) {
+            console.log('Teacher not authorized for this asesmen')
             router.push(`/courses/${courseId}`)
             return
           }
+          
+          // For students, no additional permission check needed
+          // Enrollment is already validated by API
           
           setAsesmen(asesmenData)
           
@@ -92,19 +102,34 @@ export default function AsesmenDetailPage({ params }: PageProps) {
             // Extract nilai from the response (already filtered by API)
             if (asesmenData.nilai && asesmenData.nilai.length > 0) {
               setStudentNilai(asesmenData.nilai[0])
+              console.log('Student nilai found:', asesmenData.nilai[0])
             }
             
             // Extract pengumpulan from the response (already filtered by API)
             if (asesmenData.pengumpulanProyek && asesmenData.pengumpulanProyek.length > 0) {
               setStudentPengumpulan(asesmenData.pengumpulanProyek[0])
+              console.log('Student submission found:', asesmenData.pengumpulanProyek[0])
             }
           }
         } else {
-          router.push('/courses')
+          const errorData = await response.json()
+          console.error('Failed to fetch asesmen:', response.status, errorData)
+          
+          // Show error message based on status
+          if (response.status === 403) {
+            alert(errorData.error || 'Anda tidak memiliki akses ke asesmen ini')
+          } else if (response.status === 404) {
+            alert('Asesmen tidak ditemukan')
+          } else {
+            alert('Gagal mengambil data asesmen')
+          }
+          
+          router.push(`/courses/${courseId}`)
         }
       } catch (error) {
         console.error('Error fetching asesmen:', error)
-        router.push('/courses')
+        alert('Terjadi kesalahan saat mengambil data asesmen')
+        router.push(`/courses/${courseId}`)
       } finally {
         setLoading(false)
       }

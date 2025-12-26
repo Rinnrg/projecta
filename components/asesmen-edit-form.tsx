@@ -35,6 +35,7 @@ interface Soal {
   id?: string
   pertanyaan: string
   bobot: number
+  tipeJawaban?: 'PILIHAN_GANDA' | 'ISIAN'
   opsi: Opsi[]
 }
 
@@ -49,6 +50,7 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
   const [currentSoal, setCurrentSoal] = useState<Soal>({
     pertanyaan: "",
     bobot: 10,
+    tipeJawaban: 'PILIHAN_GANDA',
     opsi: [
       { teks: "", isBenar: false },
       { teks: "", isBenar: false },
@@ -220,10 +222,13 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
         bodyData.soal = soalList.map(s => ({
           pertanyaan: s.pertanyaan,
           bobot: s.bobot,
-          opsi: s.opsi.filter(o => o.teks.trim() !== "").map(o => ({
-            teks: o.teks,
-            isBenar: o.isBenar
-          }))
+          tipeJawaban: s.tipeJawaban || 'PILIHAN_GANDA',
+          opsi: (s.tipeJawaban === 'PILIHAN_GANDA' || !s.tipeJawaban)
+            ? s.opsi.filter(o => o.teks.trim() !== "").map(o => ({
+                teks: o.teks,
+                isBenar: o.isBenar
+              }))
+            : []
         }))
       }
 
