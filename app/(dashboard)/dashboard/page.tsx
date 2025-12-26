@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { AnimateIn } from "@/components/ui/animate-in"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
+import { DashboardSkeleton } from "@/components/ui/loading-skeletons"
 import { useState, useEffect } from "react"
 import {
   BookOpen,
@@ -107,11 +108,7 @@ export default function DashboardPage() {
 
   // Show loading while checking auth or fetching data
   if (!user || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   const greeting = () => {

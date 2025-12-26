@@ -13,13 +13,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, X, ImageIcon, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
-import { toast } from "@/hooks/use-toast"
+import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { AnimateIn } from "@/components/ui/animate-in"
 
 const categories = ["Programming", "Database", "Design", "Networking", "Security", "DevOps"]
 
 export default function AddCoursePage() {
   const router = useRouter()
   const { user } = useAuth()
+  const { error: showError, success: showSuccess, AlertComponent } = useSweetAlert()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [category, setCategory] = useState("")
@@ -30,30 +32,18 @@ export default function AddCoursePage() {
     e.preventDefault()
     
     if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to create a course",
-        variant: "destructive",
-      })
+      showError("Error", "You must be logged in to create a course")
       return
     }
 
     // Validasi form
     if (!title.trim()) {
-      toast({
-        title: "Error",
-        description: "Course title is required",
-        variant: "destructive",
-      })
+      showError("Error", "Course title is required")
       return
     }
 
     if (!category) {
-      toast({
-        title: "Error",
-        description: "Please select a category",
-        variant: "destructive",
-      })
+      showError("Error", "Please select a category")
       return
     }
 
@@ -79,20 +69,12 @@ export default function AddCoursePage() {
         throw new Error(data.error || "Failed to create course")
       }
 
-      toast({
-        title: "Success",
-        description: "Course created successfully",
-      })
-
+      await showSuccess("Success!", "Course created successfully")
       router.push("/courses")
       router.refresh()
     } catch (error) {
       console.error("Error creating course:", error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create course",
-        variant: "destructive",
-      })
+      showError("Error", error instanceof Error ? error.message : "Failed to create course")
     } finally {
       setIsSubmitting(false)
     }
@@ -100,20 +82,25 @@ export default function AddCoursePage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      {/* Back Button */}
-      <Button variant="ghost" size="sm" asChild>
-        <Link href="/courses">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Courses
-        </Link>
-      </Button>
+      <AlertComponent />
+      
+      <AnimateIn stagger={0}>
+        {/* Back Button */}
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/courses">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Courses
+          </Link>
+        </Button>
+      </AnimateIn>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Create New Course</CardTitle>
-          <CardDescription>Fill in the details below to create a new course for your students</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <AnimateIn stagger={1}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Create New Course</CardTitle>
+            <CardDescription>Fill in the details below to create a new course for your students</CardDescription>
+          </CardHeader>
+          <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Thumbnail Upload */}
             <div className="space-y-2">
@@ -237,6 +224,7 @@ export default function AddCoursePage() {
           </form>
         </CardContent>
       </Card>
+      </AnimateIn>
     </div>
   )
 }

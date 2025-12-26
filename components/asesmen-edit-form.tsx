@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { toast } from "@/hooks/use-toast"
+import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { Loader2, Plus, Trash2, Check, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -40,6 +40,7 @@ interface Soal {
 
 export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
   const router = useRouter()
+  const { error: showError, success: showSuccess, AlertComponent } = useSweetAlert()
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [courses, setCourses] = useState<any[]>([])
@@ -108,11 +109,7 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
       
     } catch (error) {
       console.error('Error fetching data:', error)
-      toast({
-        title: "Error",
-        description: "Gagal mengambil data asesmen",
-        variant: "destructive",
-      })
+      showError("Error", "Gagal mengambil data asesmen")
     } finally {
       setIsLoading(false)
     }
@@ -121,31 +118,19 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
   const handleAddSoal = () => {
     // Validasi soal
     if (!currentSoal.pertanyaan.trim()) {
-      toast({
-        title: "Error",
-        description: "Pertanyaan wajib diisi",
-        variant: "destructive",
-      })
+      showError("Error", "Pertanyaan wajib diisi")
       return
     }
 
     const filledOpsi = currentSoal.opsi.filter(o => o.teks.trim() !== "")
     if (filledOpsi.length < 2) {
-      toast({
-        title: "Error",
-        description: "Minimal 2 pilihan jawaban harus diisi",
-        variant: "destructive",
-      })
+      showError("Error", "Minimal 2 pilihan jawaban harus diisi")
       return
     }
 
     const hasCorrectAnswer = currentSoal.opsi.some(o => o.isBenar)
     if (!hasCorrectAnswer) {
-      toast({
-        title: "Error",
-        description: "Harus ada minimal 1 jawaban yang benar",
-        variant: "destructive",
-      })
+      showError("Error", "Harus ada minimal 1 jawaban yang benar")
       return
     }
 
@@ -164,10 +149,7 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
       ]
     })
 
-    toast({
-      title: "Berhasil",
-      description: "Soal berhasil ditambahkan",
-    })
+    showSuccess("Berhasil!", "Soal berhasil ditambahkan")
   }
 
   const handleRemoveSoal = (index: number) => {
@@ -190,11 +172,7 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
 
   const handleNext = () => {
     if (!formData.nama || !formData.tipe || !formData.courseId) {
-      toast({
-        title: "Error",
-        description: "Nama, tipe, dan course wajib diisi",
-        variant: "destructive",
-      })
+      showError("Error", "Nama, tipe, dan course wajib diisi")
       return
     }
 
@@ -213,21 +191,13 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
     if (e) e.preventDefault()
     
     if (!formData.nama || !formData.tipe || !formData.courseId) {
-      toast({
-        title: "Error",
-        description: "Nama, tipe, dan course wajib diisi",
-        variant: "destructive",
-      })
+      showError("Error", "Nama, tipe, dan course wajib diisi")
       return
     }
 
     // Validasi untuk KUIS
     if (formData.tipe === 'KUIS' && soalList.length === 0) {
-      toast({
-        title: "Error",
-        description: "Minimal harus ada 1 soal untuk kuis",
-        variant: "destructive",
-      })
+      showError("Error", "Minimal harus ada 1 soal untuk kuis")
       return
     }
 
@@ -269,10 +239,7 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
         throw new Error('Failed to update asesmen')
       }
 
-      toast({
-        title: "Berhasil",
-        description: "Asesmen berhasil diperbarui",
-      })
+      await showSuccess("Berhasil!", "Asesmen berhasil diperbarui")
 
       // Redirect kembali ke course detail
       if (courseId) {
@@ -283,11 +250,7 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
       router.refresh()
     } catch (error) {
       console.error('Error updating asesmen:', error)
-      toast({
-        title: "Error",
-        description: "Gagal memperbarui asesmen",
-        variant: "destructive",
-      })
+      showError("Error", "Gagal memperbarui asesmen")
     } finally {
       setIsSaving(false)
     }
@@ -304,7 +267,9 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
   // Render step pertanyaan untuk KUIS
   if (currentStep === 'questions' && formData.tipe === 'KUIS') {
     return (
-      <div className="space-y-6">
+      <>
+        <AlertComponent />
+        <div className="space-y-6">
         {/* Soal yang sudah ditambahkan */}
         {soalList.length > 0 && (
           <Card>
@@ -448,15 +413,18 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
           </Button>
         </div>
       </div>
+      </>
     )
   }
 
   // Render form basic info
   return (
-    <form onSubmit={(e) => {
-      e.preventDefault()
-      handleNext()
-    }}>
+    <>
+      <AlertComponent />
+      <form onSubmit={(e) => {
+        e.preventDefault()
+        handleNext()
+      }}>
       <Card>
         <CardHeader>
           <CardTitle>Edit Asesmen</CardTitle>
@@ -617,5 +585,6 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
         </CardContent>
       </Card>
     </form>
+    </>
   )
 }

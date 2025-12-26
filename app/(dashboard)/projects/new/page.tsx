@@ -16,11 +16,14 @@ import Link from "next/link"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
-import { toast } from "@/hooks/use-toast"
+import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { FileUploadField } from "@/components/file-upload-field"
+import { AnimateIn } from "@/components/ui/animate-in"
 
 export default function CreateProjectPage() {
   const router = useRouter()
   const { user } = useAuth()
+  const { error: showError, success: showSuccess, AlertComponent } = useSweetAlert()
   const [judul, setJudul] = useState("")
   const [deskripsi, setDeskripsi] = useState("")
   const [startDate, setStartDate] = useState<Date>()
@@ -32,57 +35,33 @@ export default function CreateProjectPage() {
     e.preventDefault()
     
     if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to create a project",
-        variant: "destructive",
-      })
+      showError("Error", "You must be logged in to create a project")
       return
     }
 
     // Validasi form
     if (!judul.trim()) {
-      toast({
-        title: "Error",
-        description: "Project title is required",
-        variant: "destructive",
-      })
+      showError("Error", "Project title is required")
       return
     }
 
     if (!deskripsi.trim()) {
-      toast({
-        title: "Error",
-        description: "Project description is required",
-        variant: "destructive",
-      })
+      showError("Error", "Project description is required")
       return
     }
 
     if (!startDate) {
-      toast({
-        title: "Error",
-        description: "Start date is required",
-        variant: "destructive",
-      })
+      showError("Error", "Start date is required")
       return
     }
 
     if (!endDate) {
-      toast({
-        title: "Error",
-        description: "End date is required",
-        variant: "destructive",
-      })
+      showError("Error", "End date is required")
       return
     }
 
     if (endDate < startDate) {
-      toast({
-        title: "Error",
-        description: "End date must be after start date",
-        variant: "destructive",
-      })
+      showError("Error", "End date must be after start date")
       return
     }
 
@@ -110,11 +89,7 @@ export default function CreateProjectPage() {
         throw new Error(data.error || "Failed to create project")
       }
 
-      toast({
-        title: "Success",
-        description: "Project created successfully",
-      })
-
+      await showSuccess("Success!", "Project created successfully")
       router.push("/projects")
       router.refresh()
     } catch (error) {
@@ -124,6 +99,9 @@ export default function CreateProjectPage() {
         description: error instanceof Error ? error.message : "Failed to create project",
         variant: "destructive",
       })
+    } catch (error) {
+      console.error("Error creating project:", error)
+      showError("Error", error instanceof Error ? error.message : "Failed to create project")
     } finally {
       setIsSubmitting(false)
     }
@@ -131,14 +109,19 @@ export default function CreateProjectPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <Button variant="ghost" size="sm" asChild>
-        <Link href="/projects">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Projects
-        </Link>
-      </Button>
+      <AlertComponent />
+      
+      <AnimateIn stagger={0}>
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/projects">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Projects
+          </Link>
+        </Button>
+      </AnimateIn>
 
-      <Card>
+      <AnimateIn stagger={1}>
+        <Card>
         <CardHeader>
           <CardTitle>Create New Project</CardTitle>
           <CardDescription>Create a project assignment for your students</CardDescription>
@@ -168,19 +151,13 @@ export default function CreateProjectPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="lampiran">Attachment Link (Optional)</Label>
-              <Input
-                id="lampiran"
-                type="url"
-                placeholder="https://..."
-                value={lampiran}
-                onChange={(e) => setLampiran(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Add a link to project resources, guidelines, or reference materials
-              </p>
-            </div>
+            <FileUploadField
+              label="Attachment / Resource Link (Optional)"
+              value={lampiran}
+              onChange={setLampiran}
+              accept="*/*"
+              description="Upload file atau masukkan link ke project resources, guidelines, atau reference materials"
+            />
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
@@ -254,6 +231,7 @@ export default function CreateProjectPage() {
           </form>
         </CardContent>
       </Card>
+      </AnimateIn>
     </div>
   )
 }

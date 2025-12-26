@@ -15,12 +15,15 @@ import Link from "next/link"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
-import { toast } from "@/hooks/use-toast"
+import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { FileUploadField } from "@/components/file-upload-field"
+import { AnimateIn } from "@/components/ui/animate-in"
 
 export default function EditProjectPage() {
   const router = useRouter()
   const params = useParams()
   const { user } = useAuth()
+  const { error: showError, success: showSuccess, AlertComponent } = useSweetAlert()
   const projectId = params.id as string
   
   const [loading, setLoading] = useState(true)
@@ -56,11 +59,7 @@ export default function EditProjectPage() {
         }
       } catch (error) {
         console.error("Error fetching project:", error)
-        toast({
-          title: "Error",
-          description: "Failed to load project data",
-          variant: "destructive",
-        })
+        showError("Error", "Failed to load project data")
       } finally {
         setLoading(false)
       }
@@ -75,48 +74,28 @@ export default function EditProjectPage() {
     e.preventDefault()
     
     if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to update a project",
-        variant: "destructive",
-      })
+      showError("Error", "You must be logged in to update a project")
       return
     }
 
     // Validasi form
     if (!judul.trim()) {
-      toast({
-        title: "Error",
-        description: "Project title is required",
-        variant: "destructive",
-      })
+      showError("Error", "Project title is required")
       return
     }
 
     if (!deskripsi.trim()) {
-      toast({
-        title: "Error",
-        description: "Project description is required",
-        variant: "destructive",
-      })
+      showError("Error", "Project description is required")
       return
     }
 
     if (!startDate) {
-      toast({
-        title: "Error",
-        description: "Start date is required",
-        variant: "destructive",
-      })
+      showError("Error", "Start date is required")
       return
     }
 
     if (!endDate) {
-      toast({
-        title: "Error",
-        description: "End date is required",
-        variant: "destructive",
-      })
+      showError("Error", "End date is required")
       return
     }
 
@@ -152,20 +131,12 @@ export default function EditProjectPage() {
         throw new Error(data.error || "Failed to update project")
       }
 
-      toast({
-        title: "Success",
-        description: "Project updated successfully",
-      })
-
+      await showSuccess("Success!", "Project updated successfully")
       router.push(`/projects/${projectId}`)
       router.refresh()
     } catch (error) {
       console.error("Error updating project:", error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update project",
-        variant: "destructive",
-      })
+      showError("Error", error instanceof Error ? error.message : "Failed to update project")
     } finally {
       setIsSubmitting(false)
     }
@@ -184,17 +155,22 @@ export default function EditProjectPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <Button variant="ghost" size="sm" asChild>
-        <Link href={`/projects/${projectId}`}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Project
-        </Link>
-      </Button>
+      <AlertComponent />
+      
+      <AnimateIn stagger={0}>
+        <Button variant="ghost" size="sm" asChild>
+          <Link href={`/projects/${projectId}`}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Project
+          </Link>
+        </Button>
+      </AnimateIn>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Edit Project</CardTitle>
-          <CardDescription>Update project information</CardDescription>
+      <AnimateIn stagger={1}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Edit Project</CardTitle>
+            <CardDescription>Update project information</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -221,19 +197,13 @@ export default function EditProjectPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="lampiran">Attachment Link (Optional)</Label>
-              <Input
-                id="lampiran"
-                type="url"
-                placeholder="https://..."
-                value={lampiran}
-                onChange={(e) => setLampiran(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Add a link to project resources, guidelines, or reference materials
-              </p>
-            </div>
+            <FileUploadField
+              label="Attachment / Resource Link (Optional)"
+              value={lampiran}
+              onChange={setLampiran}
+              accept="*/*"
+              description="Upload file atau masukkan link ke project resources, guidelines, atau reference materials"
+            />
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
@@ -307,6 +277,7 @@ export default function EditProjectPage() {
           </form>
         </CardContent>
       </Card>
+      </AnimateIn>
     </div>
   )
 }

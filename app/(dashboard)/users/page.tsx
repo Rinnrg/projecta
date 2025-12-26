@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
+import { UserTableSkeleton } from "@/components/ui/loading-skeletons"
 import {
   Dialog,
   DialogContent,
@@ -98,13 +99,7 @@ export default function UsersPage() {
   }
 
   if (loading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    )
+    return <UserTableSkeleton />
   }
 
   if (error) {

@@ -11,10 +11,12 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, User, Mail, Lock, AtSign, Loader2 } from "lucide-react"
 import Link from "next/link"
-import { toast } from "@/hooks/use-toast"
+import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { AnimateIn } from "@/components/ui/animate-in"
 
 export default function AddUserPage() {
   const router = useRouter()
+  const { error: showError, success: showSuccess, AlertComponent } = useSweetAlert()
   const [nama, setNama] = useState("")
   const [email, setEmail] = useState("")
   const [username, setUsername] = useState("")
@@ -27,29 +29,17 @@ export default function AddUserPage() {
     
     // Validasi form
     if (!nama.trim()) {
-      toast({
-        title: "Error",
-        description: "Full name is required",
-        variant: "destructive",
-      })
+      showError("Error", "Full name is required")
       return
     }
 
     if (!email.trim()) {
-      toast({
-        title: "Error",
-        description: "Email is required",
-        variant: "destructive",
-      })
+      showError("Error", "Email is required")
       return
     }
 
     if (!role) {
-      toast({
-        title: "Error",
-        description: "Please select a role",
-        variant: "destructive",
-      })
+      showError("Error", "Please select a role")
       return
     }
 
@@ -76,20 +66,12 @@ export default function AddUserPage() {
         throw new Error(data.error || "Failed to create user")
       }
 
-      toast({
-        title: "Success",
-        description: "User created successfully",
-      })
-
+      await showSuccess("Success!", "User created successfully")
       router.push("/users")
       router.refresh()
     } catch (error) {
       console.error("Error creating user:", error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create user",
-        variant: "destructive",
-      })
+      showError("Error", error instanceof Error ? error.message : "Failed to create user")
     } finally {
       setIsSubmitting(false)
     }
@@ -97,19 +79,24 @@ export default function AddUserPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <Button variant="ghost" size="sm" asChild>
-        <Link href="/users">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Users
-        </Link>
-      </Button>
+      <AlertComponent />
+      
+      <AnimateIn stagger={0}>
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/users">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Users
+          </Link>
+        </Button>
+      </AnimateIn>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Add New User</CardTitle>
-          <CardDescription>Create a new user account for Projecta platform</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <AnimateIn stagger={1}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Add New User</CardTitle>
+            <CardDescription>Create a new user account for Projecta platform</CardDescription>
+          </CardHeader>
+          <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="nama">Full Name</Label>
@@ -215,6 +202,7 @@ export default function AddUserPage() {
           </form>
         </CardContent>
       </Card>
+      </AnimateIn>
     </div>
   )
 }

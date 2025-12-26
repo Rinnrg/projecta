@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/hooks/use-toast"
+import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { Loader2, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { FileUploadField } from "@/components/file-upload-field"
 
 interface AddMateriFormProps {
   courseId: string
@@ -20,6 +21,7 @@ interface AddMateriFormProps {
 export default function AddMateriForm({ courseId, courseTitle }: AddMateriFormProps) {
   const router = useRouter()
   const { user } = useAuth()
+  const { error: showError, success: showSuccess, AlertComponent } = useSweetAlert()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     judul: "",
@@ -31,20 +33,12 @@ export default function AddMateriForm({ courseId, courseTitle }: AddMateriFormPr
     e.preventDefault()
     
     if (!formData.judul) {
-      toast({
-        title: "Error",
-        description: "Judul wajib diisi",
-        variant: "destructive",
-      })
+      showError("Error", "Judul wajib diisi")
       return
     }
 
     if (!user?.id) {
-      toast({
-        title: "Error",
-        description: "User tidak terautentikasi",
-        variant: "destructive",
-      })
+      showError("Error", "User tidak terautentikasi")
       return
     }
 
@@ -68,27 +62,21 @@ export default function AddMateriForm({ courseId, courseTitle }: AddMateriFormPr
         throw new Error(errorData.error || 'Failed to create materi')
       }
 
-      toast({
-        title: "Berhasil",
-        description: "Materi berhasil ditambahkan",
-      })
-
+      await showSuccess("Berhasil!", "Materi berhasil ditambahkan")
       router.push(`/courses/${courseId}`)
       router.refresh()
     } catch (error) {
       console.error('Error creating materi:', error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Gagal menambahkan materi",
-        variant: "destructive",
-      })
+      showError("Error", error instanceof Error ? error.message : "Gagal menambahkan materi")
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <>
+      <AlertComponent />
+      <form onSubmit={handleSubmit}>
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2 mb-2">
@@ -132,18 +120,13 @@ export default function AddMateriForm({ courseId, courseTitle }: AddMateriFormPr
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="lampiran">Link / URL Materi</Label>
-            <Input
-              id="lampiran"
-              value={formData.lampiran}
-              onChange={(e) => setFormData({ ...formData, lampiran: e.target.value })}
-              placeholder="https://youtube.com/... atau https://drive.google.com/..."
-            />
-            <p className="text-xs text-muted-foreground">
-              Masukkan link YouTube, Google Drive, PDF, atau resource eksternal lainnya
-            </p>
-          </div>
+          <FileUploadField
+            label="Link / URL Materi"
+            value={formData.lampiran}
+            onChange={(value) => setFormData({ ...formData, lampiran: value })}
+            accept="*/*"
+            description="Upload file atau masukkan link YouTube, Google Drive, PDF, atau resource eksternal lainnya"
+          />
 
           <div className="flex gap-2 justify-end pt-4">
             <Button
@@ -168,5 +151,6 @@ export default function AddMateriForm({ courseId, courseTitle }: AddMateriFormPr
         </CardContent>
       </Card>
     </form>
+    </>
   )
 }
