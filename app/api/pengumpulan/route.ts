@@ -8,39 +8,32 @@ export async function GET(request: NextRequest) {
     const asesmenId = searchParams.get('asesmenId')
     const proyekId = searchParams.get('proyekId')
 
+    console.log('=== API Pengumpulan GET ===')
+    console.log('siswaId:', siswaId)
+    console.log('asesmenId:', asesmenId)
+    console.log('proyekId:', proyekId)
+
     const where: any = {}
     if (siswaId) where.siswaId = siswaId
     if (asesmenId) where.asesmenId = asesmenId
     if (proyekId) where.proyekId = proyekId
 
+    console.log('Where clause:', where)
+
     const pengumpulan = await prisma.pengumpulanProyek.findMany({
       where,
       include: {
-        siswa: {
-          select: {
-            id: true,
-            nama: true,
-            email: true,
-          },
-        },
-        asesmen: {
-          select: {
-            id: true,
-            nama: true,
-            tipe: true,
-          },
-        },
-        proyek: {
-          select: {
-            id: true,
-            judul: true,
-          },
-        },
+        siswa: true,
+        asesmen: true,
+        kelompok: true,
       },
       orderBy: {
         tgl_unggah: 'desc',
       },
     })
+
+    console.log('Found pengumpulan:', pengumpulan.length, 'records')
+    console.log('Pengumpulan data:', JSON.stringify(pengumpulan, null, 2))
 
     return NextResponse.json({ pengumpulan })
   } catch (error) {
@@ -56,17 +49,17 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { 
-      siswaId, 
-      asesmenId, 
-      proyekId, 
-      file, 
-      link, 
-      namaKelompok, 
-      ketua, 
-      anggota 
+      siswaId,
+      asesmenId,
+      kelompokId,
+      fileUrl,
+      catatan,
+      namaKelompok,
+      ketua,
+      anggota
     } = body
 
-    if (!siswaId || (!asesmenId && !proyekId)) {
+    if (!siswaId || !asesmenId) {
       return NextResponse.json(
         { error: 'Data tidak lengkap' },
         { status: 400 }
@@ -75,13 +68,13 @@ export async function POST(request: NextRequest) {
 
     const data: any = {
       siswaId,
+      asesmenId,
       tgl_unggah: new Date(),
     }
 
-    if (asesmenId) data.asesmenId = asesmenId
-    if (proyekId) data.proyekId = proyekId
-    if (file) data.file = file
-    if (link) data.link = link
+    if (kelompokId) data.kelompokId = kelompokId
+    if (fileUrl) data.fileUrl = fileUrl
+    if (catatan) data.catatan = catatan
     if (namaKelompok) data.namaKelompok = namaKelompok
     if (ketua) data.ketua = ketua
     if (anggota) data.anggota = anggota
@@ -89,13 +82,8 @@ export async function POST(request: NextRequest) {
     const pengumpulan = await prisma.pengumpulanProyek.create({
       data,
       include: {
-        siswa: {
-          select: {
-            id: true,
-            nama: true,
-            email: true,
-          },
-        },
+        siswa: true,
+        asesmen: true,
       },
     })
 

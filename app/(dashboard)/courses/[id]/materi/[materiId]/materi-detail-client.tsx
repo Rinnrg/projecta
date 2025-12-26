@@ -22,6 +22,7 @@ import {
   ExternalLink,
   Calendar,
   User,
+  Eye,
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
@@ -63,6 +64,7 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
   const { user } = useAuth()
   const { confirm, success: showSuccess, error: showError, AlertComponent } = useSweetAlert()
   const [selectedMateriId, setSelectedMateriId] = useState(materi.id)
+  const [showPdfViewer, setShowPdfViewer] = useState(false)
 
   const isTeacherOrAdmin = user?.role === "GURU" || user?.role === "ADMIN"
 
@@ -339,82 +341,106 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
                         </>
                       )}
                     </div>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="shrink-0 gap-2"
-                      asChild
-                    >
-                      <a 
-                        href={materi.fileData ? `/api/materi/${materi.id}/file` : materi.lampiran || '#'} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        download={materi.fileData ? materi.fileName || undefined : undefined}
+                    <div className="flex gap-2 shrink-0">
+                      {/* Tombol Lihat untuk PDF dan Video */}
+                      {((materi.fileData && (materi.fileType === 'application/pdf' || materi.fileType?.startsWith('video/'))) ||
+                        (materi.lampiran && (materi.lampiran.includes("youtube.com") || materi.lampiran.includes("youtu.be")))) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => setShowPdfViewer(!showPdfViewer)}
+                        >
+                          <Eye className="h-4 w-4" />
+                          {showPdfViewer ? 'Sembunyikan' : 'Lihat Lampiran'}
+                        </Button>
+                      )}
+                      
+                      {/* Tombol Unduh/Buka */}
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="gap-2"
+                        asChild
                       >
-                        {materi.fileData ? (
-                          <>
-                            <Download className="h-4 w-4" />
-                            Unduh
-                          </>
-                        ) : (
-                          <>
-                            <ExternalLink className="h-4 w-4" />
-                            Buka
-                          </>
-                        )}
-                      </a>
-                    </Button>
+                        <a 
+                          href={materi.fileData ? `/api/materi/${materi.id}/file` : materi.lampiran || '#'} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          download={materi.fileData ? materi.fileName || undefined : undefined}
+                        >
+                          {materi.fileData ? (
+                            <>
+                              <Download className="h-4 w-4" />
+                              Unduh
+                            </>
+                          ) : (
+                            <>
+                              <ExternalLink className="h-4 w-4" />
+                              Buka
+                            </>
+                          )}
+                        </a>
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
 
-                {/* YouTube Embed if it's a YouTube link */}
-                {materi.lampiran && (materi.lampiran.includes("youtube.com") || materi.lampiran.includes("youtu.be")) && (
-                  <Card>
-                    <CardContent className="p-4 sm:p-6">
-                      <div className="aspect-video w-full rounded-lg overflow-hidden bg-muted">
-                        <iframe
-                          src={materi.lampiran.replace("watch?v=", "embed/")}
-                          title={materi.judul}
-                          className="w-full h-full"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                {/* Preview Section dengan animasi slide */}
+                <div 
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    showPdfViewer ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+                >
+                  {/* YouTube Embed if it's a YouTube link */}
+                  {materi.lampiran && (materi.lampiran.includes("youtube.com") || materi.lampiran.includes("youtu.be")) && (
+                    <Card>
+                      <CardContent className="p-4 sm:p-6">
+                        <div className="aspect-video w-full rounded-lg overflow-hidden bg-muted">
+                          <iframe
+                            src={materi.lampiran.replace("watch?v=", "embed/")}
+                            title={materi.judul}
+                            className="w-full h-full"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
-                {/* PDF Preview for database files */}
-                {materi.fileData && materi.fileType === 'application/pdf' && (
-                  <Card>
-                    <CardContent className="p-4 sm:p-6">
-                      <div className="aspect-[3/4] w-full rounded-lg overflow-hidden bg-muted">
-                        <iframe
-                          src={`/api/materi/${materi.id}/file`}
-                          title={materi.judul}
-                          className="w-full h-full"
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                  {/* PDF Preview for database files */}
+                  {materi.fileData && materi.fileType === 'application/pdf' && (
+                    <Card>
+                      <CardContent className="p-4 sm:p-6">
+                        <div className="aspect-[3/4] w-full rounded-lg overflow-hidden bg-muted">
+                          <iframe
+                            src={`/api/materi/${materi.id}/file`}
+                            title={materi.judul}
+                            className="w-full h-full"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
-                {/* Video Preview for database video files */}
-                {materi.fileData && materi.fileType?.startsWith('video/') && (
-                  <Card>
-                    <CardContent className="p-4 sm:p-6">
-                      <div className="aspect-video w-full rounded-lg overflow-hidden bg-muted">
-                        <video
-                          src={`/api/materi/${materi.id}/file`}
-                          controls
-                          className="w-full h-full"
-                        >
-                          Browser Anda tidak mendukung tag video.
-                        </video>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                  {/* Video Preview for database video files */}
+                  {materi.fileData && materi.fileType?.startsWith('video/') && (
+                    <Card>
+                      <CardContent className="p-4 sm:p-6">
+                        <div className="aspect-video w-full rounded-lg overflow-hidden bg-muted">
+                          <video
+                            src={`/api/materi/${materi.id}/file`}
+                            controls
+                            className="w-full h-full"
+                          >
+                            Browser Anda tidak mendukung tag video.
+                          </video>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center border-2 border-dashed rounded-xl bg-muted/30">
