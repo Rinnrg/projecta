@@ -31,9 +31,26 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Optimized: Use select to exclude heavy fileData field
     const asesmen = await prisma.asesmen.findMany({
       where: whereClause,
-      include: {
+      select: {
+        id: true,
+        nama: true,
+        deskripsi: true,
+        tipe: true,
+        tipePengerjaan: true,
+        jml_soal: true,
+        durasi: true,
+        tgl_mulai: true,
+        tgl_selesai: true,
+        lampiran: true,
+        // Exclude fileData to reduce payload size
+        fileName: true,
+        fileType: true,
+        fileSize: true,
+        guruId: true,
+        courseId: true,
         guru: {
           select: {
             id: true,

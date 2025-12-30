@@ -63,6 +63,9 @@ model Course {
   asesmen     Asesmen[]
   materi      Materi[]
   enrollments Enrollment[]
+
+  @@index([guruId])
+  @@index([kategori])
 }
 
 model Materi {
@@ -80,6 +83,9 @@ model Materi {
 
   courseId String
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([tgl_unggah])
 }
 
 model Asesmen {
@@ -110,6 +116,12 @@ model Asesmen {
 
   nilai             Nilai[]
   pengumpulanProyek PengumpulanProyek[] // Renamed from pengumpulanTugas
+
+  @@index([guruId])
+  @@index([courseId])
+  @@index([tipe])
+  @@index([tgl_mulai])
+  @@index([tgl_selesai])
 }
 
 model Soal {
@@ -123,6 +135,8 @@ model Soal {
 
   opsi          Opsi[]
   jawabanSiswa  JawabanSiswa[]
+
+  @@index([asesmenId])
 }
 
 model Opsi {
@@ -132,6 +146,8 @@ model Opsi {
 
   soalId String
   soal   Soal   @relation(fields: [soalId], references: [id], onDelete: Cascade)
+
+  @@index([soalId])
 }
 
 model JawabanSiswa {
@@ -151,6 +167,9 @@ model JawabanSiswa {
   nilai   Nilai?  @relation(fields: [nilaiId], references: [id], onDelete: Cascade)
 
   @@unique([siswaId, soalId], name: "siswaId_soalId")
+  @@index([siswaId])
+  @@index([soalId])
+  @@index([nilaiId])
 }
 
 model Nilai {
@@ -167,6 +186,9 @@ model Nilai {
   jawabanSiswa JawabanSiswa[]
 
   @@unique([siswaId, asesmenId], name: "siswaId_asesmenId")
+  @@index([siswaId])
+  @@index([asesmenId])
+  @@index([tanggal])
 }
 
 model Proyek {
@@ -187,6 +209,10 @@ model Proyek {
   guru   User   @relation(fields: [guruId], references: [id])
 
   kelompok Kelompok[]
+
+  @@index([guruId])
+  @@index([tgl_mulai])
+  @@index([tgl_selesai])
 }
 
 model Kelompok {
@@ -198,6 +224,8 @@ model Kelompok {
 
   anggota     AnggotaKelompok[]
   pengumpulan PengumpulanProyek[]
+
+  @@index([proyekId])
 }
 
 model AnggotaKelompok {
@@ -208,6 +236,9 @@ model AnggotaKelompok {
 
   siswaId String
   siswa   User   @relation(fields: [siswaId], references: [id])
+
+  @@index([kelompokId])
+  @@index([siswaId])
 }
 
 model PengumpulanProyek {
@@ -235,6 +266,11 @@ model PengumpulanProyek {
   asesmen   Asesmen? @relation(fields: [asesmenId], references: [id], onDelete: Cascade)
 
   profileShowcase ProfileShowcase?
+
+  @@index([kelompokId])
+  @@index([siswaId])
+  @@index([asesmenId])
+  @@index([tgl_unggah])
 }
 
 model ProfileShowcase {
@@ -253,6 +289,10 @@ model ProfileShowcase {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([siswaId])
+  @@index([isPublic])
+  @@index([tanggalDinilai])
 }
 
 model Enrollment {
@@ -267,4 +307,7 @@ model Enrollment {
   siswa   User   @relation(fields: [siswaId], references: [id], onDelete: Cascade)
 
   @@unique([courseId, siswaId])
+  @@index([courseId])
+  @@index([siswaId])
+  @@index([enrolledAt])
 }

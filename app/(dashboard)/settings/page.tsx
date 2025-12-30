@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
 
 export default function SettingsPage() {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const { theme, setTheme } = useTheme()
   const { t } = useAutoTranslate()
   const { locale, setLocale } = useAutoTranslate()
@@ -73,8 +73,10 @@ export default function SettingsPage() {
       
       if (result.success) {
         success(t("Berhasil"), "Foto profil berhasil diperbarui")
+        // Refresh user data to get updated photo URL
+        await refreshUser()
+        // Force re-render of all components
         router.refresh()
-        window.location.reload() // Refresh to update avatar everywhere
       } else {
         showError("Gagal Upload", result.error || "Terjadi kesalahan saat mengupload foto")
       }

@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null
   setUser: (user: User) => void
   setUserRole: (role: UserRole) => void
+  refreshUser: () => Promise<void>
   isAuthenticated: boolean
   logout: () => void
   isLoading: boolean
@@ -54,6 +55,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  const refreshUser = async () => {
+    if (!user?.id) return
+    
+    try {
+      const response = await fetch(`/api/users/${user.id}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.user) {
+          setUser(data.user)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to refresh user:', error)
+    }
+  }
+
   const logout = () => {
     setUser(null)
     localStorage.removeItem('user')
@@ -64,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user, 
       setUser, 
       setUserRole, 
+      refreshUser,
       isAuthenticated: !!user, 
       logout,
       isLoading 

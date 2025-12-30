@@ -6,9 +6,20 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const courseId = searchParams.get('courseId')
 
+    // Optimized: Use select to exclude heavy fileData field
     const materi = await prisma.materi.findMany({
       where: courseId ? { courseId } : {},
-      include: {
+      select: {
+        id: true,
+        judul: true,
+        deskripsi: true,
+        tgl_unggah: true,
+        lampiran: true,
+        // Exclude fileData to reduce payload size
+        fileName: true,
+        fileType: true,
+        fileSize: true,
+        courseId: true,
         course: {
           select: {
             id: true,

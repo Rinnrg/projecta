@@ -360,36 +360,65 @@ export default function DashboardPage() {
                 {user.role === "SISWA" ? t("Siap Dikerjakan") : t("Asesmen Terbaru")}
               </h3>
               <div className="space-y-2">
-                {asesmenList.slice(0, 3).map((asesmen) => (
-                  <div
-                    key={asesmen.id}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-border/50 bg-muted/30 p-2 transition-colors hover:bg-muted/50 sm:gap-3 sm:p-3"
-                  >
-                    <div className="space-y-0.5 min-w-0">
-                      <p className="text-xs sm:text-sm">
-                        <span className="font-medium">{asesmen.nama}</span>{" "}
-                        <span className="text-muted-foreground line-clamp-1">
-                          {asesmen.course?.judul || asesmen.course?.kategori}
-                        </span>
-                      </p>
-                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground sm:gap-2 sm:text-xs">
-                        <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                        {asesmen.durasi}m<span className="text-border">•</span>
-                        {asesmen.jml_soal} {t("common.questions")}
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant={user.role === "SISWA" ? "default" : "ghost"}
-                      className="h-6 text-[10px] shrink-0 sm:h-7 sm:text-xs"
-                      asChild
+                {asesmenList.slice(0, 3).map((asesmen) => {
+                  // Determine status for siswa
+                  const isOverdue = asesmen.tgl_selesai && new Date(asesmen.tgl_selesai) < new Date()
+                  const isCompleted = asesmen.isCompleted || false // This should come from API
+                  
+                  // Calculate border and background color based on status
+                  let borderColor = 'border-border/50'
+                  let bgColor = 'bg-muted/30'
+                  let statusLabel = ''
+                  
+                  if (user.role === "SISWA") {
+                    if (isCompleted) {
+                      borderColor = 'border-green-500/50'
+                      bgColor = 'bg-green-50 dark:bg-green-950/20'
+                      statusLabel = ''
+                    } else if (isOverdue) {
+                      borderColor = 'border-red-500'
+                      bgColor = 'bg-muted/30'
+                      statusLabel = t("Terlambat")
+                    }
+                  }
+                  
+                  return (
+                    <div
+                      key={asesmen.id}
+                      className={`flex items-center justify-between gap-2 rounded-lg border ${borderColor} ${bgColor} p-2 transition-colors hover:bg-muted/50 sm:gap-3 sm:p-3`}
                     >
-                      <Link href={`/courses/${asesmen.courseId}/asesmen/${asesmen.id}`}>
-                        {user.role === "SISWA" ? t("common.start") : t("Edit")}
-                      </Link>
-                    </Button>
-                  </div>
-                ))}
+                      <div className="space-y-0.5 min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm">
+                          <span className="font-medium">{asesmen.nama}</span>{" "}
+                          <span className="text-muted-foreground line-clamp-1">
+                            {asesmen.course?.judul || asesmen.course?.kategori}
+                          </span>
+                        </p>
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground sm:gap-2 sm:text-xs">
+                          <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                          {asesmen.durasi}m<span className="text-border">•</span>
+                          {asesmen.jml_soal} {t("common.questions")}
+                          {statusLabel && user.role === "SISWA" && (
+                            <>
+                              <span className="text-border">•</span>
+                              <span className="text-red-500 font-medium">{statusLabel}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={user.role === "SISWA" ? (isCompleted ? "outline" : "default") : "ghost"}
+                        className="h-6 text-[10px] shrink-0 sm:h-7 sm:text-xs"
+                        asChild
+                      >
+                        <Link href={`/courses/${asesmen.courseId}/asesmen/${asesmen.id}`}>
+                          {user.role === "SISWA" ? (isCompleted ? t("Lihat") : t("Mulai")) : t("Edit")}
+                        </Link>
+                      </Button>
+                    </div>
+                  )
+                })}
               </div>
             </Card>
           )}

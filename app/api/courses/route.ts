@@ -10,10 +10,15 @@ export async function GET(request: NextRequest) {
     let courses
 
     if (guruId) {
-      // Get courses by teacher
+      // Get courses by teacher - optimized with select
       courses = await prisma.course.findMany({
         where: { guruId },
-        include: {
+        select: {
+          id: true,
+          judul: true,
+          gambar: true,
+          kategori: true,
+          guruId: true,
           guru: {
             select: {
               id: true,
@@ -22,21 +27,32 @@ export async function GET(request: NextRequest) {
               foto: true,
             },
           },
-          materi: true,
-          asesmen: true,
-          enrollments: true,
+          _count: {
+            select: {
+              materi: true,
+              asesmen: true,
+              enrollments: true,
+            },
+          },
         },
         orderBy: {
           judul: 'asc',
         },
       })
     } else if (siswaId) {
-      // Get enrolled courses by student
+      // Get enrolled courses by student - optimized with select
       const enrollments = await prisma.enrollment.findMany({
         where: { siswaId },
-        include: {
+        select: {
+          progress: true,
+          enrolledAt: true,
           course: {
-            include: {
+            select: {
+              id: true,
+              judul: true,
+              gambar: true,
+              kategori: true,
+              guruId: true,
               guru: {
                 select: {
                   id: true,
@@ -45,8 +61,12 @@ export async function GET(request: NextRequest) {
                   foto: true,
                 },
               },
-              materi: true,
-              asesmen: true,
+              _count: {
+                select: {
+                  materi: true,
+                  asesmen: true,
+                },
+              },
             },
           },
         },
@@ -61,9 +81,14 @@ export async function GET(request: NextRequest) {
         enrolledAt: e.enrolledAt,
       }))
     } else {
-      // Get all courses
+      // Get all courses - optimized with select
       courses = await prisma.course.findMany({
-        include: {
+        select: {
+          id: true,
+          judul: true,
+          gambar: true,
+          kategori: true,
+          guruId: true,
           guru: {
             select: {
               id: true,
@@ -72,8 +97,13 @@ export async function GET(request: NextRequest) {
               foto: true,
             },
           },
-          materi: true,
-          asesmen: true,
+          _count: {
+            select: {
+              materi: true,
+              asesmen: true,
+              enrollments: true,
+            },
+          },
         },
         orderBy: {
           judul: 'asc',

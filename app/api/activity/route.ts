@@ -18,24 +18,69 @@ export async function GET(request: NextRequest) {
     const activities: any[] = []
 
     if (role === 'SISWA') {
-      // Get recent nilai (assessment submissions)
-      const recentNilai = await prisma.nilai.findMany({
-        where: { siswaId: userId },
-        include: {
-          asesmen: {
-            select: {
-              nama: true,
-              course: {
-                select: {
-                  judul: true
+      // Optimized: Execute all queries in parallel using Promise.all with select
+      const [recentNilai, recentProjects, recentEnrollments] = await Promise.all([
+        prisma.nilai.findMany({
+          where: { siswaId: userId },
+          select: {
+            tanggal: true,
+            skor: true,
+            asesmen: {
+              select: {
+                nama: true,
+                course: {
+                  select: {
+                    judul: true
+                  }
                 }
               }
             }
-          }
-        },
-        orderBy: { tanggal: 'desc' },
-        take: 5
-      })
+          },
+          orderBy: { tanggal: 'desc' },
+          take: 5
+        }),
+        prisma.pengumpulanProyek.findMany({
+          where: {
+            kelompok: {
+              anggota: {
+                some: {
+                  siswaId: userId
+                }
+              }
+            }
+          },
+          select: {
+            tgl_unggah: true,
+            nilai: true,
+            kelompok: {
+              select: {
+                nama: true,
+                proyek: {
+                  select: {
+                    judul: true
+                  }
+                }
+              }
+            }
+          },
+          orderBy: { tgl_unggah: 'desc' },
+          take: 5
+        }),
+        prisma.enrollment.findMany({
+          where: { siswaId: userId },
+          select: {
+            enrolledAt: true,
+            progress: true,
+            course: {
+              select: {
+                judul: true
+              }
+            }
+          },
+          orderBy: { enrolledAt: 'desc' },
+          take: 3
+        })
+      ])
 
       recentNilai.forEach(n => {
         activities.push({
@@ -46,32 +91,6 @@ export async function GET(request: NextRequest) {
           type: 'quiz',
           score: n.skor
         })
-      })
-
-      // Get recent project submissions
-      const recentProjects = await prisma.pengumpulanProyek.findMany({
-        where: {
-          kelompok: {
-            anggota: {
-              some: {
-                siswaId: userId
-              }
-            }
-          }
-        },
-        include: {
-          kelompok: {
-            include: {
-              proyek: {
-                select: {
-                  judul: true
-                }
-              }
-            }
-          }
-        },
-        orderBy: { tgl_unggah: 'desc' },
-        take: 5
       })
 
       recentProjects.forEach(p => {
@@ -85,20 +104,6 @@ export async function GET(request: NextRequest) {
         })
       })
 
-      // Get recent enrollments
-      const recentEnrollments = await prisma.enrollment.findMany({
-        where: { siswaId: userId },
-        include: {
-          course: {
-            select: {
-              judul: true
-            }
-          }
-        },
-        orderBy: { enrolledAt: 'desc' },
-        take: 3
-      })
-
       recentEnrollments.forEach(e => {
         activities.push({
           action: 'enrolled',
@@ -109,12 +114,68 @@ export async function GET(request: NextRequest) {
         })
       })
     } else if (role === 'GURU') {
-      // Get recently created courses
-      const recentCourses = await prisma.course.findMany({
-        where: { guruId: userId },
-        orderBy: { id: 'desc' },
-        take: 3
-      })
+      // Optimized: Execute all queries in parallel using Promise.all with select
+      const [recentCourses, recentAsesmen, recentProjects, recentGrades] = await Promise.all([
+        prisma.course.findMany({
+          where: { guruId: userId },
+          select: {
+            judul: true,
+            id: true,
+          },
+          orderBy: { id: 'desc' },
+          take: 3
+        }),
+        prisma.asesmen.findMany({
+          where: { guruId: userId },
+          select: {
+            nama: true,
+            course: {
+              select: {
+                judul: true
+              }
+            }
+          },
+          orderBy: { id: 'desc' },
+          take: 3
+        }),
+        prisma.proyek.findMany({
+          where: { guruId: userId },
+          select: {
+            judul: true,
+            tgl_mulai: true,
+          },
+          orderBy: { tgl_mulai: 'desc' },
+          take: 3
+        }),
+        prisma.pengumpulanProyek.findMany({
+          where: {
+            kelompok: {
+              proyek: {
+                guruId: userId
+              }
+            },
+            nilai: {
+              not: null
+            }
+          },
+          select: {
+            tgl_unggah: true,
+            nilai: true,
+            kelompok: {
+              select: {
+                nama: true,
+                proyek: {
+                  select: {
+                    judul: true
+                  }
+                },
+              }
+            }
+          },
+          orderBy: { tgl_unggah: 'desc' },
+          take: 3
+        })
+      ])
 
       recentCourses.forEach(c => {
         activities.push({
@@ -123,20 +184,6 @@ export async function GET(request: NextRequest) {
           time: new Date().toISOString(), // Since there's no createdAt field
           type: 'course'
         })
-      })
-
-      // Get recently created assessments
-      const recentAsesmen = await prisma.asesmen.findMany({
-        where: { guruId: userId },
-        include: {
-          course: {
-            select: {
-              judul: true
-            }
-          }
-        },
-        orderBy: { id: 'desc' },
-        take: 3
       })
 
       recentAsesmen.forEach(a => {
@@ -149,13 +196,6 @@ export async function GET(request: NextRequest) {
         })
       })
 
-      // Get recently created projects
-      const recentProjects = await prisma.proyek.findMany({
-        where: { guruId: userId },
-        orderBy: { tgl_mulai: 'desc' },
-        take: 3
-      })
-
       recentProjects.forEach(p => {
         activities.push({
           action: 'created',
@@ -163,42 +203,6 @@ export async function GET(request: NextRequest) {
           time: p.tgl_mulai.toISOString(),
           type: 'project'
         })
-      })
-
-      // Get recent graded submissions
-      const recentGrades = await prisma.pengumpulanProyek.findMany({
-        where: {
-          kelompok: {
-            proyek: {
-              guruId: userId
-            }
-          },
-          nilai: {
-            not: null
-          }
-        },
-        include: {
-          kelompok: {
-            include: {
-              proyek: {
-                select: {
-                  judul: true
-                }
-              },
-              anggota: {
-                include: {
-                  siswa: {
-                    select: {
-                      nama: true
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        orderBy: { tgl_unggah: 'desc' },
-        take: 3
       })
 
       recentGrades.forEach(g => {

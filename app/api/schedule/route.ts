@@ -18,11 +18,33 @@ export async function GET(request: NextRequest) {
     const scheduleEvents: any[] = []
 
     if (role === 'SISWA') {
-      // Get enrolled courses
-      const enrollments = await prisma.enrollment.findMany({
-        where: { siswaId: userId },
-        select: { courseId: true }
-      })
+      // Optimized: Execute all queries in parallel using Promise.all
+      const [enrollments, anggotaKelompok] = await Promise.all([
+        prisma.enrollment.findMany({
+          where: { siswaId: userId },
+          select: { courseId: true }
+        }),
+        prisma.anggotaKelompok.findMany({
+          where: { siswaId: userId },
+          select: {
+            kelompok: {
+              select: {
+                nama: true,
+                proyek: {
+                  select: {
+                    id: true,
+                    judul: true,
+                    deskripsi: true,
+                    tgl_mulai: true,
+                    tgl_selesai: true,
+                  }
+                }
+              }
+            }
+          }
+        })
+      ])
+
       const courseIds = enrollments.map(e => e.courseId)
 
       // Get upcoming assessments from enrolled courses
@@ -30,22 +52,19 @@ export async function GET(request: NextRequest) {
         where: {
           courseId: { in: courseIds }
         },
-        include: {
+        select: {
+          id: true,
+          nama: true,
+          deskripsi: true,
+          tipe: true,
+          jml_soal: true,
+          durasi: true,
+          tgl_mulai: true,
+          tgl_selesai: true,
+          courseId: true,
           course: {
             select: {
               judul: true
-            }
-          }
-        }
-      })
-
-      // Get projects where student is a member
-      const anggotaKelompok = await prisma.anggotaKelompok.findMany({
-        where: { siswaId: userId },
-        include: {
-          kelompok: {
-            include: {
-              proyek: true
             }
           }
         }
@@ -83,22 +102,38 @@ export async function GET(request: NextRequest) {
         }
       })
     } else if (role === 'GURU') {
-      // Get assessments created by teacher
-      const asesmen = await prisma.asesmen.findMany({
-        where: { guruId: userId },
-        include: {
-          course: {
-            select: {
-              judul: true
+      // Optimized: Execute both queries in parallel using Promise.all
+      const [asesmen, proyeks] = await Promise.all([
+        prisma.asesmen.findMany({
+          where: { guruId: userId },
+          select: {
+            id: true,
+            nama: true,
+            deskripsi: true,
+            tipe: true,
+            jml_soal: true,
+            durasi: true,
+            tgl_mulai: true,
+            tgl_selesai: true,
+            courseId: true,
+            course: {
+              select: {
+                judul: true
+              }
             }
           }
-        }
-      })
-
-      // Get projects created by teacher
-      const proyeks = await prisma.proyek.findMany({
-        where: { guruId: userId }
-      })
+        }),
+        prisma.proyek.findMany({
+          where: { guruId: userId },
+          select: {
+            id: true,
+            judul: true,
+            deskripsi: true,
+            tgl_mulai: true,
+            tgl_selesai: true,
+          }
+        })
+      ])
 
       // Add assessments to schedule
       asesmen.forEach(a => {
