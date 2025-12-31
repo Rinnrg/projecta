@@ -41,16 +41,12 @@ interface SearchResults {
     judul: string
     kategori: string
     gambar: string
-    guru?: {
-      nama: string
-    }
   }>
   materi: Array<{
     id: string
     judul: string
     deskripsi: string | null
     tgl_unggah: Date
-    fileType?: string | null
     course: {
       id: string
       judul: string
@@ -62,7 +58,6 @@ interface SearchResults {
     nama: string
     deskripsi: string | null
     tipe: string
-    tgl_mulai?: Date | null
     tgl_selesai: Date | null
     course: {
       id: string
@@ -82,32 +77,6 @@ interface SearchResults {
       nama: string
     }
   }>
-  users?: Array<{
-    id: string
-    nama: string
-    email: string
-    username: string | null
-    role: string
-    foto: string | null
-  }>
-  projects?: Array<{
-    id: string
-    catatan: string | null
-    namaKelompok: string | null
-    nilai: number | null
-    tgl_unggah: Date
-    kelompok?: {
-      proyek: {
-        judul: string
-      }
-    } | null
-    asesmen?: {
-      nama: string
-      course: {
-        judul: string
-      }
-    } | null
-  }>
 }
 
 export function SearchDropdown() {
@@ -121,8 +90,6 @@ export function SearchDropdown() {
     materi: [],
     asesmen: [],
     schedules: [],
-    users: [],
-    projects: [],
   })
   const dropdownRef = React.useRef<HTMLDivElement>(null)
   const inputRef = React.useRef<HTMLInputElement>(null)
@@ -164,8 +131,6 @@ export function SearchDropdown() {
         materi: [],
         asesmen: [],
         schedules: [],
-        users: [],
-        projects: [],
       })
       return
     }
@@ -181,8 +146,6 @@ export function SearchDropdown() {
             materi: [],
             asesmen: [],
             schedules: [],
-            users: [],
-            projects: [],
           })
         }
       } catch (error) {

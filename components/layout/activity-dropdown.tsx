@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth-context"
 import {
@@ -10,28 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Bell, 
-  Award, 
-  Upload, 
-  BookOpen, 
-  Clock, 
-  CheckCircle2, 
-  Loader2, 
-  Check, 
-  CheckCheck,
-  UserCheck,
-  Settings,
-  Camera,
-  Key,
-  FileText,
-  Folder,
-  Image,
-  Trash2,
-  Edit,
-  LogIn,
-  LogOut
-} from "lucide-react"
+import { Bell, Award, Upload, BookOpen, Clock, CheckCircle2, Loader2, Check, CheckCheck } from "lucide-react"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 import { id as localeId } from "date-fns/locale"
@@ -43,8 +24,6 @@ interface Activity {
   time: string
   type: string
   score?: number
-  group?: string
-  progress?: number
 }
 
 export function ActivityDropdown() {
@@ -127,19 +106,8 @@ export function ActivityDropdown() {
       case 'assignment':
       case 'submission':
         return <Upload className="h-4 w-4" />
-      case 'course':
       case 'enrollment':
         return <BookOpen className="h-4 w-4" />
-      case 'profile':
-        return <UserCheck className="h-4 w-4" />
-      case 'project':
-        return <Folder className="h-4 w-4" />
-      case 'material':
-        return <FileText className="h-4 w-4" />
-      case 'showcase':
-        return <Image className="h-4 w-4" />
-      case 'auth':
-        return <LogIn className="h-4 w-4" />
       default:
         return <CheckCircle2 className="h-4 w-4" />
     }
@@ -153,62 +121,26 @@ export function ActivityDropdown() {
       case 'assignment':
       case 'submission':
         return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-      case 'course':
       case 'enrollment':
         return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
-      case 'profile':
-        return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
-      case 'project':
-        return "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400"
-      case 'material':
-        return "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400"
-      case 'showcase':
-        return "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400"
-      case 'auth':
-        return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400"
       default:
         return "bg-muted text-muted-foreground"
     }
   }
 
   const getActivityLabel = (action: string) => {
-    const labels: Record<string, string> = {
-      // Existing
-      'completed': 'Menyelesaikan',
-      'submitted': 'Mengumpulkan',
-      'graded': 'Dinilai',
-      'enrolled': 'Bergabung',
-      'created': 'Membuat',
-      // New activity types
-      'updated_profile': 'Memperbarui profil',
-      'changed_password': 'Mengubah kata sandi',
-      'updated_photo': 'Mengubah foto profil',
-      'completed_quiz': 'Menyelesaikan kuis',
-      'started_quiz': 'Memulai kuis',
-      'submitted_task': 'Mengumpulkan tugas',
-      'graded_task': 'Menilai tugas',
-      'joined_course': 'Bergabung dengan kursus',
-      'left_course': 'Keluar dari kursus',
-      'created_course': 'Membuat kursus',
-      'updated_course': 'Memperbarui kursus',
-      'deleted_course': 'Menghapus kursus',
-      'created_assessment': 'Membuat asesmen',
-      'updated_assessment': 'Memperbarui asesmen',
-      'deleted_assessment': 'Menghapus asesmen',
-      'created_project': 'Membuat proyek',
-      'updated_project': 'Memperbarui proyek',
-      'deleted_project': 'Menghapus proyek',
-      'uploaded_material': 'Mengunggah materi',
-      'updated_material': 'Memperbarui materi',
-      'deleted_material': 'Menghapus materi',
-      'viewed_material': 'Melihat materi',
-      'created_showcase': 'Membuat showcase',
-      'updated_showcase': 'Memperbarui showcase',
-      'deleted_showcase': 'Menghapus showcase',
-      'logged_in': 'Masuk',
-      'logged_out': 'Keluar',
+    switch (action) {
+      case 'completed':
+        return 'Menyelesaikan'
+      case 'submitted':
+        return 'Mengumpulkan'
+      case 'graded':
+        return 'Dinilai'
+      case 'enrolled':
+        return 'Bergabung'
+      default:
+        return action
     }
-    return labels[action] || action
   }
 
   // Generate unique ID for activity

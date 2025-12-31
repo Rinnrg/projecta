@@ -49,7 +49,6 @@ model User {
   enrollments     Enrollment[]
   pengumpulanProyek PengumpulanProyek[] // For individual task submissions
   jawabanSiswa    JawabanSiswa[]
-  activities      Activity[]
 }
 
 model Course {
@@ -311,25 +310,4 @@ model Enrollment {
   @@index([courseId])
   @@index([siswaId])
   @@index([enrolledAt])
-}
-
-model Activity {
-  id          String   @id @default(cuid())
-  action      String   // e.g., "updated_profile", "completed_quiz", "submitted_task", "joined_course", "created_course", etc.
-  description String   @db.Text // Detailed description of the activity
-  metadata    Json?    // Additional data (scores, course names, etc.)
-  createdAt   DateTime @default(now())
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Optional references to related entities
-  courseId  String?
-  asesmenId String?
-  proyekId  String?
-  materiId  String?
-
-  @@index([userId])
-  @@index([createdAt])
-  @@index([action])
 }
