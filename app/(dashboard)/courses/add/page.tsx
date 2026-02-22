@@ -15,7 +15,6 @@ import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { AnimateIn } from "@/components/ui/animate-in"
-import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 const categories = ["Programming", "Database", "Design", "Networking", "Security", "DevOps"]
 
@@ -84,7 +83,6 @@ export default function AddCoursePage() {
   return (
     <div className="w-full space-y-6">
       <AlertComponent />
-      <FloatingBackButton href="/courses" />
       
       <AnimateIn stagger={1}>
         <Card>
