@@ -291,13 +291,20 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
 
     setIsLoading(true)
     try {
+      // Konversi datetime-local string ke ISO string agar timezone client terkirim dengan benar
+      const toISOWithTimezone = (dtLocal: string) => {
+        if (!dtLocal) return null
+        const d = new Date(dtLocal)
+        return isNaN(d.getTime()) ? null : d.toISOString()
+      }
+
       const bodyData: any = {
         nama: formData.nama,
         deskripsi: formData.deskripsi || null,
         tipe: formData.tipe,
         tipePengerjaan: formData.tipe === 'TUGAS' ? formData.tipePengerjaan : null,
-        tgl_mulai: formData.tgl_mulai || null,
-        tgl_selesai: formData.tgl_selesai || null,
+        tgl_mulai: toISOWithTimezone(formData.tgl_mulai),
+        tgl_selesai: toISOWithTimezone(formData.tgl_selesai),
         durasi: formData.durasi ? parseInt(formData.durasi) : null,
         courseId: courseId,
         guruId: user.id,

@@ -96,19 +96,23 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
       // Set form data
       const asesmen = asesmenData.asesmen
       
-      console.log('Raw asesmen data:', asesmen)
-      console.log('tgl_mulai raw:', asesmen.tgl_mulai)
-      console.log('tgl_selesai raw:', asesmen.tgl_selesai)
+      // Helper: format Date ke string datetime-local (waktu lokal, bukan UTC)
+      const toLocalDatetimeString = (dateStr: string) => {
+        const d = new Date(dateStr)
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        const hours = String(d.getHours()).padStart(2, '0')
+        const minutes = String(d.getMinutes()).padStart(2, '0')
+        return `${year}-${month}-${day}T${hours}:${minutes}`
+      }
       
       const tglMulaiFormatted = asesmen.tgl_mulai 
-        ? new Date(asesmen.tgl_mulai).toISOString().slice(0, 16) 
+        ? toLocalDatetimeString(asesmen.tgl_mulai) 
         : ""
       const tglSelesaiFormatted = asesmen.tgl_selesai 
-        ? new Date(asesmen.tgl_selesai).toISOString().slice(0, 16) 
+        ? toLocalDatetimeString(asesmen.tgl_selesai) 
         : ""
-      
-      console.log('tgl_mulai formatted:', tglMulaiFormatted)
-      console.log('tgl_selesai formatted:', tglSelesaiFormatted)
       
       setFormData({
         nama: asesmen.nama || "",
@@ -286,22 +290,24 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
 
     setIsSaving(true)
     try {
+      // Konversi datetime-local string ke ISO string agar timezone client terkirim dengan benar
+      const toISOWithTimezone = (dtLocal: string) => {
+        if (!dtLocal) return null
+        const d = new Date(dtLocal)
+        return isNaN(d.getTime()) ? null : d.toISOString()
+      }
+
       const bodyData: any = {
         nama: formData.nama,
         deskripsi: formData.deskripsi || null,
         tipe: formData.tipe,
         tipePengerjaan: formData.tipe === 'TUGAS' ? formData.tipePengerjaan : null,
-        tgl_mulai: formData.tgl_mulai || null,
-        tgl_selesai: formData.tgl_selesai || null,
+        tgl_mulai: toISOWithTimezone(formData.tgl_mulai),
+        tgl_selesai: toISOWithTimezone(formData.tgl_selesai),
         durasi: formData.durasi ? parseInt(formData.durasi) : null,
         lampiran: formData.lampiran || null,
         courseId: formData.courseId,
       }
-      
-      console.log('=== SUBMIT DATA ===')
-      console.log('Form state tgl_mulai:', formData.tgl_mulai)
-      console.log('Form state tgl_selesai:', formData.tgl_selesai)
-      console.log('Body data being sent:', JSON.stringify(bodyData, null, 2))
 
       // Tambahkan soal untuk KUIS
       if (formData.tipe === 'KUIS') {
