@@ -28,7 +28,6 @@ import { AnimateIn } from "@/components/ui/animate-in"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import ProjectGroupsManagement from "@/components/project-groups-management"
 import { SINTAKS_MAP, getSintaksInfo } from "@/lib/constants/project"
-import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 interface Proyek {
   id: string
