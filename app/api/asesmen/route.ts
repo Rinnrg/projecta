@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
       fileSize,
       courseId,
       guruId,
+      antiCurang,
       soal // Array of questions for KUIS
     } = body
 
@@ -226,6 +227,7 @@ export async function POST(request: NextRequest) {
       tgl_selesai: endDate,
       guruId: guruId,
       courseId,
+      antiCurang: !!antiCurang,
     }
     
     // Add tipePengerjaan only for TUGAS

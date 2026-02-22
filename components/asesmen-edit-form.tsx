@@ -19,6 +19,7 @@ import { Loader2, Plus, Trash2, Check, X, ImagePlus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { FileUploadField } from "@/components/file-upload-field"
+import { Switch } from "@/components/ui/switch"
 
 interface AsesmenEditFormProps {
   asesmenId: string
@@ -72,6 +73,7 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
     durasi: "",
     lampiran: "",
     courseId: "",
+    antiCurang: false,
   })
 
   useEffect(() => {
@@ -124,6 +126,7 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
         durasi: asesmen.durasi?.toString() || "",
         lampiran: asesmen.lampiran || "",
         courseId: asesmen.courseId || "",
+        antiCurang: !!asesmen.antiCurang,
       })
 
       // Load existing soal jika tipe KUIS
@@ -307,6 +310,7 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
         durasi: formData.durasi ? parseInt(formData.durasi) : null,
         lampiran: formData.lampiran || null,
         courseId: formData.courseId,
+        antiCurang: formData.tipe === 'KUIS' ? formData.antiCurang : false,
       }
 
       // Tambahkan soal untuk KUIS
@@ -608,6 +612,26 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
               </div>
             )}
           </div>
+
+          {/* Anti-Curang Toggle - hanya untuk KUIS */}
+          {formData.tipe === 'KUIS' && (
+            <div className="flex items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="antiCurang" className="text-base font-medium">
+                  Mode Anti-Curang
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Jika diaktifkan, siswa akan mendapat peringatan saat meninggalkan jendela kuis. 
+                  Kuis akan otomatis dikumpulkan jika siswa tidak kembali dalam 5 menit.
+                </p>
+              </div>
+              <Switch
+                id="antiCurang"
+                checked={formData.antiCurang}
+                onCheckedChange={(checked) => setFormData({ ...formData, antiCurang: checked })}
+              />
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="courseId">Course *</Label>

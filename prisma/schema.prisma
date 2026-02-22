@@ -100,6 +100,7 @@ model Asesmen {
   tgl_mulai      DateTime?
   tgl_selesai    DateTime?
   lampiran       String?         @db.Text // URL or base64 for file attachment
+  antiCurang     Boolean         @default(false) // Anti-cheat: detect tab/window leave
 
   // File storage fields (untuk file yang diupload)
   fileData       Bytes?   // Binary file data stored in database

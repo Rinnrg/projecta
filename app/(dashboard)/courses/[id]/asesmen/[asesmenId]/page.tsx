@@ -36,6 +36,7 @@ import {
   ClipboardList,
 } from "lucide-react"
 import Link from "next/link"
+import { useSweetAlert } from "@/components/ui/sweet-alert"
 
 interface PageProps {
   params: Promise<{ 
@@ -56,6 +57,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
   const [showPdfViewer, setShowPdfViewer] = useState(false)
   const [activeTab, setActiveTab] = useState("info")
   const [tabKey, setTabKey] = useState(0) // For re-render animation
+  const { confirm, AlertComponent } = useSweetAlert()
 
   useEffect(() => {
     if (authLoading) return
@@ -186,6 +188,8 @@ export default function AsesmenDetailPage({ params }: PageProps) {
 
   return (
     <div className="w-full py-6 sm:py-8 space-y-6">
+      <AlertComponent />
+      
       {/* Header */}
       <div className="space-y-4">
         <Button variant="ghost" size="sm" asChild>
@@ -262,7 +266,15 @@ export default function AsesmenDetailPage({ params }: PageProps) {
               asesmen.soalCount > 0
             ) && (
               <>
-                {!hasStarted ? (
+                {studentNilai ? (
+                  <Button 
+                    disabled
+                    className="bg-green-600 hover:bg-green-600 cursor-not-allowed opacity-90"
+                  >
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Sudah Mengerjakan Kuis
+                  </Button>
+                ) : !hasStarted ? (
                   <Button 
                     disabled
                     variant="secondary"
@@ -279,11 +291,22 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                     Kuis Sudah Ditutup
                   </Button>
                 ) : (
-                  <Button asChild>
-                    <Link href={`/courses/${courseId}/asesmen/${asesmenId}/kuis`}>
-                      <FileText className="mr-2 h-4 w-4" />
-                      Kerjakan Kuis
-                    </Link>
+                  <Button onClick={async () => {
+                    const confirmed = await confirm(
+                      "Mulai Kerjakan Kuis?",
+                      {
+                        description: `Anda akan memulai kuis "${asesmen.nama}".${asesmen.durasi ? ` Durasi: ${asesmen.durasi} menit.` : ''} Pastikan Anda siap sebelum memulai. ${asesmen.antiCurang ? '\n\n⚠️ Anti-curang aktif: Anda tidak diperbolehkan meninggalkan jendela kuis selama pengerjaan.' : ''}`,
+                        confirmText: "Mulai Kuis",
+                        cancelText: "Batal",
+                        type: "warning",
+                      }
+                    )
+                    if (confirmed) {
+                      router.push(`/courses/${courseId}/asesmen/${asesmenId}/kuis`)
+                    }
+                  }}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Kerjakan Kuis
                   </Button>
                 )}
               </>
@@ -742,29 +765,17 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                     
                     <Separator />
                     
-                    <div className="flex items-center gap-2">
-                      {studentNilai.skor >= 75 ? (
-                        <>
-                          <CheckCircle2 className="h-5 w-5 text-green-500" />
-                          <div>
-                            <p className="font-medium text-green-700">Selamat! Anda Lulus</p>
-                            <p className="text-sm text-muted-foreground">
-                              Nilai Anda memenuhi standar kelulusan (≥75)
-                            </p>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <AlertCircle className="h-5 w-5 text-orange-500" />
-                          <div>
-                            <p className="font-medium text-orange-700">Belum Lulus</p>
-                            <p className="text-sm text-muted-foreground">
-                              Nilai Anda belum memenuhi standar kelulusan (≥75)
-                            </p>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                    {studentNilai.skor >= 75 && (
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        <div>
+                          <p className="font-medium text-green-700">Selamat! Anda Lulus</p>
+                          <p className="text-sm text-muted-foreground">
+                            Nilai Anda memenuhi standar kelulusan (≥75)
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   // Belum ada nilai

@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator"
 import { FileUploadField } from "@/components/file-upload-field"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Switch } from "@/components/ui/switch"
 
 interface AddAsesmenFormProps {
   courseId: string
@@ -71,6 +72,7 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
     tgl_selesai: "",
     durasi: "",
     lampiran: "",
+    antiCurang: false,
   })
 
   // Show loading state while auth is loading
@@ -308,6 +310,7 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
         durasi: formData.durasi ? parseInt(formData.durasi) : null,
         courseId: courseId,
         guruId: user.id,
+        antiCurang: formData.tipe === 'KUIS' ? formData.antiCurang : false,
       }
 
       // Handle file upload for TUGAS
@@ -695,6 +698,26 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
               </div>
             )}
           </div>
+
+          {/* Anti-Curang Toggle - hanya untuk KUIS */}
+          {formData.tipe === 'KUIS' && (
+            <div className="flex items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="antiCurang" className="text-base font-medium">
+                  Mode Anti-Curang
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Jika diaktifkan, siswa akan mendapat peringatan saat meninggalkan jendela kuis. 
+                  Kuis akan otomatis dikumpulkan jika siswa tidak kembali dalam 5 menit.
+                </p>
+              </div>
+              <Switch
+                id="antiCurang"
+                checked={formData.antiCurang}
+                onCheckedChange={(checked) => setFormData({ ...formData, antiCurang: checked })}
+              />
+            </div>
+          )}
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">

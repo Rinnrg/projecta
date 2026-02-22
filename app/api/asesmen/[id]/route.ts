@@ -218,6 +218,7 @@ export async function PUT(
       tgl_selesai,
       lampiran,
       courseId,
+      antiCurang,
       soal // Array of questions for KUIS
     } = body
 
@@ -282,6 +283,7 @@ export async function PUT(
     
     if (lampiran !== undefined) updateData.lampiran = lampiran
     if (courseId !== undefined) updateData.courseId = courseId
+    if (antiCurang !== undefined) updateData.antiCurang = !!antiCurang
     
     console.log('Update data:', JSON.stringify(updateData, null, 2))
     console.log('Date values - tgl_mulai:', updateData.tgl_mulai, 'tgl_selesai:', updateData.tgl_selesai)

@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useEffect, useState } from "react"
+import { use, useEffect, useState, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,6 +15,7 @@ import {
   Clock,
   AlertCircle,
   CheckCircle,
+  HelpCircle,
 } from "lucide-react"
 import Link from "next/link"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -53,7 +54,7 @@ export default function KuisPage({ params }: PageProps) {
   const router = useRouter()
   const resolvedParams = use(params)
   const { id: courseId, asesmenId } = resolvedParams
-  const { confirm, success, error: showError, AlertComponent } = useSweetAlert()
+  const { confirm, success, error: showError, warning: showWarning, AlertComponent } = useSweetAlert()
   
   const [asesmen, setAsesmen] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -64,6 +65,16 @@ export default function KuisPage({ params }: PageProps) {
   const [startTime, setStartTime] = useState<Date | null>(null)
   const [durasiMenit, setDurasiMenit] = useState<number | null>(null)
   const [timeExpired, setTimeExpired] = useState(false)
+  
+  // Ragu-ragu state
+  const [raguRagu, setRaguRagu] = useState<Set<string>>(new Set())
+  
+  // Anti-cheat state
+  const [antiCurang, setAntiCurang] = useState(false)
+  const [leaveCount, setLeaveCount] = useState(0)
+  const leaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [leaveCountdown, setLeaveCountdown] = useState<number | null>(null)
+  const isSubmittingRef = useRef(false)
   
   // Check if already submitted
   const [hasSubmitted, setHasSubmitted] = useState(false)
@@ -104,6 +115,7 @@ export default function KuisPage({ params }: PageProps) {
           }
           
           setAsesmen(asesmenData)
+          setAntiCurang(!!asesmenData.antiCurang)
           
           // Check if already submitted
           if (asesmenData.nilai && asesmenData.nilai.length > 0) {
@@ -148,6 +160,12 @@ export default function KuisPage({ params }: PageProps) {
               setTimeLeft(remaining)
             }
           }
+          
+          // Restore leave count from sessionStorage
+          const savedLeaveCount = sessionStorage.getItem(`kuis_leave_${asesmenId}`)
+          if (savedLeaveCount) {
+            setLeaveCount(parseInt(savedLeaveCount))
+          }
         } else {
           router.push(`/courses/${courseId}`)
         }
@@ -186,10 +204,85 @@ export default function KuisPage({ params }: PageProps) {
 
   // Auto-submit saat waktu habis
   useEffect(() => {
-    if (timeExpired && !hasSubmitted) {
+    if (timeExpired && !hasSubmitted && !isSubmittingRef.current) {
       handleSubmit(true)
     }
   }, [timeExpired, hasSubmitted])
+
+  // Anti-cheat: detect tab switch / visibility change / window blur
+  useEffect(() => {
+    if (!antiCurang || hasSubmitted || loading) return
+
+    const handleVisibilityChange = () => {
+      if (document.hidden && !isSubmittingRef.current) {
+        triggerLeaveWarning()
+      } else if (!document.hidden) {
+        handleWindowReturn()
+      }
+    }
+
+    const handleBlur = () => {
+      if (!isSubmittingRef.current && !hasSubmitted) {
+        triggerLeaveWarning()
+      }
+    }
+
+    const handleFocus = () => {
+      handleWindowReturn()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('blur', handleBlur)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('blur', handleBlur)
+      window.removeEventListener('focus', handleFocus)
+      if (leaveTimerRef.current) {
+        clearInterval(leaveTimerRef.current)
+      }
+    }
+  }, [antiCurang, hasSubmitted, loading])
+
+  const triggerLeaveWarning = useCallback(() => {
+    if (isSubmittingRef.current || hasSubmitted) return
+    
+    setLeaveCount(prev => {
+      const newCount = prev + 1
+      sessionStorage.setItem(`kuis_leave_${asesmenId}`, String(newCount))
+      return newCount
+    })
+
+    // Start 5 minute countdown for auto-submit
+    let countdown = 300 // 5 minutes in seconds
+    setLeaveCountdown(countdown)
+
+    if (leaveTimerRef.current) {
+      clearInterval(leaveTimerRef.current)
+    }
+
+    leaveTimerRef.current = setInterval(() => {
+      countdown--
+      setLeaveCountdown(countdown)
+      if (countdown <= 0) {
+        if (leaveTimerRef.current) clearInterval(leaveTimerRef.current)
+        // Auto-submit karena siswa tidak kembali dalam 5 menit
+        if (!isSubmittingRef.current) {
+          setTimeExpired(true)
+        }
+      }
+    }, 1000)
+  }, [asesmenId, hasSubmitted])
+
+  const handleWindowReturn = useCallback(() => {
+    // Clear the 5-minute leave timer
+    if (leaveTimerRef.current) {
+      clearInterval(leaveTimerRef.current)
+      leaveTimerRef.current = null
+    }
+    setLeaveCountdown(null)
+  }, [])
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -201,6 +294,18 @@ export default function KuisPage({ params }: PageProps) {
     setJawaban(prev => prev.map(j => 
       j.soalId === soalId ? { ...j, jawaban: value } : j
     ))
+  }
+
+  const toggleRaguRagu = (soalId: string) => {
+    setRaguRagu(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(soalId)) {
+        newSet.delete(soalId)
+      } else {
+        newSet.add(soalId)
+      }
+      return newSet
+    })
   }
 
   const handleNext = () => {
@@ -216,57 +321,84 @@ export default function KuisPage({ params }: PageProps) {
   }
 
   const handleSubmit = async (autoSubmit = false) => {
-    const confirmed = autoSubmit || await confirm(
+    if (isSubmittingRef.current) return
+    isSubmittingRef.current = true
+
+    // Clear leave timer if active
+    if (leaveTimerRef.current) {
+      clearInterval(leaveTimerRef.current)
+      leaveTimerRef.current = null
+    }
+    setLeaveCountdown(null)
+
+    const doSubmit = async () => {
+      try {
+        const payload = {
+          siswaId: user?.id,
+          jawaban: jawaban,
+          waktuMulai: startTime,
+          waktuSelesai: new Date(),
+        }
+        
+        const response = await fetch(`/api/asesmen/${asesmenId}/submit-kuis`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        
+        const responseData = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(responseData.error || "Gagal mengumpulkan kuis")
+        }
+        
+        return responseData
+      } catch (error) {
+        console.error('Error submitting:', error)
+        throw error
+      }
+    }
+
+    if (autoSubmit) {
+      try {
+        await doSubmit()
+        sessionStorage.removeItem(`kuis_start_${asesmenId}`)
+        sessionStorage.removeItem(`kuis_leave_${asesmenId}`)
+        setHasSubmitted(true)
+        success(
+          "Berhasil!",
+          "Waktu habis! Kuis telah dikumpulkan secara otomatis."
+        )
+        setTimeout(() => {
+          router.push(`/courses/${courseId}/asesmen/${asesmenId}`)
+        }, 2000)
+      } catch {
+        isSubmittingRef.current = false
+      }
+      return
+    }
+
+    const confirmed = await confirm(
       "Kumpulkan Kuis?",
       {
         description: "Apakah Anda yakin ingin mengumpulkan kuis ini? Jawaban tidak dapat diubah setelah dikumpulkan.",
         confirmText: "Kumpulkan",
         cancelText: "Batal",
         type: "warning",
-        onConfirm: async () => {
-          try {
-            const payload = {
-              siswaId: user?.id,
-              jawaban: jawaban,
-              waktuMulai: startTime,
-              waktuSelesai: new Date(),
-            }
-            
-            const response = await fetch(`/api/asesmen/${asesmenId}/submit-kuis`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload),
-            })
-            
-            const responseData = await response.json()
-            
-            if (!response.ok) {
-              throw new Error(responseData.error || "Gagal mengumpulkan kuis")
-            }
-            
-            return responseData
-          } catch (error) {
-            console.error('Error submitting:', error)
-            throw error
-          }
-        }
+        onConfirm: doSubmit,
       }
     )
     
-    if (confirmed || autoSubmit) {
-      // Bersihkan timer dari sessionStorage
+    if (confirmed) {
       sessionStorage.removeItem(`kuis_start_${asesmenId}`)
+      sessionStorage.removeItem(`kuis_leave_${asesmenId}`)
       setHasSubmitted(true)
-
-      success(
-        "Berhasil!",
-        autoSubmit 
-          ? "Waktu habis! Kuis telah dikumpulkan secara otomatis." 
-          : "Kuis berhasil dikumpulkan"
-      )
+      success("Berhasil!", "Kuis berhasil dikumpulkan")
       setTimeout(() => {
         router.push(`/courses/${courseId}/asesmen/${asesmenId}`)
       }, 2000)
+    } else {
+      isSubmittingRef.current = false
     }
   }
 
@@ -327,14 +459,57 @@ export default function KuisPage({ params }: PageProps) {
   const currentJawaban = jawaban.find(j => j.soalId === currentSoal.id)
   const answeredCount = jawaban.filter(j => j.jawaban !== '').length
   const progress = (answeredCount / asesmen.soal.length) * 100
+  const isCurrentRagu = raguRagu.has(currentSoal.id)
 
   return (
     <div className="w-full py-6 sm:py-8 space-y-6">
       <AlertComponent />
       
+      {/* Anti-cheat leave countdown overlay */}
+      {antiCurang && leaveCountdown !== null && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
+          <Card className="max-w-md mx-4">
+            <CardHeader>
+              <div className="flex items-center gap-2 text-red-600">
+                <AlertCircle className="h-6 w-6" />
+                <CardTitle className="text-red-600">⚠️ Anda Meninggalkan Kuis!</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">
+                Anda terdeteksi meninggalkan jendela kuis. Kuis akan otomatis dikumpulkan jika Anda tidak kembali dalam waktu:
+              </p>
+              <div className="text-center">
+                <span className="text-4xl font-mono font-bold text-red-600">
+                  {formatTime(leaveCountdown)}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground text-center">
+                Pelanggaran ke-{leaveCount}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-bold sm:text-2xl">{asesmen.nama}</h1>
+        <div className="space-y-1">
+          <h1 className="text-xl font-bold sm:text-2xl">{asesmen.nama}</h1>
+          {antiCurang && (
+            <div className="flex items-center gap-1.5">
+              <Badge variant="destructive" className="text-xs">
+                <AlertCircle className="mr-1 h-3 w-3" />
+                Anti-Curang Aktif
+              </Badge>
+              {leaveCount > 0 && (
+                <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
+                  Pelanggaran: {leaveCount}x
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
         {timeLeft !== null && (
           <div className="flex items-center gap-2">
             <Clock className={`h-5 w-5 ${timeLeft < 60 ? 'text-red-600' : 'text-muted-foreground'}`} />
@@ -364,6 +539,12 @@ export default function KuisPage({ params }: PageProps) {
               <Badge variant={currentSoal.tipeJawaban === 'PILIHAN_GANDA' ? 'default' : 'secondary'}>
                 {currentSoal.tipeJawaban === 'PILIHAN_GANDA' ? 'Pilihan Ganda' : 'Isian'}
               </Badge>
+              {isCurrentRagu && (
+                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300 dark:bg-yellow-950 dark:text-yellow-400">
+                  <HelpCircle className="mr-1 h-3 w-3" />
+                  Ragu-ragu
+                </Badge>
+              )}
             </div>
           </div>
           <CardTitle className="mt-4">{currentSoal.pertanyaan}</CardTitle>
@@ -383,7 +564,7 @@ export default function KuisPage({ params }: PageProps) {
               value={currentJawaban?.jawaban || ''}
               onValueChange={(value) => handleJawabanChange(currentSoal.id, value)}
             >
-              {currentSoal.opsi.map((opsi) => (
+              {currentSoal.opsi.map((opsi: Opsi) => (
                 <div key={opsi.id} className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-accent cursor-pointer">
                   <RadioGroupItem value={opsi.id} id={opsi.id} />
                   <Label htmlFor={opsi.id} className="flex-1 cursor-pointer">
@@ -411,8 +592,27 @@ export default function KuisPage({ params }: PageProps) {
             </div>
           )}
 
-          {/* Navigation Buttons */}
-          <div className="flex justify-between pt-4">
+          {/* Ragu-ragu button + Navigation Buttons */}
+          <div className="flex flex-col gap-3 pt-4">
+            {/* Tombol Ragu-ragu */}
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                variant={isCurrentRagu ? "default" : "outline"}
+                size="sm"
+                onClick={() => toggleRaguRagu(currentSoal.id)}
+                className={isCurrentRagu 
+                  ? "bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500" 
+                  : "border-yellow-400 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-950"
+                }
+              >
+                <HelpCircle className="mr-2 h-4 w-4" />
+                {isCurrentRagu ? "Hapus Tanda Ragu" : "Tandai Ragu-ragu"}
+              </Button>
+            </div>
+
+            {/* Navigation */}
+            <div className="flex justify-between">
             <Button
               variant="outline"
               onClick={handlePrevious}
@@ -441,6 +641,7 @@ export default function KuisPage({ params }: PageProps) {
               </Button>
             )}
           </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -448,20 +649,46 @@ export default function KuisPage({ params }: PageProps) {
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">Navigasi Soal</CardTitle>
+          <CardDescription className="text-xs">
+            <span className="inline-flex items-center gap-3 flex-wrap">
+              <span className="inline-flex items-center gap-1">
+                <span className="w-3 h-3 rounded-sm inline-block bg-green-500" /> Sudah dijawab
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-3 h-3 rounded-sm inline-block bg-yellow-400" /> Ragu-ragu
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-3 h-3 rounded-sm border border-border inline-block" /> Belum dijawab
+              </span>
+            </span>
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
             {asesmen.soal.map((soal: Soal, index: number) => {
               const isAnswered = jawaban.find(j => j.soalId === soal.id)?.jawaban !== ''
               const isCurrent = index === currentSoalIndex
+              const isRagu = raguRagu.has(soal.id)
+              
+              let btnClass = "h-10 w-full font-medium transition-all "
+              if (isCurrent) {
+                btnClass += "ring-2 ring-primary ring-offset-2 "
+              }
               
               return (
                 <Button
                   key={soal.id}
-                  variant={isCurrent ? 'default' : isAnswered ? 'secondary' : 'outline'}
+                  variant={(!isAnswered && !isRagu) ? 'outline' : 'default'}
                   size="sm"
                   onClick={() => setCurrentSoalIndex(index)}
-                  className="h-10 w-full"
+                  className={btnClass}
+                  style={
+                    isRagu 
+                      ? { backgroundColor: 'rgb(250, 204, 21)', borderColor: 'rgb(250, 204, 21)', color: 'white' }
+                      : isAnswered 
+                        ? { backgroundColor: 'rgb(34, 197, 94)', borderColor: 'rgb(34, 197, 94)', color: 'white' }
+                        : undefined
+                  }
                 >
                   {index + 1}
                 </Button>
