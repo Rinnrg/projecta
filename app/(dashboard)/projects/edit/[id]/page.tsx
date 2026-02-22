@@ -11,11 +11,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { FileUploadField } from "@/components/file-upload-field"
-import { ArrowLeft, Edit, Calendar } from "lucide-react"
+import { Edit, Calendar } from "lucide-react"
 import Link from "next/link"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { AnimateIn } from "@/components/ui/animate-in"
 import { SINTAKS_MAP, SINTAKS_KEYS, SintaksKey } from "@/lib/constants/project"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 interface Proyek {
   id: string
@@ -190,17 +191,12 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
   if (!proyek) {
     return (
       <div className="w-full">
+        <FloatingBackButton href="/projects" />
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Edit className="h-12 w-12 text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-semibold mb-2">{t("Proyek tidak ditemukan")}</h3>
-            <p className="text-muted-foreground mb-4">{t("Proyek yang ingin Anda edit tidak ada")}</p>
-            <Link href="/projects">
-              <Button>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                {t("Kembali ke Proyek")}
-              </Button>
-            </Link>
+            <p className="text-muted-foreground mb-4">{t("Proyek yang ingin Anda edit tidak ada. Gunakan tombol kembali di pojok kiri atas.")}</p>
           </CardContent>
         </Card>
       </div>
@@ -211,17 +207,12 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
   if (user?.role !== "ADMIN" && proyek.guru.id !== user?.id) {
     return (
       <div className="w-full">
+        <FloatingBackButton href="/projects" />
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Edit className="h-12 w-12 text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-semibold mb-2">{t("Tidak ada akses")}</h3>
-            <p className="text-muted-foreground mb-4">{t("Anda tidak memiliki izin untuk mengedit proyek ini")}</p>
-            <Link href="/projects">
-              <Button>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                {t("Kembali ke Proyek")}
-              </Button>
-            </Link>
+            <p className="text-muted-foreground mb-4">{t("Anda tidak memiliki izin untuk mengedit proyek ini. Gunakan tombol kembali di pojok kiri atas.")}</p>
           </CardContent>
         </Card>
       </div>
@@ -231,22 +222,16 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
   return (
     <div className="w-full">
       <AlertComponent />
+      <FloatingBackButton href="/projects" />
       
       {/* Header */}
       <AnimateIn>
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <Link href={`/projects/${params.id}`}>
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold sm:text-3xl">{t("Edit Proyek")}</h1>
-              <p className="text-sm text-muted-foreground mt-1 sm:text-base">
-                {t("Ubah detail proyek")} "{proyek.judul}"
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold sm:text-3xl">{t("Edit Proyek")}</h1>
+            <p className="text-sm text-muted-foreground mt-1 sm:text-base">
+              {t("Ubah detail proyek")} "{proyek.judul}"
+            </p>
           </div>
         </div>
       </AnimateIn>

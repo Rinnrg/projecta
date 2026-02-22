@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
-  ArrowLeft,
   FileText,
   Video,
   Download,
@@ -28,6 +27,7 @@ import {
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 import { useRouter, useSearchParams } from "next/navigation"
 import AddStudentDialog from "./add-student-dialog"
 import EditTeacherDialog from "./edit-teacher-dialog"
@@ -220,13 +220,8 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
         onSuccess={fetchEnrollments}
       />
       
-      {/* Back Button */}
-      <Button variant="ghost" size="sm" asChild className="gap-1.5 h-8 px-2 sm:gap-2 sm:h-9 sm:px-3">
-        <Link href="/courses">
-          <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          <span className="text-xs sm:text-sm">Kembali</span>
-        </Link>
-      </Button>
+      {/* Floating Back Button */}
+      <FloatingBackButton href="/courses" />
 
       {/* Course Header */}
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">

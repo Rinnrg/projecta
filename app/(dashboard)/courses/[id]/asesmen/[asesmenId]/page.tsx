@@ -27,7 +27,6 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  ArrowLeft,
   Edit,
   Download,
   Plus,
@@ -37,6 +36,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 interface PageProps {
   params: Promise<{ 
@@ -189,16 +189,10 @@ export default function AsesmenDetailPage({ params }: PageProps) {
   return (
     <div className="w-full py-6 sm:py-8 space-y-6">
       <AlertComponent />
+      <FloatingBackButton href={`/courses/${courseId}`} />
       
       {/* Header */}
       <div className="space-y-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href={`/courses/${courseId}`}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Kembali ke Course
-          </Link>
-        </Button>
-
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2 min-w-0">
             <div className="flex flex-wrap items-center gap-2">

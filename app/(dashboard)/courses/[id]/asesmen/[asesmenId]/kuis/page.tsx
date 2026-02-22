@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { 
-  ArrowLeft, 
   Loader2,
   Clock,
   AlertCircle,
@@ -18,6 +17,7 @@ import {
   HelpCircle,
 } from "lucide-react"
 import Link from "next/link"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -435,18 +435,13 @@ export default function KuisPage({ params }: PageProps) {
   if (!asesmen || !asesmen.soal || asesmen.soal.length === 0) {
     return (
       <div className="w-full py-6 sm:py-8">
+        <FloatingBackButton href={`/courses/${courseId}/asesmen/${asesmenId}`} />
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Kuis tidak ditemukan atau belum memiliki soal.
+            Kuis tidak ditemukan atau belum memiliki soal. Gunakan tombol kembali di pojok kiri atas.
           </AlertDescription>
         </Alert>
-        <Button variant="outline" className="mt-4" asChild>
-          <Link href={`/courses/${courseId}/asesmen/${asesmenId}`}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Kembali
-          </Link>
-        </Button>
       </div>
     )
   }
@@ -454,6 +449,7 @@ export default function KuisPage({ params }: PageProps) {
   if (hasSubmitted) {
     return (
       <div className="w-full py-6 sm:py-8 space-y-6">
+        <FloatingBackButton href={`/courses/${courseId}/asesmen/${asesmenId}`} />
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -461,17 +457,9 @@ export default function KuisPage({ params }: PageProps) {
               <CardTitle>Kuis Sudah Dikumpulkan</CardTitle>
             </div>
             <CardDescription>
-              Anda sudah mengumpulkan kuis ini. Lihat nilai Anda di halaman detail asesmen.
+              Anda sudah mengumpulkan kuis ini. Lihat nilai Anda di halaman detail asesmen. Gunakan tombol kembali di pojok kiri atas.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button asChild>
-              <Link href={`/courses/${courseId}/asesmen/${asesmenId}`}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Kembali ke Detail Asesmen
-              </Link>
-            </Button>
-          </CardContent>
         </Card>
       </div>
     )

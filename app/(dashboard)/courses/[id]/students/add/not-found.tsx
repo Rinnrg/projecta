@@ -1,17 +1,13 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, AlertCircle } from "lucide-react"
+import { AlertCircle } from "lucide-react"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 export default function NotFound() {
   return (
     <div className="w-full">
-      <Link href="/dashboard">
-        <Button variant="ghost" size="sm" className="mb-6 gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          Kembali ke Dashboard
-        </Button>
-      </Link>
+      <FloatingBackButton href="/dashboard" />
 
       <Card className="border-destructive/50">
         <CardHeader className="text-center pb-4">
@@ -24,9 +20,9 @@ export default function NotFound() {
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center">
-          <Link href="/dashboard">
-            <Button>Kembali ke Dashboard</Button>
-          </Link>
+          <p className="text-muted-foreground">
+            Gunakan tombol kembali di pojok kiri atas untuk kembali ke dashboard
+          </p>
         </CardContent>
       </Card>
     </div>

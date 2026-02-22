@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ArrowLeft, GraduationCap, UserPlus, Users, Loader2 } from "lucide-react"
+import { GraduationCap, UserPlus, Users, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 interface ClassInfo {
   kelas: string
@@ -101,15 +102,9 @@ export default function AddStudentsClient({
   return (
     <div className="w-full">
       <AlertComponent />
+      <FloatingBackButton href={`/courses/${course.id}?tab=students`} />
 
       <div className="mb-6 space-y-4">
-        <Link href={`/courses/${course.id}?tab=students`}>
-          <Button variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Kembali
-          </Button>
-        </Link>
-
         <div>
           <h1 className="text-2xl font-bold sm:text-3xl">Tambah Siswa per Kelas</h1>
           <p className="text-sm text-muted-foreground mt-1 sm:text-base">

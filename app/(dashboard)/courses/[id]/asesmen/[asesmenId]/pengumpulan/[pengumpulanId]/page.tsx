@@ -12,7 +12,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { 
-  ArrowLeft,
   Download,
   Calendar,
   User,
@@ -24,6 +23,7 @@ import {
   Eye,
 } from "lucide-react"
 import Link from "next/link"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 interface PageProps {
   params: Promise<{ 
@@ -150,16 +150,10 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
   return (
     <div className="w-full py-6 sm:py-8 space-y-6">
       <AlertComponent />
+      <FloatingBackButton href={`/courses/${courseId}/asesmen/${asesmenId}`} />
       
       {/* Header */}
       <div className="space-y-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href={`/courses/${courseId}/asesmen/${asesmenId}`}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Kembali ke Asesmen
-          </Link>
-        </Button>
-
         <div>
           <h1 className="text-2xl font-bold sm:text-3xl">Detail Pengumpulan</h1>
           <p className="text-muted-foreground">{asesmen.nama}</p>

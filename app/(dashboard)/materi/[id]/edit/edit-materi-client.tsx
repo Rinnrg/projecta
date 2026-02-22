@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
-import { Loader2, ArrowLeft, Trash2 } from "lucide-react"
+import { Loader2, Trash2 } from "lucide-react"
 import Link from "next/link"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 import { FileUploadField } from "@/components/file-upload-field"
 
 interface MateriData {
@@ -185,22 +186,11 @@ export default function EditMateriClient({ materi }: EditMateriClientProps) {
   return (
     <>
       <AlertComponent />
+      <FloatingBackButton href={`/courses/${materi.course.id}`} />
+      
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader>
-            <div className="flex items-center gap-2 mb-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                asChild
-              >
-                <Link href={`/courses/${materi.course.id}`}>
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Kembali
-                </Link>
-              </Button>
-            </div>
             <CardTitle>Edit Materi</CardTitle>
             <CardDescription>
               Update materi untuk course {materi.course.judul}

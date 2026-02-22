@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { FileUploadField } from "@/components/file-upload-field"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { 
-  ArrowLeft, 
   Upload, 
   Loader2,
   FileText,
@@ -21,6 +20,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 interface PageProps {
   params: Promise<{ 
@@ -205,16 +205,10 @@ export default function SubmitAsesmenPage({ params }: PageProps) {
   return (
     <div className="w-full py-6 sm:py-8 space-y-6">
       <AlertComponent />
+      <FloatingBackButton href={`/courses/${courseId}/asesmen/${asesmenId}`} />
       
       {/* Header */}
       <div className="space-y-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href={`/courses/${courseId}/asesmen/${asesmenId}`}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Kembali ke Detail Asesmen
-          </Link>
-        </Button>
-
         <div>
           <h1 className="text-2xl font-bold sm:text-3xl">
             {existingSubmission ? 'Edit' : 'Kumpulkan'} Tugas
