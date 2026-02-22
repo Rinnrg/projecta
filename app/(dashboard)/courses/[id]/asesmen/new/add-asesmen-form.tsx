@@ -557,15 +557,7 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
         </Button>
 
         {/* Tombol navigasi */}
-        <div className="flex gap-2 justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleBack}
-            disabled={isLoading}
-          >
-            Kembali
-          </Button>
+        <div className="flex justify-end">
           <Button
             type="button"
             onClick={() => handleSubmit()}

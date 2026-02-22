@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -167,6 +168,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
     <div className="w-full">
       <AlertComponent />
       <FloatingBackButton href="/projects" />
+      <FloatingBackButton href="/projects" />
       
       {/* Header */}
       <AnimateIn>
@@ -183,10 +185,9 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                 <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
                 <span className="truncate">{format(new Date(proyek.tgl_mulai), 'dd MMM', { locale: dateLocale })} - {format(new Date(proyek.tgl_selesai), 'dd MMM yyyy', { locale: dateLocale })}</span>
               </div>
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-                  <span className="truncate">{proyek.guru.nama}</span>
-                </div>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                <span className="truncate">{proyek.guru.nama}</span>
               </div>
             </div>
           </div>
