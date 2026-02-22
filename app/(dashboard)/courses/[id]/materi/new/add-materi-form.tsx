@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
-import { Loader2, ArrowLeft } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import Link from "next/link"
 import { FileUploadField } from "@/components/file-upload-field"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 interface AddMateriFormProps {
   courseId: string
@@ -106,22 +107,11 @@ export default function AddMateriForm({ courseId, courseTitle }: AddMateriFormPr
   return (
     <>
       <AlertComponent />
+      <FloatingBackButton href={`/courses/${courseId}`} />
+      
       <form onSubmit={handleSubmit}>
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2 mb-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              asChild
-            >
-              <Link href={`/courses/${courseId}`}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Kembali
-              </Link>
-            </Button>
-          </div>
           <CardTitle>Informasi Materi</CardTitle>
           <CardDescription>
             {courseTitle ? `Tambah materi baru untuk course ${courseTitle}` : 'Tambah materi baru untuk course ini'}

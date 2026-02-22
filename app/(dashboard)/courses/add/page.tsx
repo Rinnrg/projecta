@@ -10,11 +10,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, X, ImageIcon, Loader2 } from "lucide-react"
+import { X, ImageIcon, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { AnimateIn } from "@/components/ui/animate-in"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 const categories = ["Programming", "Database", "Design", "Networking", "Security", "DevOps"]
 
@@ -83,17 +84,8 @@ export default function AddCoursePage() {
   return (
     <div className="w-full space-y-6">
       <AlertComponent />
+      <FloatingBackButton href="/courses" />
       
-      <AnimateIn stagger={0}>
-        {/* Back Button */}
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/courses">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Courses
-          </Link>
-        </Button>
-      </AnimateIn>
-
       <AnimateIn stagger={1}>
         <Card>
           <CardHeader>

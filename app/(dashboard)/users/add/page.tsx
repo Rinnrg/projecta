@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, User, Mail, Lock, AtSign, Loader2 } from "lucide-react"
+import { User, Mail, Lock, AtSign, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { AnimateIn } from "@/components/ui/animate-in"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 export default function AddUserPage() {
   const router = useRouter()
@@ -82,16 +83,8 @@ export default function AddUserPage() {
   return (
     <div className="w-full space-y-6">
       <AlertComponent />
+      <FloatingBackButton href="/users" />
       
-      <AnimateIn stagger={0}>
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/users">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Users
-          </Link>
-        </Button>
-      </AnimateIn>
-
       <AnimateIn stagger={1}>
         <Card>
           <CardHeader>

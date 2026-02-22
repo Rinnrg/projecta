@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 import { 
-  ArrowLeft,
   BookOpen, 
   PlayCircle, 
   FileText, 
@@ -223,12 +223,6 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
       {/* Sidebar - Materi List */}
       <div className="w-80 border-r bg-card/50 flex flex-col hidden lg:flex">
         <div className="p-4 sm:p-6 border-b">
-          <Button variant="ghost" size="sm" asChild className="mb-4 -ml-2">
-            <Link href={`/courses/${courseId}`}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Kembali ke Kursus
-            </Link>
-          </Button>
           <h2 className="font-semibold text-lg mb-1">Daftar Materi</h2>
           <p className="text-sm text-muted-foreground">Pilih materi untuk melihat detail</p>
         </div>
@@ -273,15 +267,8 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
       <div className="flex-1 overflow-auto bg-background">
         <div className="p-4 sm:p-6 lg:p-8 w-full space-y-6 sm:space-y-8">
           
-          {/* Mobile Back Button */}
-          <div className="lg:hidden">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href={`/courses/${courseId}`}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Kembali
-              </Link>
-            </Button>
-          </div>
+          {/* Floating Back Button */}
+          <FloatingBackButton href={`/courses/${courseId}`} />
 
           {/* Header Section */}
           <div className="space-y-4">
@@ -587,12 +574,6 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
                   </div>
                 </div>
                 <Separator />
-                <Button className="w-full" asChild>
-                  <Link href={`/courses/${courseId}`}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Kembali ke Kursus
-                  </Link>
-                </Button>
               </div>
             </CardContent>
           </Card>

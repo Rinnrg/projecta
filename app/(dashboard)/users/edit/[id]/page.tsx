@@ -9,11 +9,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, User, Mail, Lock, AtSign, Upload, Loader2 } from "lucide-react"
+import { User, Mail, Lock, AtSign, Upload, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { AnimateIn } from "@/components/ui/animate-in"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 export default function EditUserPage() {
   const router = useRouter()
@@ -128,15 +129,7 @@ export default function EditUserPage() {
   return (
     <div className="w-full space-y-4 sm:space-y-6">
       <AlertComponent />
-
-      <AnimateIn stagger={0}>
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/users">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t("Kembali ke Daftar Pengguna")}
-          </Link>
-        </Button>
-      </AnimateIn>
+      <FloatingBackButton href="/users" />
 
       <AnimateIn stagger={1}>
         <Card>

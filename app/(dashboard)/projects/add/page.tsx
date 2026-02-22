@@ -12,11 +12,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { FileUploadField } from "@/components/file-upload-field"
-import { ArrowLeft, Plus, Calendar, GraduationCap, Users, Loader2 } from "lucide-react"
+import { Plus, Calendar, GraduationCap, Users, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { AnimateIn } from "@/components/ui/animate-in"
 import { SINTAKS_MAP, SINTAKS_KEYS, SintaksKey } from "@/lib/constants/project"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 interface ClassInfo {
   kelas: string
@@ -197,22 +198,16 @@ export default function AddProjectPage() {
   return (
     <div className="w-full">
       <AlertComponent />
+      <FloatingBackButton href="/projects" />
       
       {/* Header */}
       <AnimateIn>
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/projects">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold sm:text-3xl">{t("Buat Proyek Baru")}</h1>
-              <p className="text-sm text-muted-foreground mt-1 sm:text-base">
-                {t("Buat proyek pembelajaran untuk siswa")}
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold sm:text-3xl">{t("Buat Proyek Baru")}</h1>
+            <p className="text-sm text-muted-foreground mt-1 sm:text-base">
+              {t("Buat proyek pembelajaran untuk siswa")}
+            </p>
           </div>
         </div>
       </AnimateIn>

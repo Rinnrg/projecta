@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "@/hooks/use-toast"
-import { Loader2, ArrowLeft, Plus, Trash2, Check, X, AlertCircle } from "lucide-react"
+import { Loader2, Plus, Trash2, Check, X, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -24,6 +24,7 @@ import { FileUploadField } from "@/components/file-upload-field"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Switch } from "@/components/ui/switch"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 interface AddAsesmenFormProps {
   courseId: string
@@ -401,22 +402,9 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
     return (
       <>
         <AlertComponent />
+        <FloatingBackButton onClick={handleBack} />
+        
         <div className="space-y-6">
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-            size="sm"
-            asChild
-          >
-            <Link href={`/courses/${courseId}`}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Kembali ke Course
-            </Link>
-          </Button>
-        </div>
-
-        {/* Daftar Soal - semua bisa diedit inline */}
         {soalList.length > 0 && (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Daftar Soal ({soalList.length})</h3>
@@ -602,25 +590,14 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
   return (
     <>
       <AlertComponent />
+      <FloatingBackButton href={`/courses/${courseId}`} />
+      
       <form onSubmit={(e) => {
         e.preventDefault()
         handleNext()
       }}>
         <Card>
           <CardHeader>
-            <div className="flex items-center gap-2 mb-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                asChild
-              >
-                <Link href={`/courses/${courseId}`}>
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Kembali
-                </Link>
-              </Button>
-            </div>
           <CardTitle>Informasi Asesmen</CardTitle>
           <CardDescription>
             {courseTitle ? `Buat asesmen baru untuk course ${courseTitle}` : 'Buat asesmen baru untuk course ini'}

@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
-  ArrowLeft,
   Calendar,
   Clock,
   Users,
@@ -28,6 +27,7 @@ import { AnimateIn } from "@/components/ui/animate-in"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import ProjectGroupsManagement from "@/components/project-groups-management"
 import { SINTAKS_MAP, getSintaksInfo } from "@/lib/constants/project"
+import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 interface Proyek {
   id: string
@@ -142,17 +142,12 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   if (!proyek) {
     return (
       <div className="w-full">
+        <FloatingBackButton href="/projects" />
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <BookOpen className="h-12 w-12 text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-semibold mb-2">{t("Proyek tidak ditemukan")}</h3>
             <p className="text-muted-foreground mb-4">{t("Proyek yang Anda cari tidak ada atau telah dihapus")}</p>
-            <Link href="/projects">
-              <Button>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                {t("Kembali ke Proyek")}
-              </Button>
-            </Link>
           </CardContent>
         </Card>
       </div>
@@ -171,28 +166,23 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   return (
     <div className="w-full">
       <AlertComponent />
+      <FloatingBackButton href="/projects" />
       
       {/* Header */}
       <AnimateIn>
         <div className="mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-3 sm:gap-4">
-            <Link href="/projects">
-              <Button variant="ghost" size="icon" className="mt-1 shrink-0 h-8 w-8 sm:h-10 sm:w-10">
-                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-              </Button>
-            </Link>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-start gap-2 sm:gap-3 mb-2">
-                <h1 className="text-xl font-bold sm:text-2xl md:text-3xl line-clamp-2">{proyek.judul}</h1>
-                {getStatusBadge(status)}
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-start gap-2 sm:gap-3 mb-2">
+              <h1 className="text-xl font-bold sm:text-2xl md:text-3xl line-clamp-2">{proyek.judul}</h1>
+              {getStatusBadge(status)}
+            </div>
+            <p className="text-sm text-muted-foreground mb-3 sm:mb-4 line-clamp-3">{proyek.deskripsi}</p>
+            
+            <div className="flex flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                <span className="truncate">{format(new Date(proyek.tgl_mulai), 'dd MMM', { locale: dateLocale })} - {format(new Date(proyek.tgl_selesai), 'dd MMM yyyy', { locale: dateLocale })}</span>
               </div>
-              <p className="text-sm text-muted-foreground mb-3 sm:mb-4 line-clamp-3">{proyek.deskripsi}</p>
-              
-              <div className="flex flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-                  <span className="truncate">{format(new Date(proyek.tgl_mulai), 'dd MMM', { locale: dateLocale })} - {format(new Date(proyek.tgl_selesai), 'dd MMM yyyy', { locale: dateLocale })}</span>
-                </div>
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
                   <span className="truncate">{proyek.guru.nama}</span>
