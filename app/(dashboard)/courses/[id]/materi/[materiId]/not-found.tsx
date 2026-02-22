@@ -1,10 +1,8 @@
 import { FileQuestion } from "lucide-react"
-import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 export default function MateriNotFound() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] p-4">
-      <FloatingBackButton href="/courses" />
       <div className="text-center space-y-6 max-w-md">
         <div className="flex justify-center">
           <div className="p-6 rounded-full bg-muted">

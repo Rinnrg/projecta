@@ -20,7 +20,6 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 interface PageProps {
   params: Promise<{ 
@@ -205,7 +204,6 @@ export default function SubmitAsesmenPage({ params }: PageProps) {
   return (
     <div className="w-full py-6 sm:py-8 space-y-6">
       <AlertComponent />
-      <FloatingBackButton href={`/courses/${courseId}/asesmen/${asesmenId}`} />
       
       {/* Header */}
       <div className="space-y-4">

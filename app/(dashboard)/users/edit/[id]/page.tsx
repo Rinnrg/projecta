@@ -14,7 +14,6 @@ import Link from "next/link"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { AnimateIn } from "@/components/ui/animate-in"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
-import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 export default function EditUserPage() {
   const router = useRouter()
@@ -129,7 +128,6 @@ export default function EditUserPage() {
   return (
     <div className="w-full space-y-4 sm:space-y-6">
       <AlertComponent />
-      <FloatingBackButton href="/users" />
 
       <AnimateIn stagger={1}>
         <Card>

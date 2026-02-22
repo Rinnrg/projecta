@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { GraduationCap, UserPlus, Users, Loader2 } from "lucide-react"
 import Link from "next/link"
-import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 interface ClassInfo {
   kelas: string
@@ -102,7 +101,6 @@ export default function AddStudentsClient({
   return (
     <div className="w-full">
       <AlertComponent />
-      <FloatingBackButton href={`/courses/${course.id}?tab=students`} />
 
       <div className="mb-6 space-y-4">
         <div>

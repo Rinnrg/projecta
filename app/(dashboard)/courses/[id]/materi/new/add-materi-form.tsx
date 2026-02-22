@@ -12,7 +12,6 @@ import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { Loader2 } from "lucide-react"
 import Link from "next/link"
 import { FileUploadField } from "@/components/file-upload-field"
-import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 interface AddMateriFormProps {
   courseId: string
@@ -107,7 +106,6 @@ export default function AddMateriForm({ courseId, courseTitle }: AddMateriFormPr
   return (
     <>
       <AlertComponent />
-      <FloatingBackButton href={`/courses/${courseId}`} />
       
       <form onSubmit={handleSubmit}>
       <Card>

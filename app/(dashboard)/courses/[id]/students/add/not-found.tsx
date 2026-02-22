@@ -2,12 +2,10 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle } from "lucide-react"
-import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 export default function NotFound() {
   return (
     <div className="w-full">
-      <FloatingBackButton href="/dashboard" />
 
       <Card className="border-destructive/50">
         <CardHeader className="text-center pb-4">

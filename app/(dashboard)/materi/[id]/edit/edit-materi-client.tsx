@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { Loader2, Trash2 } from "lucide-react"
 import Link from "next/link"
-import { FloatingBackButton } from "@/components/ui/floating-back-button"
 import { FileUploadField } from "@/components/file-upload-field"
 
 interface MateriData {
@@ -186,7 +185,6 @@ export default function EditMateriClient({ materi }: EditMateriClientProps) {
   return (
     <>
       <AlertComponent />
-      <FloatingBackButton href={`/courses/${materi.course.id}`} />
       
       <form onSubmit={handleSubmit}>
         <Card>

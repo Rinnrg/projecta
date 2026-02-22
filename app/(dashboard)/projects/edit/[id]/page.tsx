@@ -16,7 +16,6 @@ import Link from "next/link"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { AnimateIn } from "@/components/ui/animate-in"
 import { SINTAKS_MAP, SINTAKS_KEYS, SintaksKey } from "@/lib/constants/project"
-import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 interface Proyek {
   id: string
@@ -191,12 +190,11 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
   if (!proyek) {
     return (
       <div className="w-full">
-        <FloatingBackButton href="/projects" />
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Edit className="h-12 w-12 text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-semibold mb-2">{t("Proyek tidak ditemukan")}</h3>
-            <p className="text-muted-foreground mb-4">{t("Proyek yang ingin Anda edit tidak ada. Gunakan tombol kembali di pojok kiri atas.")}</p>
+            <p className="text-muted-foreground mb-4">{t("Proyek yang ingin Anda edit tidak ada.")}</p>
           </CardContent>
         </Card>
       </div>
@@ -207,12 +205,11 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
   if (user?.role !== "ADMIN" && proyek.guru.id !== user?.id) {
     return (
       <div className="w-full">
-        <FloatingBackButton href="/projects" />
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Edit className="h-12 w-12 text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-semibold mb-2">{t("Tidak ada akses")}</h3>
-            <p className="text-muted-foreground mb-4">{t("Anda tidak memiliki izin untuk mengedit proyek ini. Gunakan tombol kembali di pojok kiri atas.")}</p>
+            <p className="text-muted-foreground mb-4">{t("Anda tidak memiliki izin untuk mengedit proyek ini.")}</p>
           </CardContent>
         </Card>
       </div>
@@ -222,7 +219,6 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
   return (
     <div className="w-full">
       <AlertComponent />
-      <FloatingBackButton href="/projects" />
       
       {/* Header */}
       <AnimateIn>

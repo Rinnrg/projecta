@@ -24,7 +24,6 @@ import { FileUploadField } from "@/components/file-upload-field"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Switch } from "@/components/ui/switch"
-import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 interface AddAsesmenFormProps {
   courseId: string
@@ -402,7 +401,6 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
     return (
       <>
         <AlertComponent />
-        <FloatingBackButton onClick={handleBack} />
         
         <div className="space-y-6">
         {soalList.length > 0 && (
@@ -582,7 +580,6 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
   return (
     <>
       <AlertComponent />
-      <FloatingBackButton href={`/courses/${courseId}`} />
       
       <form onSubmit={(e) => {
         e.preventDefault()

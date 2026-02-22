@@ -13,7 +13,6 @@ import { User, Mail, Lock, AtSign, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { AnimateIn } from "@/components/ui/animate-in"
-import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 export default function AddUserPage() {
   const router = useRouter()
@@ -83,7 +82,6 @@ export default function AddUserPage() {
   return (
     <div className="w-full space-y-6">
       <AlertComponent />
-      <FloatingBackButton href="/users" />
       
       <AnimateIn stagger={1}>
         <Card>

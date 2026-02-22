@@ -27,7 +27,6 @@ import {
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { FloatingBackButton } from "@/components/ui/floating-back-button"
 import { useRouter, useSearchParams } from "next/navigation"
 import AddStudentDialog from "./add-student-dialog"
 import EditTeacherDialog from "./edit-teacher-dialog"
@@ -220,9 +219,6 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
         onSuccess={fetchEnrollments}
       />
       
-      {/* Floating Back Button */}
-      <FloatingBackButton href="/courses" />
-
       {/* Course Header */}
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">

@@ -20,7 +20,6 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { FileUploadField } from "@/components/file-upload-field"
 import { Switch } from "@/components/ui/switch"
-import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 interface AsesmenEditFormProps {
   asesmenId: string
@@ -372,7 +371,6 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
     return (
       <>
         <AlertComponent />
-        <FloatingBackButton onClick={handleBack} />
         <div className="space-y-6">
         {/* Daftar Soal - semua bisa diedit inline */}
         {soalList.length > 0 && (
@@ -523,15 +521,6 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
   return (
     <>
       <AlertComponent />
-      <FloatingBackButton 
-        onClick={() => {
-          if (courseId) {
-            router.push(`/courses/${courseId}`)
-          } else {
-            router.back()
-          }
-        }}
-      />
       <form onSubmit={(e) => {
         e.preventDefault()
         handleNext()

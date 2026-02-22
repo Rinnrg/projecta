@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
-import { FloatingBackButton } from "@/components/ui/floating-back-button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -142,7 +141,6 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   if (!proyek) {
     return (
       <div className="w-full">
-        <FloatingBackButton href="/projects" />
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <BookOpen className="h-12 w-12 text-muted-foreground/50 mb-4" />
@@ -166,8 +164,6 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   return (
     <div className="w-full">
       <AlertComponent />
-      <FloatingBackButton href="/projects" />
-      <FloatingBackButton href="/projects" />
       
       {/* Header */}
       <AnimateIn>

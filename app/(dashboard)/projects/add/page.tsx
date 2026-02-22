@@ -17,7 +17,6 @@ import Link from "next/link"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { AnimateIn } from "@/components/ui/animate-in"
 import { SINTAKS_MAP, SINTAKS_KEYS, SintaksKey } from "@/lib/constants/project"
-import { FloatingBackButton } from "@/components/ui/floating-back-button"
 
 interface ClassInfo {
   kelas: string
@@ -198,7 +197,6 @@ export default function AddProjectPage() {
   return (
     <div className="w-full">
       <AlertComponent />
-      <FloatingBackButton href="/projects" />
       
       {/* Header */}
       <AnimateIn>
