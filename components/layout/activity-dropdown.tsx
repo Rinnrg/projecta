@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth-context"
+import { useAutoTranslate } from "@/lib/auto-translate-context"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { Bell, Award, Upload, BookOpen, Clock, CheckCircle2, Loader2, Check, CheckCheck } from "lucide-react"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
-import { id as localeId } from "date-fns/locale"
+import { id as localeId, enUS } from "date-fns/locale"
 
 interface Activity {
   action: string
@@ -28,6 +29,8 @@ interface Activity {
 
 export function ActivityDropdown() {
   const { user } = useAuth()
+  const { t, locale } = useAutoTranslate()
+  const dateLocale = locale === 'id' ? localeId : enUS
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState(false)
@@ -131,13 +134,13 @@ export function ActivityDropdown() {
   const getActivityLabel = (action: string) => {
     switch (action) {
       case 'completed':
-        return 'Menyelesaikan'
+        return t('Menyelesaikan')
       case 'submitted':
-        return 'Mengumpulkan'
+        return t('Mengumpulkan')
       case 'graded':
-        return 'Dinilai'
+        return t('Dinilai')
       case 'enrolled':
-        return 'Bergabung'
+        return t('Bergabung')
       default:
         return action
     }
@@ -186,11 +189,11 @@ export function ActivityDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 sm:w-96 p-0">
         <div className="flex items-center justify-between p-4 pb-2">
-          <h3 className="font-semibold text-base">Aktivitas Terbaru</h3>
+          <h3 className="font-semibold text-base">{t("Aktivitas Terbaru")}</h3>
           <div className="flex items-center gap-2">
             {unreadCount > 0 && (
               <Badge variant="secondary" className="text-xs">
-                {unreadCount} baru
+                {unreadCount} {t("baru")}
               </Badge>
             )}
             {activities.length > 0 && unreadCount > 0 && (
@@ -201,7 +204,7 @@ export function ActivityDropdown() {
                 onClick={markAllAsRead}
               >
                 <CheckCheck className="h-3.5 w-3.5" />
-                Tandai Semua
+                {t("Tandai Semua")}
               </Button>
             )}
           </div>
@@ -249,7 +252,7 @@ export function ActivityDropdown() {
                                 size="icon"
                                 className="h-6 w-6"
                                 onClick={() => markAsRead(activityId)}
-                                title="Tandai telah dibaca"
+                                title={t("Tandai telah dibaca")}
                               >
                                 <Check className="h-3.5 w-3.5" />
                               </Button>
@@ -265,7 +268,7 @@ export function ActivityDropdown() {
                           <Clock className="h-3 w-3" />
                           {formatDistanceToNow(new Date(activity.time), {
                             addSuffix: true,
-                            locale: localeId,
+                            locale: dateLocale,
                           })}
                         </div>
                       </div>
@@ -280,9 +283,9 @@ export function ActivityDropdown() {
             <div className="rounded-full bg-muted p-3 mb-3">
               <Bell className="h-6 w-6 text-muted-foreground" />
             </div>
-            <p className="text-sm font-medium">Belum ada aktivitas</p>
+            <p className="text-sm font-medium">{t("Belum ada aktivitas")}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Aktivitas Anda akan muncul di sini
+              {t("Aktivitas Anda akan muncul di sini")}
             </p>
           </div>
         )}

@@ -238,12 +238,13 @@ export default function EditMateriClient({ materi }: EditMateriClientProps) {
               description="Upload file atau masukkan link YouTube, Google Drive, PDF, atau resource eksternal lainnya"
             />
 
-            <div className="flex gap-2 justify-between pt-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-between pt-4">
               <Button
                 type="button"
                 variant="destructive"
                 onClick={handleDelete}
                 disabled={isLoading || isDeleting}
+                className="w-full sm:w-auto"
               >
                 {isDeleting ? (
                   <>
@@ -258,7 +259,7 @@ export default function EditMateriClient({ materi }: EditMateriClientProps) {
                 )}
               </Button>
               
-              <div className="flex gap-2">
+              <div className="flex flex-col-reverse gap-2 sm:flex-row">
                 <Button
                   type="button"
                   variant="outline"

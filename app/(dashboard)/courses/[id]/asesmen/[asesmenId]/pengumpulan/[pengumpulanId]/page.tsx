@@ -148,7 +148,7 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
   const isTeacher = user && (user.role === 'GURU' || user.role === 'ADMIN')
 
   return (
-    <div className="container max-w-5xl py-6 sm:py-8 space-y-6">
+    <div className="w-full py-6 sm:py-8 space-y-6">
       <AlertComponent />
       
       {/* Header */}

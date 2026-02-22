@@ -42,13 +42,21 @@ export async function GET(request: NextRequest) {
                   select: {
                     id: true,
                     nama: true,
-                    email: true,
-                    foto: true,
+                    kelas: true,
                   },
                 },
               },
             },
-            pengumpulan: true,
+            _count: {
+              select: {
+                anggota: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            kelompok: true,
           },
         },
       },
@@ -70,7 +78,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { judul, deskripsi, tgl_mulai, tgl_selesai, lampiran, fileData, fileName, fileType, fileSize, guruId } = body
+    const { judul, deskripsi, tgl_mulai, tgl_selesai, lampiran, sintaks, guruId } = body
 
     if (!judul || !deskripsi || !tgl_mulai || !tgl_selesai || !guruId) {
       return NextResponse.json(
@@ -79,36 +87,98 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Convert base64 file data to Buffer if provided
-    let fileBuffer = null
-    if (fileData) {
-      // Remove data URL prefix if exists (e.g., "data:application/pdf;base64,")
-      const base64Data = fileData.includes(',') ? fileData.split(',')[1] : fileData
-      fileBuffer = Buffer.from(base64Data, 'base64')
+    if (!sintaks || !Array.isArray(sintaks) || sintaks.length === 0) {
+      return NextResponse.json(
+        { error: 'Pilih minimal satu tahapan sintaks' },
+        { status: 400 }
+      )
     }
 
-    const proyek = await prisma.proyek.create({
-      data: {
-        judul,
-        deskripsi,
-        tgl_mulai: new Date(tgl_mulai),
-        tgl_selesai: new Date(tgl_selesai),
-        lampiran: lampiran || null,
-        fileData: fileBuffer,
-        fileName: fileName || null,
-        fileType: fileType || null,
-        fileSize: fileSize || null,
-        guruId,
-      },
-      include: {
-        guru: {
-          select: {
-            id: true,
-            nama: true,
-            email: true,
+    // Check if start date is before end date
+    if (new Date(tgl_mulai) >= new Date(tgl_selesai)) {
+      return NextResponse.json(
+        { error: "Tanggal selesai harus lebih besar dari tanggal mulai" },
+        { status: 400 }
+      )
+    }
+
+    // Check if teacher exists
+    const guru = await prisma.user.findUnique({
+      where: { 
+        id: guruId,
+        role: "GURU"
+      }
+    })
+
+    if (!guru) {
+      return NextResponse.json(
+        { error: "Guru tidak ditemukan" },
+        { status: 404 }
+      )
+    }
+
+    // Extract selectedClasses for enrollment
+    const { selectedClasses } = body
+
+    const proyek = await prisma.$transaction(async (tx) => {
+      // Create the project
+      const newProyek = await tx.proyek.create({
+        data: {
+          judul,
+          deskripsi,
+          tgl_mulai: new Date(tgl_mulai),
+          tgl_selesai: new Date(tgl_selesai),
+          lampiran: lampiran || null,
+          sintaks,
+          guruId,
+        },
+        include: {
+          guru: {
+            select: {
+              id: true,
+              nama: true,
+              email: true,
+            },
+          },
+          _count: {
+            select: {
+              kelompok: true,
+            },
           },
         },
-      },
+      })
+
+      // If classes are selected, create a default group and enroll all students from those classes
+      if (selectedClasses && Array.isArray(selectedClasses) && selectedClasses.length > 0) {
+        // Get all students from selected classes
+        const students = await tx.user.findMany({
+          where: {
+            role: 'SISWA',
+            kelas: { in: selectedClasses },
+          },
+          select: { id: true },
+        })
+
+        if (students.length > 0) {
+          // Create a default group
+          const kelompok = await tx.kelompok.create({
+            data: {
+              nama: 'Kelompok Utama',
+              proyekId: newProyek.id,
+            },
+          })
+
+          // Add all students as members
+          await tx.anggotaKelompok.createMany({
+            data: students.map((s) => ({
+              kelompokId: kelompok.id,
+              siswaId: s.id,
+            })),
+          })
+        }
+      }
+
+      return newProyek
     })
 
     return NextResponse.json({ proyek }, { status: 201 })

@@ -141,7 +141,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
 
   if (authLoading || loading) {
     return (
-      <div className="container max-w-6xl py-6 sm:py-8 space-y-6">
+      <div className="w-full py-6 sm:py-8 space-y-6">
         <div className="space-y-4">
           <div className="h-10 w-32 bg-muted animate-pulse rounded" />
           <div className="space-y-2">
@@ -185,7 +185,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
   const isStudent = user && user.role === 'SISWA'
 
   return (
-    <div className="container max-w-6xl py-6 sm:py-8 space-y-6">
+    <div className="w-full py-6 sm:py-8 space-y-6">
       {/* Header */}
       <div className="space-y-4">
         <Button variant="ghost" size="sm" asChild>
@@ -195,10 +195,10 @@ export default function AsesmenDetailPage({ params }: PageProps) {
           </Link>
         </Button>
 
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold sm:text-3xl">{asesmen.nama}</h1>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-2 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-bold sm:text-2xl md:text-3xl">{asesmen.nama}</h1>
               <Badge variant={asesmen.tipe === 'KUIS' ? 'default' : 'secondary'}>
                 {asesmen.tipe === 'KUIS' ? (
                   <><FileText className="mr-1 h-3 w-3" /> Kuis</>
@@ -219,7 +219,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
               )}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 shrink-0">
             {isStudent && asesmen.tipe === 'TUGAS' && (
               <>
                 {hasSubmitted ? (
@@ -478,10 +478,10 @@ export default function AsesmenDetailPage({ params }: PageProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400">
-                  <FileText className="h-6 w-6" />
+            <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4 bg-muted rounded-lg">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 sm:p-3 rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400 shrink-0">
+                  <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
                 <div>
                   <p className="font-medium">
@@ -500,7 +500,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                   </p>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2 shrink-0">
                 {/* Tombol Lihat Lampiran - untuk PDF, video, dan YouTube */}
                 {((asesmen.fileData && (asesmen.fileType === 'application/pdf' || asesmen.fileType?.startsWith('video/'))) ||
                   (asesmen.lampiran && (
@@ -554,7 +554,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
             {/* PDF/Video Preview dengan animasi slide */}
             <div 
               className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                showPdfViewer ? 'max-h-[850px] opacity-100' : 'max-h-0 opacity-0'
+                showPdfViewer ? 'max-h-[500px] sm:max-h-[650px] lg:max-h-[850px] opacity-100' : 'max-h-0 opacity-0'
               }`}
             >
               {/* PDF Preview for database files */}
@@ -972,6 +972,8 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                       Belum ada siswa yang mengerjakan kuis
                     </p>
                   ) : (
+                    <div className="overflow-x-auto -mx-6">
+                    <div className="min-w-[600px] px-6">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -1016,6 +1018,8 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                         ))}
                       </TableBody>
                     </Table>
+                    </div>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -1040,6 +1044,8 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                       Belum ada siswa yang mengumpulkan tugas
                     </p>
                   ) : (
+                    <div className="overflow-x-auto -mx-6">
+                    <div className="min-w-[700px] px-6">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -1109,6 +1115,8 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                         ))}
                       </TableBody>
                     </Table>
+                    </div>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -1160,6 +1168,8 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                           </CardContent>
                         </Card>
                       </div>
+                      <div className="overflow-x-auto -mx-6">
+                      <div className="min-w-[500px] px-6">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -1202,6 +1212,8 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                           ))}
                         </TableBody>
                       </Table>
+                      </div>
+                      </div>
                     </div>
                   )}
                 </CardContent>

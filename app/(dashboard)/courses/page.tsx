@@ -74,7 +74,7 @@ export default function CoursesPage() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-7xl space-y-6">
+      <div className="w-full space-y-6">
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center">
           <p className="text-sm text-destructive">{error}</p>
           <Button onClick={refetch} variant="outline" size="sm" className="mt-4">
@@ -86,7 +86,7 @@ export default function CoursesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 sm:space-y-8">
+    <div className="w-full space-y-6 sm:space-y-8">
       <AlertComponent />
 
       <AnimateIn stagger={0}>
@@ -243,11 +243,11 @@ export default function CoursesPage() {
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1.5">
                               <FileText className="h-4 w-4" />
-                              12
+                              {course._count?.materi ?? 0}
                             </span>
                             <span className="flex items-center gap-1.5">
                               <Users className="h-4 w-4" />
-                              45
+                              {course._count?.enrollments ?? 0}
                             </span>
                           </div>
                           <Button asChild size="sm" className="gap-1">
@@ -309,7 +309,7 @@ export default function CoursesPage() {
                       <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <FileText className="h-3 w-3" />
-                          12
+                          {course._count?.materi ?? 0}
                         </span>
                         <Button asChild size="sm" variant="ghost" className="h-6 gap-1 px-2 text-xs">
                           <Link href={`/courses/${course.id}`}>
@@ -321,7 +321,8 @@ export default function CoursesPage() {
                   </Card>
                 ) : (
                   // Grid View (Default)
-                  <Card className="group overflow-hidden border-border/50 transition-all duration-200 hover:border-border hover:shadow-md">
+                  <Link href={`/courses/${course.id}`} className="block">
+                  <Card className="group overflow-hidden border-border/50 transition-all duration-200 hover:border-border hover:shadow-md cursor-pointer">
                     <div className="relative aspect-[16/10] overflow-hidden bg-muted">
                       <img
                         src={course.gambar || "/placeholder.svg?height=200&width=320&query=course"}
@@ -333,6 +334,7 @@ export default function CoursesPage() {
                         {course.kategori}
                       </Badge>
                       {isTeacherOrAdmin && (
+                        <div onClick={(e) => e.preventDefault()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -359,6 +361,7 @@ export default function CoursesPage() {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
+                        </div>
                       )}
                     </div>
                     <div className="p-3 sm:p-4">
@@ -372,22 +375,21 @@ export default function CoursesPage() {
                         <div className="flex items-center gap-3 text-xs text-muted-foreground sm:gap-4 sm:text-sm">
                           <span className="flex items-center gap-1 sm:gap-1.5">
                             <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            12
+                            {course._count?.materi ?? 0}
                           </span>
                           <span className="flex items-center gap-1 sm:gap-1.5">
                             <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            45
+                            {course._count?.enrollments ?? 0}
                           </span>
                         </div>
-                        <Button asChild size="sm" variant="ghost" className="h-7 gap-1 text-xs sm:h-8">
-                          <Link href={`/courses/${course.id}`}>
-                            {user?.role === "SISWA" ? t("Lihat") : t("Kelola")}
-                            <ArrowRight className="h-3 w-3" />
-                          </Link>
-                        </Button>
+                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary sm:text-sm">
+                          {user?.role === "SISWA" ? t("Lihat") : t("Kelola")}
+                          <ArrowRight className="h-3 w-3" />
+                        </span>
                       </div>
                     </div>
                   </Card>
+                  </Link>
                 )}
               </AnimateIn>
             ))}

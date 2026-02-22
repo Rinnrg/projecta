@@ -29,6 +29,7 @@ export default function EditUserPage() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [role, setRole] = useState("")
+  const [kelas, setKelas] = useState("")
   const [foto, setFoto] = useState("")
   const [previewImage, setPreviewImage] = useState("")
 
@@ -49,6 +50,7 @@ export default function EditUserPage() {
         setEmail(userData.email || "")
         setUsername(userData.username || "")
         setRole(userData.role || "")
+        setKelas(userData.kelas || "")
         setFoto(userData.foto || "")
         setPreviewImage(userData.foto || "")
       } catch (err) {
@@ -91,6 +93,7 @@ export default function EditUserPage() {
           username,
           ...(password && { password }),
           role,
+          ...(role === "SISWA" && kelas && { kelas }),
           foto: previewImage,
         }),
       })
@@ -123,7 +126,7 @@ export default function EditUserPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 sm:space-y-6">
+    <div className="w-full space-y-4 sm:space-y-6">
       <AlertComponent />
 
       <AnimateIn stagger={0}>
@@ -259,6 +262,18 @@ export default function EditUserPage() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {role === "SISWA" && (
+                <div className="space-y-2">
+                  <Label htmlFor="kelas">{t("Kelas")}</Label>
+                  <Input
+                    id="kelas"
+                    placeholder={t("Masukkan kelas (contoh: 10 IPA 1)")}
+                    value={kelas}
+                    onChange={(e) => setKelas(e.target.value)}
+                  />
+                </div>
+              )}
 
               <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
                 <Button

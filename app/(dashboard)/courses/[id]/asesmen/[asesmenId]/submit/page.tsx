@@ -203,7 +203,7 @@ export default function SubmitAsesmenPage({ params }: PageProps) {
   const isKelompok = asesmen.tipePengerjaan === 'KELOMPOK'
 
   return (
-    <div className="container max-w-4xl py-6 sm:py-8 space-y-6">
+    <div className="w-full py-6 sm:py-8 space-y-6">
       <AlertComponent />
       
       {/* Header */}

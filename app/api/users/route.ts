@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
         nama: true,
         role: true,
         foto: true,
+        kelas: true,
         createdAt: true,
         _count: {
           select: {
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { username, email, nama, password, role, foto } = body
+    const { username, email, nama, password, role, foto, kelas } = body
 
     if (!email || !nama || !role) {
       return NextResponse.json(
@@ -72,6 +73,7 @@ export async function POST(request: NextRequest) {
         password: password || 'password123',
         role,
         foto: foto || null,
+        kelas: kelas || null,
       },
       select: {
         id: true,
@@ -80,6 +82,7 @@ export async function POST(request: NextRequest) {
         nama: true,
         role: true,
         foto: true,
+        kelas: true,
         createdAt: true,
       },
     })

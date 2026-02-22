@@ -73,14 +73,19 @@ export function useUsers(role?: string) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async (skipCache = false) => {
     const cacheKey = role ? `users-${role}` : 'users'
-    const cachedData = getCachedData(cacheKey)
     
-    if (cachedData) {
-      setUsers(cachedData)
-      setLoading(false)
-      return
+    if (!skipCache) {
+      const cachedData = getCachedData(cacheKey)
+      if (cachedData) {
+        setUsers(cachedData)
+        setLoading(false)
+        return
+      }
+    } else {
+      // Clear cache when forcing refetch
+      cache.delete(cacheKey)
     }
 
     try {
@@ -109,7 +114,9 @@ export function useUsers(role?: string) {
     fetchUsers()
   }, [fetchUsers])
 
-  return { users, loading, error, refetch: fetchUsers }
+  const refetch = useCallback(() => fetchUsers(true), [fetchUsers])
+
+  return { users, loading, error, refetch }
 }
 
 export function useProyek(guruId?: string) {

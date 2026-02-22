@@ -25,13 +25,21 @@ export async function GET(
                   select: {
                     id: true,
                     nama: true,
-                    email: true,
-                    foto: true,
+                    kelas: true,
                   },
                 },
               },
             },
-            pengumpulan: true,
+            _count: {
+              select: {
+                anggota: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            kelompok: true,
           },
         },
       },
@@ -44,7 +52,10 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ proyek })
+    return NextResponse.json({ 
+      success: true,
+      proyek 
+    })
   } catch (error) {
     console.error('Error fetching proyek:', error)
     return NextResponse.json(
@@ -61,16 +72,52 @@ export async function PUT(
 ) {
   try {
     const body = await request.json()
-    const { judul, deskripsi, tgl_mulai, tgl_selesai, lampiran } = body
+    const { judul, deskripsi, tgl_mulai, tgl_selesai, lampiran, sintaks } = body
+
+    // Validation  
+    if (!judul || !deskripsi || !tgl_mulai || !tgl_selesai) {
+      return NextResponse.json(
+        { error: "Semua field wajib harus diisi" },
+        { status: 400 }
+      )
+    }
+
+    if (!sintaks || !Array.isArray(sintaks) || sintaks.length === 0) {
+      return NextResponse.json(
+        { error: 'Pilih minimal satu tahapan sintaks' },
+        { status: 400 }
+      )
+    }
+
+    // Check if start date is before end date
+    if (new Date(tgl_mulai) >= new Date(tgl_selesai)) {
+      return NextResponse.json(
+        { error: "Tanggal selesai harus lebih besar dari tanggal mulai" },
+        { status: 400 }
+      )
+    }
+
+    // Check if project exists
+    const existingProyek = await prisma.proyek.findUnique({
+      where: { id: params.id },
+    })
+
+    if (!existingProyek) {
+      return NextResponse.json(
+        { error: "Proyek tidak ditemukan" },
+        { status: 404 }
+      )
+    }
 
     const proyek = await prisma.proyek.update({
       where: { id: params.id },
       data: {
-        ...(judul && { judul }),
-        ...(deskripsi && { deskripsi }),
-        ...(tgl_mulai && { tgl_mulai: new Date(tgl_mulai) }),
-        ...(tgl_selesai && { tgl_selesai: new Date(tgl_selesai) }),
-        ...(lampiran !== undefined && { lampiran }),
+        judul,
+        deskripsi,
+        tgl_mulai: new Date(tgl_mulai),
+        tgl_selesai: new Date(tgl_selesai),
+        lampiran,
+        sintaks,
       },
       include: {
         guru: {

@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card"
 
 export default function Loading() {
   return (
-    <div className="mx-auto max-w-7xl space-y-8">
+    <div className="w-full space-y-8">
       {/* Header skeleton */}
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div className="space-y-2">

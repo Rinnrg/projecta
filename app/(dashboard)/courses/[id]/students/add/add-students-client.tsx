@@ -5,19 +5,18 @@ import { useRouter } from "next/navigation"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ArrowLeft, Search, UserPlus } from "lucide-react"
+import { ArrowLeft, GraduationCap, UserPlus, Users, Loader2 } from "lucide-react"
 import Link from "next/link"
 
-interface Student {
-  id: string
-  nama: string
-  email: string
-  foto: string | null
+interface ClassInfo {
+  kelas: string
+  total: number
+  enrolled: number
+  available: number
+  studentIds: string[]
 }
 
 interface AddStudentsClientProps {
@@ -25,52 +24,51 @@ interface AddStudentsClientProps {
     id: string
     judul: string
   }
-  allStudents: Student[]
-  enrolledIds: string[]
+  classData: ClassInfo[]
+  totalAvailable: number
 }
 
 export default function AddStudentsClient({
   course,
-  allStudents,
-  enrolledIds,
+  classData,
+  totalAvailable,
 }: AddStudentsClientProps) {
   const router = useRouter()
   const { success, error: showError, AlertComponent } = useSweetAlert()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [selectedClasses, setSelectedClasses] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const filteredStudents = allStudents.filter((student) => {
-    const query = searchQuery.toLowerCase()
-    return (
-      student.nama.toLowerCase().includes(query) ||
-      student.email.toLowerCase().includes(query)
+  const handleToggleClass = (kelas: string) => {
+    setSelectedClasses((prev) =>
+      prev.includes(kelas)
+        ? prev.filter((k) => k !== kelas)
+        : [...prev, kelas]
     )
-  })
-
-  const availableStudents = filteredStudents.filter(
-    (student) => !enrolledIds.includes(student.id)
-  )
+  }
 
   const handleSelectAll = () => {
-    if (selectedIds.length === availableStudents.length) {
-      setSelectedIds([])
+    const availableClasses = classData.filter((c) => c.available > 0).map((c) => c.kelas)
+    if (selectedClasses.length === availableClasses.length) {
+      setSelectedClasses([])
     } else {
-      setSelectedIds(availableStudents.map((s) => s.id))
+      setSelectedClasses(availableClasses)
     }
   }
 
-  const handleToggleStudent = (studentId: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(studentId)
-        ? prev.filter((id) => id !== studentId)
-        : [...prev, studentId]
-    )
+  const totalSelected = classData
+    .filter((c) => selectedClasses.includes(c.kelas))
+    .reduce((sum, c) => sum + c.available, 0)
+
+  const getSelectedStudentIds = () => {
+    return classData
+      .filter((c) => selectedClasses.includes(c.kelas))
+      .flatMap((c) => c.studentIds)
   }
 
   const handleSubmit = async () => {
-    if (selectedIds.length === 0) {
-      showError("Pilih minimal satu siswa")
+    const studentIds = getSelectedStudentIds()
+    if (studentIds.length === 0) {
+      showError("Error", "Pilih minimal satu kelas yang memiliki siswa tersedia")
       return
     }
 
@@ -80,29 +78,30 @@ export default function AddStudentsClient({
       const response = await fetch(`/api/courses/${course.id}/enrollments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentIds: selectedIds }),
+        body: JSON.stringify({ studentIds }),
       })
 
       if (!response.ok) {
         throw new Error("Failed to enroll students")
       }
 
-      await success(`Berhasil menambahkan ${selectedIds.length} siswa`)
+      await success("Berhasil", `${studentIds.length} siswa dari ${selectedClasses.length} kelas berhasil ditambahkan`)
       router.push(`/courses/${course.id}?tab=students`)
       router.refresh()
     } catch (error) {
       console.error("Error enrolling students:", error)
-      showError("Gagal menambahkan siswa")
+      showError("Gagal", "Gagal menambahkan siswa")
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  const availableClasses = classData.filter((c) => c.available > 0)
+
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
+    <div className="w-full">
       <AlertComponent />
 
-      {/* Header */}
       <div className="mb-6 space-y-4">
         <Link href={`/courses/${course.id}?tab=students`}>
           <Button variant="ghost" size="sm" className="gap-2">
@@ -112,7 +111,7 @@ export default function AddStudentsClient({
         </Link>
 
         <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">Tambah Siswa</h1>
+          <h1 className="text-2xl font-bold sm:text-3xl">Tambah Siswa per Kelas</h1>
           <p className="text-sm text-muted-foreground mt-1 sm:text-base">
             {course.judul}
           </p>
@@ -123,96 +122,106 @@ export default function AddStudentsClient({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Pilih Siswa</CardTitle>
+              <CardTitle>Pilih Kelas</CardTitle>
               <CardDescription>
-                Pilih siswa yang ingin ditambahkan ke course ini
+                Centang kelas untuk mendaftarkan seluruh siswa di kelas tersebut
               </CardDescription>
             </div>
-            {selectedIds.length > 0 && (
+            {totalSelected > 0 && (
               <Badge variant="secondary" className="text-sm">
-                {selectedIds.length} Dipilih
+                {totalSelected} siswa dari {selectedClasses.length} kelas
               </Badge>
             )}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Cari siswa berdasarkan nama atau email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-
-          {/* Select All */}
-          {availableStudents.length > 0 && (
+          {availableClasses.length > 0 && (
             <div className="flex items-center space-x-2 border-b pb-3">
               <Checkbox
-                id="select-all"
+                id="select-all-classes"
                 checked={
-                  selectedIds.length === availableStudents.length &&
-                  availableStudents.length > 0
+                  selectedClasses.length === availableClasses.length &&
+                  availableClasses.length > 0
                 }
                 onCheckedChange={handleSelectAll}
               />
               <label
-                htmlFor="select-all"
+                htmlFor="select-all-classes"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                Pilih Semua ({availableStudents.length})
+                Pilih Semua Kelas ({availableClasses.length})
               </label>
             </div>
           )}
 
-          {/* Students List */}
           <ScrollArea className="h-[400px] pr-4">
-            {availableStudents.length === 0 ? (
+            {classData.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <UserPlus className="h-12 w-12 text-muted-foreground/50 mb-3" />
+                <Users className="h-12 w-12 text-muted-foreground/50 mb-3" />
                 <p className="text-sm text-muted-foreground">
-                  {searchQuery
-                    ? "Tidak ada siswa yang cocok dengan pencarian"
-                    : "Semua siswa sudah terdaftar di course ini"}
+                  Tidak ada kelas yang tersedia
                 </p>
               </div>
             ) : (
               <div className="space-y-2">
-                {availableStudents.map((student) => (
-                  <div
-                    key={student.id}
-                    className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-accent/50 transition-colors"
-                  >
-                    <Checkbox
-                      id={student.id}
-                      checked={selectedIds.includes(student.id)}
-                      onCheckedChange={() => handleToggleStudent(student.id)}
-                    />
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={student.foto || undefined} alt={student.nama} />
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {student.nama
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <label
-                      htmlFor={student.id}
-                      className="flex-1 cursor-pointer"
+                {classData.map((cls) => {
+                  const isDisabled = cls.available === 0
+                  const isChecked = selectedClasses.includes(cls.kelas)
+
+                  return (
+                    <div
+                      key={cls.kelas}
+                      className={`flex items-center space-x-4 rounded-lg border p-4 transition-colors ${
+                        isDisabled
+                          ? "opacity-50 bg-muted/30"
+                          : isChecked
+                          ? "bg-primary/5 border-primary/30"
+                          : "hover:bg-accent/50"
+                      }`}
                     >
-                      <p className="text-sm font-medium">{student.nama}</p>
-                      <p className="text-xs text-muted-foreground">{student.email}</p>
-                    </label>
-                  </div>
-                ))}
+                      <Checkbox
+                        id={`class-${cls.kelas}`}
+                        checked={isChecked}
+                        onCheckedChange={() => handleToggleClass(cls.kelas)}
+                        disabled={isDisabled}
+                      />
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                        <GraduationCap className="h-6 w-6 text-primary" />
+                      </div>
+                      <label
+                        htmlFor={`class-${cls.kelas}`}
+                        className="flex-1 cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-semibold">{cls.kelas}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {cls.total} siswa total
+                              {cls.enrolled > 0 && (
+                                <span> • {cls.enrolled} sudah terdaftar</span>
+                              )}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {cls.enrolled === cls.total ? (
+                              <Badge variant="outline" className="text-xs text-green-600 border-green-300">
+                                Semua Terdaftar
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-xs">
+                                {cls.available} tersedia
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </ScrollArea>
 
-          {/* Actions */}
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Link href={`/courses/${course.id}?tab=students`}>
               <Button variant="outline" disabled={isSubmitting}>
@@ -221,13 +230,20 @@ export default function AddStudentsClient({
             </Link>
             <Button
               onClick={handleSubmit}
-              disabled={selectedIds.length === 0 || isSubmitting}
+              disabled={selectedClasses.length === 0 || isSubmitting}
               className="gap-2"
             >
-              <UserPlus className="h-4 w-4" />
-              {isSubmitting
-                ? "Menambahkan..."
-                : `Tambahkan ${selectedIds.length > 0 ? selectedIds.length : ""} Siswa`}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Menambahkan...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="h-4 w-4" />
+                  Tambahkan {totalSelected > 0 ? `${totalSelected} Siswa` : ""}
+                </>
+              )}
             </Button>
           </div>
         </CardContent>

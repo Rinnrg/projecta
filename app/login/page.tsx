@@ -150,20 +150,6 @@ export default function LoginPage() {
               </div>
             )}
 
-            <div className="flex items-center justify-between text-xs">
-              <label className="flex items-center gap-1.5 cursor-pointer group">
-                <input type="checkbox" className="h-3.5 w-3.5 rounded border-border accent-primary" />
-                <span className="text-muted-foreground group-hover:text-foreground transition-colors duration-150">
-                  Ingat saya
-                </span>
-              </label>
-              <button
-                type="button"
-                className="text-primary hover:text-primary/80 hover:underline transition-colors duration-150"
-              >
-                Lupa password?
-              </button>
-            </div>
 
             <Button type="submit" disabled={isLoading} className="w-full h-9 text-sm">
               {isLoading ? (
@@ -176,15 +162,6 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-card px-2 text-[10px] uppercase text-muted-foreground">atau masuk sebagai</span>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

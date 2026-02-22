@@ -81,7 +81,7 @@ export default function AddCoursePage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="w-full space-y-6">
       <AlertComponent />
       
       <AnimateIn stagger={0}>
@@ -196,11 +196,11 @@ export default function AddCoursePage() {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-4">
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:gap-4">
               <Button 
                 type="button" 
                 variant="outline" 
-                className="flex-1 bg-transparent" 
+                className="w-full sm:flex-1 bg-transparent" 
                 onClick={() => router.back()}
                 disabled={isSubmitting}
               >
@@ -208,7 +208,7 @@ export default function AddCoursePage() {
               </Button>
               <Button 
                 type="submit" 
-                className="flex-1"
+                className="w-full sm:flex-1"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (

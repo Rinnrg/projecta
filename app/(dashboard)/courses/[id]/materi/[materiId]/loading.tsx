@@ -24,7 +24,7 @@ export default function MateriDetailLoading() {
 
       {/* Main Content Skeleton */}
       <div className="flex-1 overflow-auto bg-background">
-        <div className="p-4 sm:p-8 max-w-4xl mx-auto space-y-6 sm:space-y-8">
+        <div className="p-4 sm:p-8 w-full space-y-6 sm:space-y-8">
           <div className="space-y-4">
             <div className="flex gap-2">
               <Skeleton className="h-6 w-32" />

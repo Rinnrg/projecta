@@ -46,7 +46,7 @@ export default function AddAsesmenPage({ params }: PageProps) {
   }
 
   return (
-    <div className="container max-w-3xl py-6 sm:py-8">
+    <div className="w-full py-6 sm:py-8">
       <div className="mb-6 space-y-1">
         <h1 className="text-2xl font-bold sm:text-3xl">Buat Asesmen Baru</h1>
         <p className="text-muted-foreground">

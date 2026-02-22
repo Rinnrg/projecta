@@ -37,6 +37,7 @@ model User {
   password  String?
   role      Role     @default(SISWA)
   foto      String?
+  kelas     String?  // Kelas untuk siswa
   createdAt DateTime @default(now())
 
   course        Course[]
@@ -198,6 +199,7 @@ model Proyek {
   tgl_mulai   DateTime
   tgl_selesai DateTime
   lampiran    String?
+  sintaks     String[] // Array sintaks yang aktif untuk proyek ini
 
   // File storage fields (untuk file yang diupload)
   fileData       Bytes?   // Binary file data stored in database

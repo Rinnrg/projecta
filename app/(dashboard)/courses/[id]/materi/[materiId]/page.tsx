@@ -15,12 +15,24 @@ export default async function MateriDetailPage({ params }: PageProps) {
   const { id: courseId, materiId } = await params
 
   try {
-    // Fetch materi with course details
+    // Fetch materi with course details (exclude fileData binary to avoid serialization error)
     const materi = await prisma.materi.findUnique({
       where: { id: materiId },
-      include: {
+      select: {
+        id: true,
+        judul: true,
+        deskripsi: true,
+        tgl_unggah: true,
+        lampiran: true,
+        fileName: true,
+        fileType: true,
+        fileSize: true,
+        courseId: true,
+        fileData: false,
         course: {
-          include: {
+          select: {
+            id: true,
+            judul: true,
             guru: {
               select: {
                 id: true,
@@ -38,6 +50,9 @@ export default async function MateriDetailPage({ params }: PageProps) {
       notFound()
     }
 
+    // Check if file data exists (lightweight: only fetch fileSize, not the binary)
+    const hasFileData = materi.fileSize != null && materi.fileSize > 0
+
     // Fetch all materi from the same course for sidebar
     const allMateri = await prisma.materi.findMany({
       where: { courseId },
@@ -51,7 +66,7 @@ export default async function MateriDetailPage({ params }: PageProps) {
 
     return (
       <MateriDetailClient 
-        materi={materi}
+        materi={{ ...materi, hasFileData }}
         allMateri={allMateri}
         courseId={courseId}
       />

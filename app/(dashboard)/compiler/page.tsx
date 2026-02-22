@@ -13,7 +13,7 @@ export default function CompilerPage() {
 
   return (
     <AnimateIn stagger={0}>
-      <div className="h-[calc(100vh-4rem)] -m-6">
+      <div className="h-[calc(100vh-4rem)] -mx-4 -my-5 sm:-mx-6 sm:-my-6 md:-mx-8">
         <PythonCompiler onBack={handleBack} />
       </div>
     </AnimateIn>

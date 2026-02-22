@@ -46,7 +46,7 @@ export default function EditAsesmenPage({ params }: PageProps) {
   }
 
   return (
-    <div className="container py-6 sm:py-8 space-y-6">
+    <div className="w-full py-6 sm:py-8 space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-bold sm:text-3xl">Edit Asesmen</h1>
         <p className="text-muted-foreground">

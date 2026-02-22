@@ -5,7 +5,7 @@ import { BookOpen, ArrowLeft } from "lucide-react"
 
 export default function CourseNotFound() {
   return (
-    <div className="mx-auto max-w-2xl space-y-6 py-12">
+    <div className="w-full space-y-6 py-12">
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-16 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">

@@ -22,6 +22,7 @@ export default function AddUserPage() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [role, setRole] = useState("")
+  const [kelas, setKelas] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,6 +58,7 @@ export default function AddUserPage() {
           username: username || email.split('@')[0], // Default username from email if not provided
           password: password || "password123", // Default password if not provided
           role,
+          ...(role === "SISWA" && kelas && { kelas }),
         }),
       })
 
@@ -78,7 +80,7 @@ export default function AddUserPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="w-full space-y-6">
       <AlertComponent />
       
       <AnimateIn stagger={0}>
@@ -174,11 +176,23 @@ export default function AddUserPage() {
               </Select>
             </div>
 
-            <div className="flex gap-4">
+            {role === "SISWA" && (
+              <div className="space-y-2">
+                <Label htmlFor="kelas">Kelas</Label>
+                <Input
+                  id="kelas"
+                  placeholder="Enter class (e.g., 10 IPA 1)"
+                  value={kelas}
+                  onChange={(e) => setKelas(e.target.value)}
+                />
+              </div>
+            )}
+
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:gap-4">
               <Button 
                 type="button" 
                 variant="outline" 
-                className="flex-1 bg-transparent" 
+                className="w-full sm:flex-1 bg-transparent" 
                 onClick={() => router.back()}
                 disabled={isSubmitting}
               >
@@ -186,7 +200,7 @@ export default function AddUserPage() {
               </Button>
               <Button 
                 type="submit" 
-                className="flex-1"
+                className="w-full sm:flex-1"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (

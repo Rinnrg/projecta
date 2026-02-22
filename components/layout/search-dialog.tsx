@@ -11,11 +11,11 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
+import { useAuth } from "@/lib/auth-context"
 import { 
   FileText, 
   BookOpen, 
   Users, 
-  Award, 
   Calendar, 
   Settings, 
   LayoutDashboard,
@@ -45,6 +45,7 @@ export function SearchDialog({ open: controlledOpen, onOpenChange }: SearchDialo
   const [searchQuery, setSearchQuery] = React.useState("")
   const router = useRouter()
   const { t } = useAutoTranslate()
+  const { user } = useAuth()
 
   // Use controlled or internal state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen
@@ -110,16 +111,6 @@ export function SearchDialog({ open: controlledOpen, onOpenChange }: SearchDialo
       category: t("Navigasi"),
       keywords: ["projects", "proyek", "project", "portfolio"],
     },
-    // Showcase
-    {
-      id: "showcase",
-      title: t("Galeri Proyek"),
-      description: t("Proyek terbaik dari siswa"),
-      url: "/showcase",
-      icon: <Award className="h-4 w-4" />,
-      category: t("Navigasi"),
-      keywords: ["showcase", "galeri", "gallery", "project", "proyek", "terbaik", "best"],
-    },
     // Schedule
     {
       id: "schedule",
@@ -172,6 +163,12 @@ export function SearchDialog({ open: controlledOpen, onOpenChange }: SearchDialo
     },
   ]
 
+  // Filter items berdasarkan role ADMIN
+  const ADMIN_RESTRICTED_PATHS = ['/courses', '/compiler', '/projects']
+  const roleFilteredItems = user?.role === 'ADMIN'
+    ? searchItems.filter(item => !ADMIN_RESTRICTED_PATHS.some(path => item.url.startsWith(path)))
+    : searchItems
+
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
@@ -193,11 +190,11 @@ export function SearchDialog({ open: controlledOpen, onOpenChange }: SearchDialo
   // Filter items based on search query
   const filteredItems = React.useMemo(() => {
     if (!searchQuery.trim()) {
-      return searchItems
+      return roleFilteredItems
     }
 
     const query = searchQuery.toLowerCase()
-    return searchItems.filter((item) => {
+    return roleFilteredItems.filter((item) => {
       const titleMatch = item.title.toLowerCase().includes(query)
       const descriptionMatch = item.description?.toLowerCase().includes(query)
       const keywordMatch = item.keywords?.some(keyword => 
@@ -205,7 +202,7 @@ export function SearchDialog({ open: controlledOpen, onOpenChange }: SearchDialo
       )
       return titleMatch || descriptionMatch || keywordMatch
     })
-  }, [searchQuery, searchItems])
+  }, [searchQuery, roleFilteredItems])
 
   // Group items by category
   const groupedItems = React.useMemo(() => {

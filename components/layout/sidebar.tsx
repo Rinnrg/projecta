@@ -12,17 +12,13 @@ import {
   FileText,
   FolderKanban,
   Calendar,
-  Award,
   Users,
-  ChevronLeft,
-  ChevronDown,
   ChevronsLeft,
   ChevronsRight,
   X,
   Code,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 interface SidebarProps {
   isCollapsed: boolean
@@ -31,37 +27,18 @@ interface SidebarProps {
   onNavClick?: () => void
 }
 
-const SINTAKS_ITEMS = [
-  { key: "sintaks_1", label: "Orientasi Masalah" },
-  { key: "sintaks_2", label: "Rencana Proyek" },
-  { key: "sintaks_3", label: "Jadwal Proyek" },
-  { key: "sintaks_4", label: "Monitoring Pelaksanaan" },
-  { key: "sintaks_5", label: "Pengumpulan" },
-  { key: "sintaks_6", label: "Presentasi" },
-  { key: "sintaks_7", label: "Penilaian & Evaluasi" },
-  { key: "sintaks_8", label: "Refleksi" },
-] as const
-
 export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, onNavClick }: SidebarProps) {
   const pathname = usePathname()
   const { user } = useAuth()
   const { t } = useAutoTranslate()
-  const [isProjectOpen, setIsProjectOpen] = useState(pathname.startsWith("/projects"))
   const [isHovered, setIsHovered] = useState(false)
-
-  // Otomatis buka proyek jika sedang di halaman proyek
-  useEffect(() => {
-    if (pathname.startsWith("/projects")) {
-      setIsProjectOpen(true)
-    }
-  }, [pathname])
 
   const menuItems = [
     { title: t("Beranda"), href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "GURU", "SISWA"] },
     { title: t("Jadwal"), href: "/schedule", icon: Calendar, roles: ["ADMIN", "GURU", "SISWA"] },
-    { title: t("Kursus"), href: "/courses", icon: BookOpen, roles: ["ADMIN", "GURU", "SISWA"] },
-    { title: t("Compiler"), href: "/compiler", icon: Code, roles: ["ADMIN", "GURU", "SISWA"] },
-    { title: t("Galeri"), href: "/showcase", icon: Award, roles: ["ADMIN", "GURU"] },
+    { title: t("Kursus"), href: "/courses", icon: BookOpen, roles: ["GURU", "SISWA"] },
+    { title: t("Proyek"), href: "/projects", icon: FolderKanban, roles: ["GURU", "SISWA"] },
+    { title: t("Compiler"), href: "/compiler", icon: Code, roles: ["GURU", "SISWA"] },
   ]
 
   const adminMenuItems = [
@@ -70,8 +47,6 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, onNavClick }: S
 
   const filteredMenu = menuItems.filter((item) => user && item.roles.includes(user.role))
   const filteredAdminMenu = adminMenuItems.filter((item) => user && item.roles.includes(user.role))
-  const hasProjectAccess = user && ["ADMIN", "GURU", "SISWA"].includes(user.role)
-  const isProjectActive = pathname.startsWith("/projects")
 
   // Sidebar akan expand jika tidak collapsed atau sedang di hover (tapi tidak untuk mobile)
   const isExpanded = isMobile || !isCollapsed || isHovered
@@ -146,86 +121,6 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, onNavClick }: S
             </Link>
           )
         })}
-
-        {hasProjectAccess && (
-          <>
-            {!isExpanded && !isMobile ? (
-              <Link
-                href="/projects"
-                onClick={onNavClick}
-                className={cn(
-                  "group relative flex items-center rounded-md py-2.5 px-2 text-sm font-medium transition-all duration-300 overflow-hidden",
-                  isProjectActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                )}
-              >
-                {isProjectActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-full" />
-                )}
-                <div className="flex items-center justify-center w-[38px] shrink-0">
-                  <FolderKanban className="h-5 w-5 shrink-0 transition-transform duration-150 group-hover:scale-110" />
-                </div>
-              </Link>
-            ) : (
-              <Collapsible open={isProjectOpen} onOpenChange={setIsProjectOpen}>
-                <CollapsibleTrigger asChild>
-                  <button
-                    className={cn(
-                      "group relative flex w-full items-center rounded-md py-2.5 px-2 text-sm font-medium transition-all duration-300 overflow-hidden",
-                      isProjectActive
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                    )}
-                  >
-                    {isProjectActive && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-full" />
-                    )}
-                    <div className="flex items-center justify-center w-[38px] shrink-0">
-                      <FolderKanban className="h-5 w-5 shrink-0 transition-transform duration-150 group-hover:scale-110" />
-                    </div>
-                    <span className={cn(
-                      "flex-1 text-left whitespace-nowrap transition-all duration-300 overflow-hidden",
-                      isExpanded || isMobile ? "opacity-100" : "opacity-0 w-0"
-                    )}>
-                      {t("Proyek")}
-                    </span>
-                    <ChevronDown
-                      className={cn(
-                        "h-4 w-4 shrink-0 transition-transform duration-200",
-                        isProjectOpen && "rotate-180",
-                      )}
-                    />
-                  </button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="overflow-hidden transition-all duration-300 ease-in-out data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                  <div className="mt-2 mb-1 space-y-0.5 ml-[46px] border-l-2 border-border pl-2">
-                    {SINTAKS_ITEMS.map((sintaks) => {
-                      const href = `/projects/${sintaks.key}`
-                      const isSubActive = pathname === href || pathname.startsWith(`${href}/`)
-
-                      return (
-                        <Link
-                          key={sintaks.key}
-                          href={href}
-                          onClick={onNavClick}
-                          className={cn(
-                            "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-all duration-150",
-                            isSubActive
-                              ? "bg-primary/10 text-primary"
-                              : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
-                          )}
-                        >
-                          <span className="truncate">{t(sintaks.label)}</span>
-                        </Link>
-                      )
-                    })}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            )}
-          </>
-        )}
 
         {/* Separator and Admin Menu */}
         {filteredAdminMenu.length > 0 && (

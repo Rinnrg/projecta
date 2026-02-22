@@ -164,7 +164,7 @@ export default function EditCoursePage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-2xl space-y-6">
+      <div className="w-full space-y-6">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -173,7 +173,7 @@ export default function EditCoursePage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="w-full space-y-6">
       <AlertComponent />
 
       {/* Back Button */}
@@ -269,11 +269,11 @@ export default function EditCoursePage() {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-4">
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:gap-4">
               <Button 
                 type="button" 
                 variant="outline" 
-                className="flex-1" 
+                className="w-full sm:flex-1" 
                 onClick={() => router.back()}
                 disabled={saving}
               >
@@ -281,7 +281,7 @@ export default function EditCoursePage() {
               </Button>
               <Button 
                 type="submit" 
-                className="flex-1 gap-2" 
+                className="w-full sm:flex-1 gap-2" 
                 disabled={saving || !hasChanges}
               >
                 {saving ? (

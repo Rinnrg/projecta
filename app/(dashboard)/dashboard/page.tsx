@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress"
 import { AnimateIn } from "@/components/ui/animate-in"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
 import { DashboardSkeleton } from "@/components/ui/loading-skeletons"
+import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import {
   BookOpen,
@@ -62,7 +63,9 @@ export default function DashboardPage() {
           fetch(`/api/stats?userId=${user.id}&role=${user.role}`, { 
             next: { revalidate: 60 } 
           }),
-          user.role === 'SISWA' 
+          user.role === 'ADMIN'
+            ? Promise.resolve(new Response(JSON.stringify({ courses: [] }), { status: 200 }))
+            : user.role === 'SISWA' 
             ? fetch(`/api/courses?siswaId=${user.id}`, { next: { revalidate: 300 } })
             : user.role === 'GURU'
             ? fetch(`/api/courses?guruId=${user.id}`, { next: { revalidate: 300 } })
@@ -70,7 +73,9 @@ export default function DashboardPage() {
           fetch(`/api/schedule?userId=${user.id}&role=${user.role}`, { 
             next: { revalidate: 180 } 
           }),
-          user.role === 'GURU'
+          user.role === 'ADMIN'
+            ? Promise.resolve(new Response(JSON.stringify({ asesmen: [] }), { status: 200 }))
+            : user.role === 'GURU'
             ? fetch(`/api/asesmen?guruId=${user.id}`, { next: { revalidate: 120 } })
             : user.role === 'SISWA'
             ? fetch(`/api/asesmen?siswaId=${user.id}`, { next: { revalidate: 120 } })
@@ -133,7 +138,7 @@ export default function DashboardPage() {
       return currentLocale === 'id' ? `${hours} jam lalu` : `${hours}h ago`
     }
     const days = Math.floor(diffInSeconds / 86400)
-    if (days === 1) return t("common.yesterday")
+    if (days === 1) return t("Kemarin")
     if (days < 7) return currentLocale === 'id' ? `${days} hari lalu` : `${days} days ago`
     if (days < 30) {
       const weeks = Math.floor(days / 7)
@@ -143,22 +148,22 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6 md:space-y-8">
+    <div className="w-full space-y-4 sm:space-y-6 md:space-y-8">
       <AnimateIn stagger={1}>
         <div className="flex flex-col gap-4 sm:gap-6 md:flex-row md:items-end md:justify-between">
           <div className="space-y-1">
             <p className="text-xs font-medium text-muted-foreground sm:text-sm">{greeting()}</p>
             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl md:text-3xl">{user.nama.split(" ")[0]}</h1>
             <p className="max-w-md text-xs text-muted-foreground sm:text-[15px]">
-              {user.role === "SISWA" && t("dashboard.trackProgress")}
-              {user.role === "GURU" && t("dashboard.manageCourses")}
+              {user.role === "SISWA" && t("Pantau perkembangan belajar Anda")}
+              {user.role === "GURU" && t("Kelola kursus dan materi pembelajaran")}
               {user.role === "ADMIN" && t("Ringkasan Sistem")}
             </p>
           </div>
           {user.role === "GURU" && (
             <Button asChild className="w-full sm:w-fit" size="sm">
               <Link href="/courses/add">
-                {t("dashboard.createCourse")}
+                {t("Buat Kursus")}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -199,23 +204,23 @@ export default function DashboardPage() {
           {user.role === "GURU" && stats && (
             <>
               <StatsCard
-                title={t("dashboard.activeCourses")}
+                title={t("Kursus Aktif")}
                 value={stats.coursesCount || 0}
                 icon={BookOpen}
               />
               <StatsCard
-                title={t("courses.students")}
+                title={t("Siswa")}
                 value={stats.studentsCount || 0}
                 icon={Users}
               />
               <StatsCard
-                title={t("dashboard.pendingReview")}
+                title={t("Menunggu Review")}
                 value={stats.proyekCount || 0}
                 icon={FileText}
                 iconColor="bg-warning/10"
               />
               <StatsCard
-                title={t("dashboard.assessments")}
+                title={t("Asesmen")}
                 value={stats.asesmenCount || 0}
                 icon={GraduationCap}
               />
@@ -250,14 +255,15 @@ export default function DashboardPage() {
       </AnimateIn>
 
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-5">
+        {user.role !== "ADMIN" && (
         <AnimateIn stagger={3} className="space-y-3 sm:space-y-4 lg:col-span-3">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-semibold sm:text-lg">
-                {user.role === "SISWA" ? t("dashboard.continueLearning") : t("Kursus Anda")}
+                {user.role === "SISWA" ? t("Lanjutkan Belajar") : t("Kursus Anda")}
               </h2>
               <p className="text-xs text-muted-foreground sm:text-sm">
-                {user.role === "SISWA" ? t("dashboard.pickUpWhereLeft") : t("Baru Diperbarui")}
+                {user.role === "SISWA" ? t("Ambil di mana Anda tinggalkan") : t("Baru Diperbarui")}
               </p>
             </div>
             <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
@@ -317,8 +323,9 @@ export default function DashboardPage() {
             ))}
           </div>
         </AnimateIn>
+        )}
 
-        <div className="space-y-4 sm:space-y-6 lg:col-span-2">
+        <div className={cn("space-y-4 sm:space-y-6", user.role === "ADMIN" ? "lg:col-span-5" : "lg:col-span-2")}>
           <AnimateIn stagger={4}>
             <Card className="border-border/50 p-3 sm:p-5">
               <div className="mb-3 flex items-center justify-between sm:mb-4">
@@ -354,11 +361,11 @@ export default function DashboardPage() {
             </Card>
           </AnimateIn>
 
-          {(user.role === "ADMIN" || user.role === "GURU" || user.role === "SISWA") && (
+          {(user.role === "GURU" || user.role === "SISWA") && (
             <AnimateIn stagger={5}>
               <Card className="border-border/50 p-3 sm:p-5">
                 <h3 className="mb-3 text-sm font-semibold sm:mb-4 sm:text-base">
-                  {user.role === "SISWA" ? t("dashboard.readyToTake") : t("dashboard.recentAssessments")}
+                  {user.role === "SISWA" ? t("Siap Dikerjakan") : t("Asesmen Terbaru")}
                 </h3>
                 <div className="space-y-2">
                   {asesmenList.slice(0, 3).map((asesmen) => (
@@ -371,7 +378,7 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground sm:gap-2 sm:text-xs">
                           <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                           {asesmen.durasi}m<span className="text-border">•</span>
-                          {asesmen.jml_soal} {t("common.questions")}
+                          {asesmen.jml_soal} {t("Soal")}
                         </div>
                       </div>
                       <Button
@@ -381,7 +388,7 @@ export default function DashboardPage() {
                         asChild
                       >
                         <Link href={`/courses/${asesmen.courseId}/asesmen/${asesmen.id}`}>
-                          {user.role === "SISWA" ? t("common.start") : t("Edit")}
+                          {user.role === "SISWA" ? t("Mulai") : t("Edit")}
                         </Link>
                       </Button>
                     </div>
@@ -396,7 +403,7 @@ export default function DashboardPage() {
       {(user.role === "ADMIN" || user.role === "GURU" || user.role === "SISWA") && (
         <AnimateIn stagger={6}>
           <Card className="border-border/50 p-3 sm:p-5">
-            <h3 className="mb-3 text-sm font-semibold sm:mb-4 sm:text-base">{t("dashboard.recentActivity")}</h3>
+            <h3 className="mb-3 text-sm font-semibold sm:mb-4 sm:text-base">{t("Aktivitas Terbaru")}</h3>
             <div className="grid gap-2 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
               {activities.slice(0, 4).map((activity, index) => (
                 <div key={index} className="flex items-start gap-2 rounded-lg bg-muted/30 p-2 sm:gap-3 sm:p-3">

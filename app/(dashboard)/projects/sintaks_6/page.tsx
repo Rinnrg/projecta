@@ -46,13 +46,13 @@ export default function Sintaks6Page() {
   if (!proyek) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Proyek Pemrograman Berorientasi Objek</h1>
+            <h1 className="text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">Proyek Pemrograman Berorientasi Objek</h1>
           </div>
           {isGuruOrAdmin && (
             <Link href="/projects/add/sintaks_6">
-              <Button>
+              <Button className="w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 Tambah Tahapan Proyek
               </Button>
@@ -81,9 +81,9 @@ export default function Sintaks6Page() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Proyek Pemrograman Berorientasi Objek</h1>
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">Proyek Pemrograman Berorientasi Objek</h1>
           <p className="text-muted-foreground">Presentasi Proyek</p>
         </div>
         {isGuruOrAdmin && proyek && (

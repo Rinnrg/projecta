@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
-import { Bell, Menu, Moon, Sun, Search, LogOut, User, Settings, Languages } from "lucide-react"
+import { Bell, Menu, Moon, Sun, Search, LogOut, User, Languages } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SearchDropdown } from "@/components/layout/search-dropdown"
 import { SearchDialog } from "@/components/layout/search-dialog"
@@ -166,12 +166,6 @@ export function Header({ onMenuClick, isMobile }: HeaderProps) {
               <Link href="/profile">
                 <User className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {t("Profil")}
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="text-xs sm:text-sm cursor-pointer">
-              <Link href="/settings">
-                <Settings className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                {t("Pengaturan")}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />

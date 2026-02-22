@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
                 select: {
                   materi: true,
                   asesmen: true,
+                  enrollments: true,
                 },
               },
             },

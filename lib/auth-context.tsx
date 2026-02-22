@@ -34,12 +34,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false)
   }, [])
 
-  // Save user to localStorage when it changes
+  // Save user to localStorage and cookie when it changes
   useEffect(() => {
     if (user) {
       localStorage.setItem('user', JSON.stringify(user))
+      // Set cookie for middleware access
+      document.cookie = `user=${encodeURIComponent(JSON.stringify({ role: user.role }))};path=/;max-age=604800;SameSite=Lax`
     } else {
       localStorage.removeItem('user')
+      // Remove cookie
+      document.cookie = 'user=;path=/;max-age=0'
     }
   }, [user])
 
@@ -74,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null)
     localStorage.removeItem('user')
+    document.cookie = 'user=;path=/;max-age=0'
   }
 
   return (

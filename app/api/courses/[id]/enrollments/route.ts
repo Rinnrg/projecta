@@ -18,6 +18,7 @@ export async function GET(
             nama: true,
             email: true,
             foto: true,
+            kelas: true,
           },
         },
       },

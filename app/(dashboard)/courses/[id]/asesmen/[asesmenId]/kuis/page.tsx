@@ -237,7 +237,7 @@ export default function KuisPage({ params }: PageProps) {
 
   if (!asesmen || !asesmen.soal || asesmen.soal.length === 0) {
     return (
-      <div className="container max-w-4xl py-6 sm:py-8">
+      <div className="w-full py-6 sm:py-8">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -256,7 +256,7 @@ export default function KuisPage({ params }: PageProps) {
 
   if (hasSubmitted) {
     return (
-      <div className="container max-w-4xl py-6 sm:py-8 space-y-6">
+      <div className="w-full py-6 sm:py-8 space-y-6">
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -286,12 +286,12 @@ export default function KuisPage({ params }: PageProps) {
   const progress = (answeredCount / asesmen.soal.length) * 100
 
   return (
-    <div className="container max-w-4xl py-6 sm:py-8 space-y-6">
+    <div className="w-full py-6 sm:py-8 space-y-6">
       <AlertComponent />
       
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{asesmen.nama}</h1>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-bold sm:text-2xl">{asesmen.nama}</h1>
         {timeLeft !== null && (
           <div className="flex items-center gap-2">
             <Clock className={`h-5 w-5 ${timeLeft < 60 ? 'text-red-600' : 'text-muted-foreground'}`} />
@@ -315,7 +315,7 @@ export default function KuisPage({ params }: PageProps) {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary">Soal {currentSoalIndex + 1} / {asesmen.soal.length}</Badge>
               <Badge variant="outline">{currentSoal.bobot} poin</Badge>
               <Badge variant={currentSoal.tipeJawaban === 'PILIHAN_GANDA' ? 'default' : 'secondary'}>

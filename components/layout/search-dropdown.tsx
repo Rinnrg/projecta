@@ -3,11 +3,11 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
+import { useAuth } from "@/lib/auth-context"
 import { 
   FileText, 
   BookOpen, 
   Users, 
-  Award, 
   Calendar, 
   Settings, 
   LayoutDashboard,
@@ -82,6 +82,7 @@ interface SearchResults {
 export function SearchDropdown() {
   const router = useRouter()
   const { t } = useAutoTranslate()
+  const { user } = useAuth()
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(false)
@@ -202,14 +203,6 @@ export function SearchDropdown() {
         category: t("Navigasi"),
       },
       {
-        id: "showcase",
-        title: t("Portofolio"),
-        description: t("Lihat portofolio proyek siswa"),
-        icon: Award,
-        href: "/showcase",
-        category: t("Navigasi"),
-      },
-      {
         id: "users",
         title: t("Pengguna"),
         description: t("Kelola pengguna sistem"),
@@ -304,8 +297,14 @@ export function SearchDropdown() {
       })
     })
 
-    return items
-  }, [t, searchResults])
+    // Filter items berdasarkan role ADMIN
+    const ADMIN_RESTRICTED_PATHS = ['/courses', '/compiler', '/projects']
+    const filteredByRole = user?.role === 'ADMIN' 
+      ? items.filter(item => !ADMIN_RESTRICTED_PATHS.some(path => item.href.startsWith(path)))
+      : items
+
+    return filteredByRole
+  }, [t, searchResults, user])
 
   const filteredItems = React.useMemo(() => {
     if (!search) return searchItems.slice(0, 10)

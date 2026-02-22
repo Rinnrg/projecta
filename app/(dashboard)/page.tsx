@@ -143,7 +143,7 @@ export default function DashboardPage() {
       return currentLocale === 'id' ? `${hours} jam lalu` : `${hours}h ago`
     }
     const days = Math.floor(diffInSeconds / 86400)
-    if (days === 1) return t("common.yesterday")
+    if (days === 1) return t("Kemarin")
     if (days < 7) return currentLocale === 'id' ? `${days} hari lalu` : `${days} days ago`
     if (days < 30) {
       const weeks = Math.floor(days / 7)
@@ -153,7 +153,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6 md:space-y-8">
+    <div className="w-full space-y-4 sm:space-y-6 md:space-y-8">
       <div className="flex flex-col gap-4 sm:gap-6 md:flex-row md:items-end md:justify-between">
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground sm:text-sm">{greeting()}</p>
@@ -167,7 +167,7 @@ export default function DashboardPage() {
         {user.role === "GURU" && (
           <Button asChild className="w-full sm:w-fit" size="sm">
             <Link href="/courses/add">
-              {t("dashboard.createCourse")}
+              {t("Buat Kursus")}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
@@ -206,19 +206,19 @@ export default function DashboardPage() {
         {user.role === "GURU" && stats && (
           <>
             <StatsCard
-              title={t("dashboard.activeCourses")}
+              title={t("Kursus Aktif")}
               value={stats.coursesCount || 0}
               icon={BookOpen}
             />
-            <StatsCard title={t("courses.students")} value={stats.studentsCount || 0} icon={Users} />
+            <StatsCard title={t("Siswa")} value={stats.studentsCount || 0} icon={Users} />
             <StatsCard
-              title={t("dashboard.pendingReview")}
+              title={t("Menunggu Review")}
               value={stats.proyekCount || 0}
               icon={FileText}
               iconColor="bg-warning/10"
             />
             <StatsCard
-              title={t("dashboard.assessments")}
+              title={t("Asesmen")}
               value={stats.asesmenCount || 0}
               icon={GraduationCap}
             />
@@ -323,7 +323,7 @@ export default function DashboardPage() {
         <div className="space-y-4 sm:space-y-6 lg:col-span-2">
           <Card className="border-border/50 p-3 sm:p-5">
             <div className="mb-3 flex items-center justify-between sm:mb-4">
-              <h3 className="text-sm font-semibold sm:text-base">{t("dashboard.upcoming")}</h3>
+              <h3 className="text-sm font-semibold sm:text-base">{t("Mendatang")}</h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -397,7 +397,7 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground sm:gap-2 sm:text-xs">
                           <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                           {asesmen.durasi}m<span className="text-border">•</span>
-                          {asesmen.jml_soal} {t("common.questions")}
+                          {asesmen.jml_soal} {t("Soal")}
                           {statusLabel && user.role === "SISWA" && (
                             <>
                               <span className="text-border">•</span>
@@ -428,7 +428,7 @@ export default function DashboardPage() {
       {/* Recent Activity - Full width */}
       {(user.role === "ADMIN" || user.role === "GURU" || user.role === "SISWA") && (
         <Card className="border-border/50 p-3 sm:p-5">
-          <h3 className="mb-3 text-sm font-semibold sm:mb-4 sm:text-base">{t("dashboard.recentActivity")}</h3>
+          <h3 className="mb-3 text-sm font-semibold sm:mb-4 sm:text-base">{t("Aktivitas Terbaru")}</h3>
           <div className="grid gap-2 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
             {activities.slice(0, 4).map((activity, index) => (
               <div key={index} className="flex items-start gap-2 rounded-lg bg-muted/30 p-2 sm:gap-3 sm:p-3">

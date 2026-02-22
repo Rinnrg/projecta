@@ -1,274 +1,412 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { mockSintaksSubmissions, getProjectBySintaks } from "@/lib/mock-data"
-import { SINTAKS_MAP, SINTAKS_KEYS, type SintaksKey } from "@/lib/constants/project"
+import { useAutoTranslate } from "@/lib/auto-translate-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Plus, Calendar, Clock, ArrowRight, CheckCircle2, Circle, AlertCircle, FolderKanban } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { 
+  Plus, 
+  Search, 
+  Calendar, 
+  Users, 
+  Clock,
+  BookOpen,
+  Settings,
+  MoreVertical,
+  Edit,
+  Trash2,
+  Eye
+} from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { format, differenceInDays, isPast, isFuture, isWithinInterval } from "date-fns"
+import { format, isPast, isFuture, isWithinInterval } from "date-fns"
 import { id as idLocale, enUS } from "date-fns/locale"
 import { AnimateIn } from "@/components/ui/animate-in"
-import { useAutoTranslate } from "@/lib/auto-translate-context"
+import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { SINTAKS_MAP } from "@/lib/constants/project"
 
-type FilterStatus = "all" | "active" | "completed" | "upcoming"
+interface Proyek {
+  id: string
+  judul: string
+  deskripsi: string
+  tgl_mulai: string
+  tgl_selesai: string
+  lampiran?: string
+  sintaks: string[]
+  guru: {
+    id: string
+    nama: string
+    email: string
+  }
+  kelompok: Array<{
+    id: string
+    nama: string
+    anggota: Array<{
+      siswa: {
+        id: string
+        nama: string
+        kelas?: string
+      }
+    }>
+    _count: {
+      anggota: number
+    }
+  }>
+  _count: {
+    kelompok: number
+  }
+}
 
 export default function ProjectsPage() {
   const { user } = useAuth()
   const { t, locale } = useAutoTranslate()
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all")
+  const { success, error: showError, confirm, AlertComponent } = useSweetAlert()
+  
+  const [proyeks, setProyeks] = useState<Proyek[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
 
   const isTeacher = user?.role === "GURU"
   const dateLocale = locale === 'id' ? idLocale : enUS
 
-  // Calculate overall progress
-  const completedCount = Object.values(mockSintaksSubmissions).filter((s) => s.submitted && s.grade !== null).length
-  const submittedCount = Object.values(mockSintaksSubmissions).filter((s) => s.submitted).length
-  const overallProgress = (completedCount / 8) * 100
+  const loadProyeks = async () => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams()
+      if (isTeacher && user?.id) {
+        params.append('guruId', user.id)
+      }
 
-  const getProjectStatus = (sintaksKey: SintaksKey) => {
-    const project = getProjectBySintaks(sintaksKey)
-    const submission = mockSintaksSubmissions[sintaksKey]
+      const response = await fetch(`/api/proyek?${params}`)
+      const data = await response.json()
 
-    if (!project) return "not_created"
-    if (submission.submitted && submission.grade !== null) return "completed"
-    if (submission.submitted) return "submitted"
+      if (response.ok) {
+        setProyeks(data.proyek || [])
+      } else {
+        showError(t("Gagal"), data.error || t("Gagal memuat data proyek"))
+      }
+    } catch (error) {
+      console.error("Error loading proyeks:", error)
+      showError(t("Error"), t("Terjadi kesalahan saat memuat data"))
+    } finally {
+      setLoading(false)
+    }
+  }
 
+  useEffect(() => {
+    loadProyeks()
+  }, [user])
+
+  const getProjectStatus = (tglMulai: string, tglSelesai: string) => {
     const now = new Date()
-    if (isPast(project.tgl_selesai)) return "overdue"
-    if (isFuture(project.tgl_mulai)) return "upcoming"
-    if (isWithinInterval(now, { start: project.tgl_mulai, end: project.tgl_selesai })) return "active"
+    const startDate = new Date(tglMulai)
+    const endDate = new Date(tglSelesai)
 
+    if (isPast(endDate)) return "completed"
+    if (isFuture(startDate)) return "upcoming"
+    if (isWithinInterval(now, { start: startDate, end: endDate })) return "active"
     return "upcoming"
   }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "completed":
-        return (
-          <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-            <CheckCircle2 className="mr-1 h-3 w-3" />
-            {t('projects.completed')}
-          </Badge>
-        )
-      case "submitted":
-        return (
-          <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-            <CheckCircle2 className="mr-1 h-3 w-3" />
-            {t('projects.submitted')}
-          </Badge>
-        )
       case "active":
-        return (
-          <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-            <Circle className="mr-1 h-3 w-3 fill-current" />
-            {t('projects.active')}
-          </Badge>
-        )
-      case "overdue":
-        return (
-          <Badge variant="destructive">
-            <AlertCircle className="mr-1 h-3 w-3" />
-            {t('projects.overdue')}
-          </Badge>
-        )
+        return <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">{t("Sedang Berjalan")}</Badge>
+      case "completed":
+        return <Badge className="bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400">{t("Selesai")}</Badge>
       case "upcoming":
-        return (
-          <Badge variant="secondary">
-            <Clock className="mr-1 h-3 w-3" />
-            {t("Proyek Mendatang")}
-          </Badge>
-        )
+        return <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">{t("Akan Datang")}</Badge>
       default:
-        return (
-          <Badge variant="outline">
-            <Circle className="mr-1 h-3 w-3" />
-            {t('projects.notCreated')}
-          </Badge>
-        )
+        return null
     }
   }
 
-  const filteredSintaks = SINTAKS_KEYS.filter((key) => {
-    if (filterStatus === "all") return true
-    const status = getProjectStatus(key)
-    if (filterStatus === "active") return status === "active" || status === "overdue"
-    if (filterStatus === "completed") return status === "completed" || status === "submitted"
-    if (filterStatus === "upcoming") return status === "upcoming" || status === "not_created"
-    return true
-  })
+  const handleDeleteProject = async (projectId: string, projectTitle: string) => {
+    const confirmed = await confirm(t("Hapus Proyek"), {
+      description: t("Apakah Anda yakin ingin menghapus proyek") + ` "${projectTitle}"? ` + t("Tindakan ini tidak dapat dibatalkan."),
+      confirmText: t("Hapus"),
+      cancelText: t("Batal"),
+      type: "warning",
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/proyek/${projectId}`, {
+            method: 'DELETE',
+          })
+
+          if (response.ok) {
+            await success(t("Berhasil"), `"${projectTitle}" ${t("berhasil dihapus")}`)
+            loadProyeks()
+          } else {
+            const data = await response.json()
+            showError(t("Gagal"), data.error || t("Gagal menghapus proyek"))
+          }
+        } catch (error) {
+          console.error('Error deleting project:', error)
+          showError(t("Error"), t("Terjadi kesalahan saat menghapus proyek"))
+        }
+      },
+    })
+  }
+
+  const filteredProyeks = proyeks.filter(proyek =>
+    proyek.judul.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    proyek.deskripsi.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    proyek.guru.nama.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  // Calculate stats
+  const totalProyeks = proyeks.length
+  const activeProyeks = proyeks.filter(p => getProjectStatus(p.tgl_mulai, p.tgl_selesai) === "active").length
+  const totalKelompok = proyeks.reduce((sum, p) => sum + p._count.kelompok, 0)
+  const totalSiswa = proyeks.reduce((sum, p) => 
+    sum + p.kelompok.reduce((kelompokSum, k) => kelompokSum + k._count.anggota, 0), 0
+  )
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="w-full">
+      <AlertComponent />
+      
       {/* Header */}
-      <AnimateIn stagger={0}>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      <AnimateIn>
+        <div className="mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
-              {t('projects.title')}
-            </h1>
-            <p className="text-sm text-muted-foreground sm:text-base">
-              {t('projects.subtitle')}
+            <h1 className="text-xl font-bold sm:text-2xl md:text-3xl">{t("Proyek")}</h1>
+            <p className="text-sm text-muted-foreground mt-1 sm:text-base">
+              {isTeacher ? t("Kelola dan pantau proyek pembelajaran") : t("Lihat dan kerjakan proyek yang diberikan")}
             </p>
           </div>
           {isTeacher && (
-            <Button asChild size="sm" className="w-full sm:w-auto">
-              <Link href="/projects/manage">
-                <Plus className="mr-2 h-4 w-4" />
-                {t('projects.manageProjects')}
-              </Link>
-            </Button>
+            <Link href="/projects/add">
+              <Button className="gap-2 w-full sm:w-auto">
+                <Plus className="h-4 w-4" />
+                {t("Buat Proyek")}
+              </Button>
+            </Link>
           )}
         </div>
       </AnimateIn>
 
-      {/* Overall Progress */}
-      <AnimateIn stagger={1}>
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-1">
-                <h3 className="font-semibold">{t('projects.overallProgress')}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {completedCount} {t('projects.of')} 8{" "}
-                  {t('projects.phasesCompleted')}
-                </p>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-6 sm:mb-8 lg:grid-cols-4">
+        <AnimateIn stagger={1}>
+          <Card>
+            <CardContent className="flex items-center gap-2 p-3 sm:gap-4 sm:p-6">
+              <div className="rounded-lg bg-primary/10 p-2 sm:p-3">
+                <BookOpen className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex-1 sm:w-48">
-                  <Progress value={overallProgress} className="h-2" />
-                </div>
-                <span className="text-sm font-medium">{overallProgress.toFixed(0)}%</span>
+              <div>
+                <p className="text-lg font-bold sm:text-2xl">{totalProyeks}</p>
+                <p className="text-[10px] text-muted-foreground sm:text-sm">{t("Total Proyek")}</p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </AnimateIn>
+            </CardContent>
+          </Card>
+        </AnimateIn>
+        <AnimateIn stagger={2}>
+          <Card>
+            <CardContent className="flex items-center gap-2 p-3 sm:gap-4 sm:p-6">
+              <div className="rounded-lg bg-green-100 dark:bg-green-900/30 p-2 sm:p-3">
+                <Clock className="h-4 w-4 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-lg font-bold sm:text-2xl">{activeProyeks}</p>
+                <p className="text-[10px] text-muted-foreground sm:text-sm">{t("Sedang Berjalan")}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </AnimateIn>
+        <AnimateIn stagger={3}>
+          <Card>
+            <CardContent className="flex items-center gap-2 p-3 sm:gap-4 sm:p-6">
+              <div className="rounded-lg bg-blue-100 dark:bg-blue-900/30 p-2 sm:p-3">
+                <Users className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="text-lg font-bold sm:text-2xl">{totalKelompok}</p>
+                <p className="text-[10px] text-muted-foreground sm:text-sm">{t("Total Kelompok")}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </AnimateIn>
+        <AnimateIn stagger={4}>
+          <Card>
+            <CardContent className="flex items-center gap-2 p-3 sm:gap-4 sm:p-6">
+              <div className="rounded-lg bg-purple-100 dark:bg-purple-900/30 p-2 sm:p-3">
+                <Users className="h-4 w-4 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="text-lg font-bold sm:text-2xl">{totalSiswa}</p>
+                <p className="text-[10px] text-muted-foreground sm:text-sm">{t("Siswa Terlibat")}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </AnimateIn>
+      </div>
 
-      {/* Filter Tabs */}
-      <AnimateIn stagger={2}>
-        <div className="flex flex-wrap gap-2">
-          {(["all", "active", "completed", "upcoming"] as FilterStatus[]).map((status) => (
-            <Button
-              key={status}
-              variant={filterStatus === status ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilterStatus(status)}
-              className="text-xs sm:text-sm"
-            >
-              {status === "all" && t('projects.all')}
-              {status === "active" && t('projects.active')}
-              {status === "completed" && t('projects.completed')}
-              {status === "upcoming" && t("Proyek Mendatang")}
-            </Button>
-          ))}
+      {/* Search */}
+      <AnimateIn>
+        <div className="mb-6">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={t("Cari proyek...")}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
       </AnimateIn>
 
-      {/* Sintaks Grid */}
-      {filteredSintaks.length > 0 ? (
-        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredSintaks.map((sintaksKey, index) => {
-            const sintaksInfo = SINTAKS_MAP[sintaksKey]
-            const project = getProjectBySintaks(sintaksKey)
-            const submission = mockSintaksSubmissions[sintaksKey]
-            const status = getProjectStatus(sintaksKey)
-            const daysLeft = project ? differenceInDays(project.tgl_selesai, new Date()) : 0
-
+      {/* Projects Grid */}
+      {loading ? (
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="pb-3">
+                <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-1/2"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded"></div>
+                  <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-3/4"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : filteredProyeks.length === 0 ? (
+        <AnimateIn>
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+              <BookOpen className="h-12 w-12 text-muted-foreground/50 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">{t("Belum ada proyek")}</h3>
+              <p className="text-muted-foreground mb-4">
+                {searchQuery ? t("Tidak ada proyek yang cocok dengan pencarian") : 
+                 isTeacher ? t("Mulai dengan membuat proyek pertama") : t("Belum ada proyek yang diberikan")}
+              </p>
+              {isTeacher && !searchQuery && (
+                <Link href="/projects/add">
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    {t("Buat Proyek")}
+                  </Button>
+                </Link>
+              )}
+            </CardContent>
+          </Card>
+        </AnimateIn>
+      ) : (
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredProyeks.map((proyek, index) => {
+            const status = getProjectStatus(proyek.tgl_mulai, proyek.tgl_selesai)
+            
             return (
-              <AnimateIn key={sintaksKey} stagger={3 + index}>
-                <Card className="flex flex-col transition-all hover:shadow-md">
-                  <CardHeader className="pb-2 sm:pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-xl">
-                        {sintaksInfo.icon}
+              <AnimateIn key={proyek.id} stagger={index + 1}>
+                <Card className="group hover:shadow-lg transition-all duration-300">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-lg line-clamp-2 mb-1">{proyek.judul}</CardTitle>
+                        <CardDescription className="line-clamp-2">{proyek.deskripsi}</CardDescription>
                       </div>
-                      {getStatusBadge(status)}
+                      <div className="flex items-center gap-1 ml-2">
+                        {getStatusBadge(status)}
+                        {isTeacher && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link href={`/projects/${proyek.id}`}>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  {t("Lihat Detail")}
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/projects/edit/${proyek.id}`}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  {t("Edit")}
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-destructive"
+                                onClick={() => handleDeleteProject(proyek.id, proyek.judul)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                {t("Hapus")}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
                     </div>
-                    <CardTitle className="mt-3 text-sm sm:text-base">
-                      <span className="text-muted-foreground">Sintaks {sintaksInfo.order}:</span>{" "}
-                      {locale === 'id' ? sintaksInfo.title : sintaksInfo.titleEn}
-                    </CardTitle>
-                    <CardDescription className="line-clamp-2 text-xs sm:text-sm">
-                      {locale === 'id' ? sintaksInfo.description : sintaksInfo.descriptionEn}
-                    </CardDescription>
                   </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                        <span className="truncate">{format(new Date(proyek.tgl_mulai), 'dd MMM', { locale: dateLocale })} - {format(new Date(proyek.tgl_selesai), 'dd MMM yyyy', { locale: dateLocale })}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src="/placeholder.svg" />
+                          <AvatarFallback className="text-xs">
+                            {proyek.guru.nama.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-muted-foreground">{proyek.guru.nama}</span>
+                      </div>
+                    </div>
 
-                  <CardContent className="flex-1 space-y-3 pb-3 sm:pb-4">
-                    {project && (
-                      <>
-                        <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <Calendar className="h-3.5 w-3.5" />
-                            <span>{format(project.tgl_mulai, "d MMM", { locale: dateLocale })}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <Clock className="h-3.5 w-3.5" />
-                            <span>{format(project.tgl_selesai, "d MMM", { locale: dateLocale })}</span>
-                          </div>
-                        </div>
-
-                        {status === "active" && daysLeft >= 0 && (
-                          <div className="rounded-lg bg-amber-50 p-2 text-center dark:bg-amber-900/20">
-                            <span
-                              className={`text-xs font-medium ${daysLeft <= 3 ? "text-red-600" : "text-amber-700"}`}
-                            >
-                              {daysLeft === 0
-                                ? t('projects.dueToday')
-                                : `${daysLeft} ${t('projects.daysLeft')}`}
-                            </span>
-                          </div>
-                        )}
-
-                        {submission.grade !== null && (
-                          <div className="flex items-center justify-center rounded-lg bg-green-50 p-2 dark:bg-green-900/20">
-                            <span className="text-sm font-semibold text-green-700 dark:text-green-400">
-                              {t('projects.grade')}: {submission.grade}
-                            </span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </CardContent>
-
-                  <div className="border-t p-3 sm:p-4">
-                    <Button
-                      asChild
-                      className="w-full"
-                      size="sm"
-                      variant={status === "completed" || status === "submitted" ? "outline" : "default"}
-                    >
-                      <Link href={`/projects/${sintaksKey}`}>
-                        {status === "completed" || status === "submitted"
-                          ? t("Lihat Detail")
-                          : status === "active"
-                            ? t('projects.workOnIt')
-                            : t("Lihat Detail")}
-                        <ArrowRight className="ml-2 h-3.5 w-3.5" />
+                    <div className="flex flex-wrap items-center justify-between pt-2 border-t gap-2">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+                        <span>{proyek._count.kelompok} {t("Kelompok")}</span>
+                        <span>
+                          {proyek.kelompok.reduce((sum, k) => sum + k._count.anggota, 0)} {t("Siswa")}
+                        </span>
+                        <span>{proyek.sintaks.length} {t("Tahapan")}</span>
+                      </div>
+                      <Link href={`/projects/${proyek.id}`}>
+                        <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                          {t("Lihat Detail")}
+                        </Button>
                       </Link>
-                    </Button>
-                  </div>
+                    </div>
+
+                    {/* Sintaks badges */}
+                    <div className="flex flex-wrap gap-1 pt-3 border-t">
+                      {proyek.sintaks.slice(0, 3).map((sintaksKey) => {
+                        const sintaksInfo = SINTAKS_MAP[sintaksKey]
+                        return sintaksInfo ? (
+                          <Badge key={sintaksKey} variant="secondary" className="text-xs">
+                            {sintaksInfo.icon} {t(sintaksInfo.title)}
+                          </Badge>
+                        ) : null
+                      })}
+                      {proyek.sintaks.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{proyek.sintaks.length - 3} {t("lagi")}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
                 </Card>
               </AnimateIn>
             )
           })}
         </div>
-      ) : (
-        <AnimateIn stagger={3}>
-          <Card className="flex flex-col items-center justify-center p-8 text-center sm:p-12">
-            <FolderKanban className="h-10 w-10 text-muted-foreground sm:h-12 sm:w-12" />
-            <h3 className="mt-4 text-sm font-semibold sm:text-base">
-              {t('projects.noPhasesFound')}
-            </h3>
-            <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
-              {t('projects.tryDifferentFilter')}
-            </p>
-          </Card>
-        </AnimateIn>
       )}
     </div>
   )

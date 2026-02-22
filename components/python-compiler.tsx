@@ -257,108 +257,39 @@ export default function PythonCompiler({ onBack }: PythonCompilerProps) {
     }
   }
 
-  // Execute Python code using multiple free APIs with fallback
-  const runPythonCode = async (code: string, cellId: string): Promise<string> => {
-    // Check for matplotlib/chart code - return mock for visualization
-    if (code.includes("matplotlib") || code.includes("plt.")) {
-      const mockOutput = "Figure displayed successfully"
-      setCells((prevCells) =>
-        prevCells.map((c) =>
-          c.id === cellId
-            ? {
-                ...c,
-                outputSegments: [
-                  { type: "text" as const, content: mockOutput },
-                  {
-                    type: "image" as const,
-                    content: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop",
-                  },
-                ],
-                isError: false,
-              }
-            : c,
-        ),
-      )
-      return mockOutput
-    }
-
-    // Try Wandbox API first (primary)
+  // Execute Python code through our backend API (avoids CORS issues)
+  const runPythonCode = async (code: string, _cellId: string): Promise<string> => {
     try {
-      const response = await fetch("https://wandbox.org/api/compile.json", {
+      const response = await fetch("/api/compiler", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           code: code,
-          compiler: "cpython-3.12.0",
         }),
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        const output = data.program_output || data.program_error || data.compiler_error || "No output"
-        return output
+      const data = await response.json()
+
+      if (data.stderr && data.stderr.length > 0) {
+        // If there's both stdout and stderr, show both
+        if (data.stdout && data.stdout.length > 0) {
+          return data.stdout + "\n" + data.stderr
+        }
+        return data.stderr
       }
-    } catch (error) {
-      console.log("Wandbox API failed, trying Piston API...")
-    }
 
-    // Fallback to Piston API
-    try {
-      const response = await fetch("https://emkc.org/api/v2/piston/execute", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          language: "python",
-          version: "3.10.0",
-          files: [
-            {
-              content: code,
-            },
-          ],
-        }),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        const output = data.run?.output || data.run?.stderr || "No output"
-        return output
+      if (data.stdout && data.stdout.length > 0) {
+        return data.stdout
       }
+
+      // No output at all (e.g. code like `x = 1` with no print)
+      return ""
     } catch (error) {
-      console.log("Piston API failed, trying OneCompiler API...")
+      console.error("Compiler API error:", error)
+      return "Error: Failed to connect to compiler service. Please check your connection and try again."
     }
-
-    // Final fallback to OneCompiler API
-    try {
-      const response = await fetch("https://onecompiler.com/api/v1/run?access_token=free", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          language: "python",
-          stdin: "",
-          files: [
-            {
-              name: "main.py",
-              content: code,
-            },
-          ],
-        }),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        return data.stdout || data.stderr || "No output"
-      }
-    } catch (error) {
-      console.log("OneCompiler API also failed")
-    }
-
-    return "Error: All execution services are currently unavailable. Please try again later."
   }
 
   // Run a single cell
@@ -367,13 +298,13 @@ export default function PythonCompiler({ onBack }: PythonCompilerProps) {
     if (!cell || cell.cellType === "markdown") return
 
     // Set running state
-    setCells(cells.map((c) => (c.id === cellId ? { ...c, isRunning: true, output: "", outputSegments: [] } : c)))
+    setCells((prev) => prev.map((c) => (c.id === cellId ? { ...c, isRunning: true, output: "", outputSegments: [] } : c)))
 
     const newCount = globalExecutionCount + 1
     setGlobalExecutionCount(newCount)
 
-    // Check for pip install
-    if (cell.code.includes("pip install") || cell.code.includes("!pip")) {
+    // Check for pip install - simulate package install
+    if (cell.code.trim().startsWith("!pip install") || cell.code.trim().startsWith("pip install")) {
       const packageMatch = cell.code.match(/pip install\s+([^\s]+)/)
       if (packageMatch) {
         const packageName = packageMatch[1]
@@ -386,8 +317,8 @@ export default function PythonCompiler({ onBack }: PythonCompilerProps) {
           return prev
         })
 
-        setCells(
-          cells.map((c) =>
+        setCells((prev) =>
+          prev.map((c) =>
             c.id === cellId
               ? {
                   ...c,
@@ -405,62 +336,66 @@ export default function PythonCompiler({ onBack }: PythonCompilerProps) {
       }
     }
 
-    // Check for pandas code - return mock
-    if (cell.code.includes("pandas") || cell.code.includes("pd.")) {
-      const mockDataFrame = `   Name  Age  Score
-0  Alice   25     85
-1    Bob   30     92
-2  Carol   28     78
-3  David   35     95
-4    Eve   22     88`
+    // Strip leading "!" from lines (Jupyter-style shell commands) for actual execution
+    let codeToRun = cell.code
+    // If the entire code is just a pip install, we already handled it above
+    // For other code, send it to the API as-is
 
+    // Run Python code via backend API
+    const output = await runPythonCode(codeToRun, cellId)
+
+    // Determine if the output is an error based on Python traceback patterns
+    const isError =
+      output.includes("Traceback (most recent call last)") ||
+      output.includes("SyntaxError:") ||
+      output.includes("NameError:") ||
+      output.includes("TypeError:") ||
+      output.includes("ValueError:") ||
+      output.includes("IndexError:") ||
+      output.includes("KeyError:") ||
+      output.includes("AttributeError:") ||
+      output.includes("ImportError:") ||
+      output.includes("ModuleNotFoundError:") ||
+      output.includes("ZeroDivisionError:") ||
+      output.includes("FileNotFoundError:") ||
+      output.includes("RuntimeError:") ||
+      output.includes("IndentationError:") ||
+      output.includes("TabError:") ||
+      output.includes("RecursionError:") ||
+      output.includes("StopIteration:") ||
+      output.includes("OverflowError:") ||
+      output.includes("MemoryError")
+
+    setCells((prevCells) =>
+      prevCells.map((c) =>
+        c.id === cellId
+          ? {
+              ...c,
+              output,
+              isError,
+              executionCount: newCount,
+              isRunning: false,
+            }
+          : c,
+      ),
+    )
+
+    if (output) {
+      await animateOutput(cellId, output, isError)
+    } else {
+      // No output - just mark as completed
       setCells((prevCells) =>
         prevCells.map((c) =>
           c.id === cellId
             ? {
                 ...c,
-                output: mockDataFrame,
+                output: "",
                 isError: false,
                 executionCount: newCount,
                 isRunning: false,
               }
             : c,
         ),
-      )
-
-      await animateOutput(cellId, mockDataFrame, false)
-      return
-    }
-
-    // Run normal Python code
-    const output = await runPythonCode(cell.code, cellId)
-
-    // Check if output is string (real execution) or void (mock execution already handled)
-    if (typeof output === "string") {
-      const isError =
-        output.toLowerCase().includes("error") ||
-        output.toLowerCase().includes("traceback") ||
-        output.toLowerCase().includes("exception")
-
-      setCells((prevCells) =>
-        prevCells.map((c) =>
-          c.id === cellId
-            ? {
-                ...c,
-                output,
-                isError,
-                executionCount: newCount,
-                isRunning: false,
-              }
-            : c,
-        ),
-      )
-
-      await animateOutput(cellId, output, isError)
-    } else {
-      // Mock execution already handled in runPythonCode
-      setCells((prevCells) =>
-        prevCells.map((c) => (c.id === cellId ? { ...c, executionCount: newCount, isRunning: false } : c)),
       )
     }
   }
@@ -477,23 +412,23 @@ export default function PythonCompiler({ onBack }: PythonCompilerProps) {
         </div>
       )}
 
-      <div className="bg-card text-card-foreground px-4 py-2 flex items-center justify-between border-b border-border flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={onBack} className="h-8 cursor-pointer">
-            ← {t("back")}
+      <div className="bg-card text-card-foreground px-2 sm:px-4 py-2 flex items-center justify-between border-b border-border flex-shrink-0 gap-1 sm:gap-0">
+        <div className="flex items-center gap-1 sm:gap-3 min-w-0">
+          <Button variant="ghost" size="sm" onClick={onBack} className="h-8 cursor-pointer shrink-0 px-1 sm:px-3">
+            ← <span className="hidden sm:inline ml-1">{t("back")}</span>
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <div className="h-7 w-7 bg-gradient-to-br from-blue-500 to-green-500 rounded flex items-center justify-center">
               <span className="text-xs font-bold text-white">Py</span>
             </div>
-            <div>
+            <div className="hidden sm:block">
               <h2 className="text-sm font-semibold">{t("compilerTitle")}</h2>
               <p className="text-xs text-muted-foreground">{t("compilerVersion")}</p>
             </div>
           </div>
 
           {/* Tombol Tambah Code dan Teks */}
-          <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => addCell("code")} className="h-8 text-xs cursor-pointer">
               <Plus className="h-3.5 w-3.5 mr-1" />
               {t("addCode")}
@@ -510,16 +445,16 @@ export default function PythonCompiler({ onBack }: PythonCompilerProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {installedPackages.length > 0 && (
-            <Badge variant="secondary" className="text-xs h-6">
+            <Badge variant="secondary" className="text-xs h-6 hidden sm:flex">
               {installedPackages.length} {t("packagesInstalled")}
               {installedPackages.length > 1 ? "s" : ""}
             </Badge>
           )}
-          <Button variant="ghost" size="sm" onClick={runAllCells} className="h-8 cursor-pointer">
-            <PlayCircle className="h-4 w-4 mr-1" />
-            {t("runAll")}
+          <Button variant="ghost" size="sm" onClick={runAllCells} className="h-8 cursor-pointer px-1 sm:px-3">
+            <PlayCircle className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">{t("runAll")}</span>
           </Button>
           <Popover>
             <PopoverTrigger asChild>
@@ -529,6 +464,21 @@ export default function PythonCompiler({ onBack }: PythonCompilerProps) {
             </PopoverTrigger>
             <PopoverContent align="end" className="w-48 p-0">
               <div className="py-1">
+                <button
+                  onClick={() => addCell("code")}
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2 transition-colors cursor-pointer md:hidden"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t("addCode")}
+                </button>
+                <button
+                  onClick={() => addCell("markdown")}
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2 transition-colors cursor-pointer md:hidden"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t("addText")}
+                </button>
+                <div className="border-t border-border my-1 md:hidden"></div>
                 <button
                   onClick={importFile}
                   className="w-full px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2 transition-colors cursor-pointer"
@@ -621,7 +571,7 @@ export default function PythonCompiler({ onBack }: PythonCompilerProps) {
                   <div className="flex w-full p-2">
                     {/* Execution count / run button area */}
                     {(!cell.cellType || cell.cellType === "code") && (
-                      <div className="w-16 flex-shrink-0 flex flex-col items-center pt-1 h-fit">
+                      <div className="w-10 sm:w-16 flex-shrink-0 flex flex-col items-center pt-1 h-fit">
                         <div className="flex flex-col items-center gap-2">
                           {cell.isRunning ? (
                             <div className="relative">

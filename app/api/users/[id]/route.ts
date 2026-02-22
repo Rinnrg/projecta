@@ -16,6 +16,7 @@ export async function GET(
         email: true,
         nama: true,
         role: true,
+        kelas: true,
         foto: true,
         createdAt: true,
         _count: {
@@ -54,7 +55,7 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const { username, email, nama, password, role, foto } = body
+    const { username, email, nama, password, role, kelas, foto } = body
 
     // Check if email is being changed and already exists
     if (email) {
@@ -81,6 +82,7 @@ export async function PUT(
         ...(nama && { nama }),
         ...(password && { password }),
         ...(role && { role }),
+        ...(kelas !== undefined && { kelas }),
         ...(foto !== undefined && { foto }),
       },
       select: {
@@ -89,6 +91,7 @@ export async function PUT(
         email: true,
         nama: true,
         role: true,
+        kelas: true,
         foto: true,
         createdAt: true,
       },

@@ -5,7 +5,7 @@ import { ArrowLeft, AlertCircle } from "lucide-react"
 
 export default function NotFound() {
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
+    <div className="w-full">
       <Link href="/dashboard">
         <Button variant="ghost" size="sm" className="mb-6 gap-2">
           <ArrowLeft className="h-4 w-4" />
