@@ -107,6 +107,7 @@ export async function GET(
         select: {
           id: true,
           pertanyaan: true,
+          gambar: true,
           bobot: true,
           tipeJawaban: true,
           opsi: {
@@ -310,6 +311,7 @@ export async function PUT(
           
           const soalData: any = {
             pertanyaan: soalItem.pertanyaan,
+            gambar: soalItem.gambar || null,
             bobot: soalItem.bobot || 10,
             tipeJawaban: soalItem.tipeJawaban || 'PILIHAN_GANDA',
             asesmenId: id,

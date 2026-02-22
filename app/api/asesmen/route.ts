@@ -270,6 +270,7 @@ export async function POST(request: NextRequest) {
           
           const soalData: any = {
             pertanyaan: soalItem.pertanyaan,
+            gambar: soalItem.gambar || null,
             bobot: soalItem.bobot || 10,
             tipeJawaban: soalItem.tipeJawaban || 'PILIHAN_GANDA',
             asesmenId: newAsesmen.id,

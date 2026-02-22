@@ -128,6 +128,7 @@ model Asesmen {
 model Soal {
   id          String       @id @default(cuid())
   pertanyaan  String       @db.Text
+  gambar      String?      @db.Text // Optional image (base64 data URL)
   bobot       Int          @default(10)
   tipeJawaban TipeJawaban  @default(PILIHAN_GANDA)
 

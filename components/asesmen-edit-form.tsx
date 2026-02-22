@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useSweetAlert } from "@/components/ui/sweet-alert"
-import { Loader2, Plus, Trash2, Check, X } from "lucide-react"
+import { Loader2, Plus, Trash2, Check, X, ImagePlus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { FileUploadField } from "@/components/file-upload-field"
@@ -34,6 +34,7 @@ interface Opsi {
 interface Soal {
   id?: string
   pertanyaan: string
+  gambar?: string
   bobot: number
   tipeJawaban?: 'PILIHAN_GANDA' | 'ISIAN'
   opsi: Opsi[]
@@ -49,6 +50,7 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
   const [soalList, setSoalList] = useState<Soal[]>([])
   const [currentSoal, setCurrentSoal] = useState<Soal>({
     pertanyaan: "",
+    gambar: "",
     bobot: 10,
     tipeJawaban: 'PILIHAN_GANDA',
     opsi: [
@@ -58,6 +60,7 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
       { teks: "", isBenar: false },
     ]
   })
+  const lastSoalRef = useRef<HTMLDivElement>(null)
   
   const [formData, setFormData] = useState({
     nama: "",
@@ -133,44 +136,84 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
   }
 
   const handleAddSoal = () => {
-    // Validasi soal
-    if (!currentSoal.pertanyaan.trim()) {
-      showError("Error", "Pertanyaan wajib diisi")
-      return
-    }
-
-    const filledOpsi = currentSoal.opsi.filter(o => o.teks.trim() !== "")
-    if (filledOpsi.length < 2) {
-      showError("Error", "Minimal 2 pilihan jawaban harus diisi")
-      return
-    }
-
-    const hasCorrectAnswer = currentSoal.opsi.some(o => o.isBenar)
-    if (!hasCorrectAnswer) {
-      showError("Error", "Harus ada minimal 1 jawaban yang benar")
-      return
-    }
-
-    // Add soal to list
-    setSoalList([...soalList, { ...currentSoal }])
-    
-    // Reset current soal
-    setCurrentSoal({
+    // Langsung tambahkan soal kosong baru ke list tanpa validasi
+    setSoalList([...soalList, {
       pertanyaan: "",
+      gambar: "",
       bobot: 10,
+      tipeJawaban: 'PILIHAN_GANDA',
       opsi: [
         { teks: "", isBenar: false },
         { teks: "", isBenar: false },
         { teks: "", isBenar: false },
         { teks: "", isBenar: false },
       ]
-    })
+    }])
 
-    showSuccess("Berhasil!", "Soal berhasil ditambahkan")
+    // Scroll ke soal baru setelah render
+    setTimeout(() => {
+      lastSoalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 100)
   }
 
   const handleRemoveSoal = (index: number) => {
     setSoalList(soalList.filter((_, i) => i !== index))
+  }
+
+  const handleSoalChange = (index: number, field: keyof Soal, value: any) => {
+    const newList = [...soalList]
+    newList[index] = { ...newList[index], [field]: value }
+    setSoalList(newList)
+  }
+
+  const handleSoalImageUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Max 2MB for images
+    if (file.size > 2 * 1024 * 1024) {
+      showError("Error", "Ukuran gambar terlalu besar. Maksimal 2MB")
+      e.target.value = ''
+      return
+    }
+
+    if (!file.type.startsWith('image/')) {
+      showError("Error", "File harus berupa gambar (JPG, PNG, GIF, dll)")
+      e.target.value = ''
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const newList = [...soalList]
+      newList[index] = { ...newList[index], gambar: reader.result as string }
+      setSoalList(newList)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveSoalImage = (index: number) => {
+    const newList = [...soalList]
+    newList[index] = { ...newList[index], gambar: "" }
+    setSoalList(newList)
+  }
+
+  const handleOpsiChangeInList = (soalIndex: number, opsiIndex: number, value: string) => {
+    const newList = [...soalList]
+    const newOpsi = [...newList[soalIndex].opsi]
+    newOpsi[opsiIndex] = { ...newOpsi[opsiIndex], teks: value }
+    newList[soalIndex] = { ...newList[soalIndex], opsi: newOpsi }
+    setSoalList(newList)
+  }
+
+  const handleCorrectAnswerInList = (soalIndex: number, opsiIndex: number) => {
+    const newList = [...soalList]
+    const newOpsi = newList[soalIndex].opsi.map((o, i) => ({
+      ...o,
+      isBenar: i === opsiIndex
+    }))
+    newList[soalIndex] = { ...newList[soalIndex], opsi: newOpsi }
+    setSoalList(newList)
   }
 
   const handleOpsiChange = (index: number, value: string) => {
@@ -218,6 +261,29 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
       return
     }
 
+    // Validasi setiap soal sebelum submit
+    if (formData.tipe === 'KUIS') {
+      for (let i = 0; i < soalList.length; i++) {
+        const soal = soalList[i]
+        if (!soal.pertanyaan.trim()) {
+          showError("Error", `Soal ${i + 1}: Pertanyaan wajib diisi`)
+          return
+        }
+        if (soal.tipeJawaban === 'PILIHAN_GANDA' || !soal.tipeJawaban) {
+          const filledOpsi = soal.opsi.filter(o => o.teks.trim() !== "")
+          if (filledOpsi.length < 2) {
+            showError("Error", `Soal ${i + 1}: Minimal 2 pilihan jawaban harus diisi`)
+            return
+          }
+          const hasCorrectAnswer = soal.opsi.some(o => o.isBenar)
+          if (!hasCorrectAnswer) {
+            showError("Error", `Soal ${i + 1}: Harus ada minimal 1 jawaban yang benar`)
+            return
+          }
+        }
+      }
+    }
+
     setIsSaving(true)
     try {
       const bodyData: any = {
@@ -241,6 +307,7 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
       if (formData.tipe === 'KUIS') {
         bodyData.soal = soalList.map(s => ({
           pertanyaan: s.pertanyaan,
+          gambar: s.gambar || null,
           bobot: s.bobot,
           tipeJawaban: s.tipeJawaban || 'PILIHAN_GANDA',
           opsi: (s.tipeJawaban === 'PILIHAN_GANDA' || !s.tipeJawaban)
@@ -295,37 +362,16 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
       <>
         <AlertComponent />
         <div className="space-y-6">
-        {/* Soal yang sudah ditambahkan */}
+        {/* Daftar Soal - semua bisa diedit inline */}
         {soalList.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Daftar Soal ({soalList.length})</CardTitle>
-              <CardDescription>Soal yang sudah ditambahkan ke kuis</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {soalList.map((soal, index) => (
-                <div key={index} className="border rounded-lg p-4 space-y-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="secondary">Soal {index + 1}</Badge>
-                        <Badge variant="outline">{soal.bobot} poin</Badge>
-                      </div>
-                      <p className="font-medium mb-2">{soal.pertanyaan}</p>
-                      <div className="space-y-1 pl-4">
-                        {soal.opsi.filter(o => o.teks.trim() !== "").map((opsi, opsiIndex) => (
-                          <div key={opsiIndex} className="flex items-center gap-2 text-sm">
-                            {opsi.isBenar ? (
-                              <Check className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <X className="h-4 w-4 text-gray-400" />
-                            )}
-                            <span className={opsi.isBenar ? "text-green-600 font-medium" : ""}>
-                              {opsi.teks}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Daftar Soal ({soalList.length})</h3>
+            {soalList.map((soal, index) => (
+              <Card key={index} ref={index === soalList.length - 1 ? lastSoalRef : undefined}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">Soal {index + 1}</Badge>
                     </div>
                     <Button
                       variant="ghost"
@@ -336,81 +382,108 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Pertanyaan *</Label>
+                    <Textarea
+                      value={soal.pertanyaan}
+                      onChange={(e) => handleSoalChange(index, 'pertanyaan', e.target.value)}
+                      placeholder="Masukkan pertanyaan..."
+                      rows={3}
+                    />
+                  </div>
+
+                  {/* Upload gambar opsional */}
+                  <div className="space-y-2">
+                    <Label>Gambar (Opsional)</Label>
+                    {soal.gambar ? (
+                      <div className="relative inline-block">
+                        <img
+                          src={soal.gambar}
+                          alt={`Gambar soal ${index + 1}`}
+                          className="max-h-48 rounded-lg border object-contain"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-1 right-1"
+                          onClick={() => handleRemoveSoalImage(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleSoalImageUpload(index, e)}
+                          className="max-w-sm"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Maks 2MB. Format: JPG, PNG, GIF
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Poin *</Label>
+                    <Input
+                      type="number"
+                      value={soal.bobot}
+                      onChange={(e) => handleSoalChange(index, 'bobot', parseInt(e.target.value) || 10)}
+                      placeholder="10"
+                      min="1"
+                      className="max-w-[120px]"
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-3">
+                    <Label>Pilihan Jawaban *</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Klik tombol centang untuk menandai jawaban yang benar
+                    </p>
+                    {soal.opsi.map((opsi, opsiIndex) => (
+                      <div key={opsiIndex} className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant={opsi.isBenar ? "default" : "outline"}
+                          size="sm"
+                          className="shrink-0"
+                          onClick={() => handleCorrectAnswerInList(index, opsiIndex)}
+                        >
+                          {opsi.isBenar ? <Check className="h-4 w-4" /> : <span className="h-4 w-4" />}
+                        </Button>
+                        <Input
+                          value={opsi.teks}
+                          onChange={(e) => handleOpsiChangeInList(index, opsiIndex, e.target.value)}
+                          placeholder={`Pilihan ${opsiIndex + 1}`}
+                          className={opsi.isBenar ? "border-green-500" : ""}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
 
-        {/* Form tambah soal baru */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Tambah Soal Baru</CardTitle>
-            <CardDescription>Buat soal pilihan ganda seperti Kahoot</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="pertanyaan">Pertanyaan *</Label>
-              <Textarea
-                id="pertanyaan"
-                value={currentSoal.pertanyaan}
-                onChange={(e) => setCurrentSoal({ ...currentSoal, pertanyaan: e.target.value })}
-                placeholder="Masukkan pertanyaan..."
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="bobot">Poin *</Label>
-              <Input
-                id="bobot"
-                type="number"
-                value={currentSoal.bobot}
-                onChange={(e) => setCurrentSoal({ ...currentSoal, bobot: parseInt(e.target.value) || 10 })}
-                placeholder="10"
-                min="1"
-              />
-            </div>
-
-            <Separator />
-
-            <div className="space-y-3">
-              <Label>Pilihan Jawaban *</Label>
-              <p className="text-sm text-muted-foreground">
-                Klik tombol centang untuk menandai jawaban yang benar
-              </p>
-              {currentSoal.opsi.map((opsi, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant={opsi.isBenar ? "default" : "outline"}
-                    size="sm"
-                    className="shrink-0"
-                    onClick={() => handleCorrectAnswerChange(index)}
-                  >
-                    {opsi.isBenar ? <Check className="h-4 w-4" /> : <span className="h-4 w-4" />}
-                  </Button>
-                  <Input
-                    value={opsi.teks}
-                    onChange={(e) => handleOpsiChange(index, e.target.value)}
-                    placeholder={`Pilihan ${index + 1}`}
-                    className={opsi.isBenar ? "border-green-500" : ""}
-                  />
-                </div>
-              ))}
-            </div>
-
-            <Button
-              type="button"
-              onClick={handleAddSoal}
-              className="w-full"
-              variant="secondary"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Tambah Soal
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Tombol tambah soal baru */}
+        <Button
+          type="button"
+          onClick={handleAddSoal}
+          className="w-full"
+          variant="outline"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Tambah Soal
+        </Button>
 
         {/* Tombol navigasi */}
         <div className="flex gap-2 justify-between">

@@ -37,6 +37,7 @@ interface Opsi {
 interface Soal {
   id: string
   pertanyaan: string
+  gambar?: string
   bobot: number
   tipeJawaban: 'PILIHAN_GANDA' | 'ISIAN'
   opsi: Opsi[]
@@ -324,6 +325,15 @@ export default function KuisPage({ params }: PageProps) {
             </div>
           </div>
           <CardTitle className="mt-4">{currentSoal.pertanyaan}</CardTitle>
+          {currentSoal.gambar && (
+            <div className="mt-3">
+              <img
+                src={currentSoal.gambar}
+                alt="Gambar soal"
+                className="max-h-64 rounded-lg border object-contain"
+              />
+            </div>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           {currentSoal.tipeJawaban === 'PILIHAN_GANDA' ? (
