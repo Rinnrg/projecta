@@ -239,8 +239,9 @@ export async function POST(request: NextRequest) {
     }
     
     // Add durasi if provided
-    if (durasi) {
-      asesmenData.durasi = parseInt(durasi)
+    if (durasi !== undefined && durasi !== null) {
+      const parsedDurasi = parseInt(String(durasi))
+      asesmenData.durasi = isNaN(parsedDurasi) ? null : parsedDurasi
     }
     
     console.log('Asesmen data to create:', {

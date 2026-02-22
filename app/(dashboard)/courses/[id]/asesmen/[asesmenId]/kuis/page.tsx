@@ -62,6 +62,8 @@ export default function KuisPage({ params }: PageProps) {
   const [jawaban, setJawaban] = useState<Jawaban[]>([])
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
   const [startTime, setStartTime] = useState<Date | null>(null)
+  const [durasiMenit, setDurasiMenit] = useState<number | null>(null)
+  const [timeExpired, setTimeExpired] = useState(false)
   
   // Check if already submitted
   const [hasSubmitted, setHasSubmitted] = useState(false)
@@ -117,9 +119,34 @@ export default function KuisPage({ params }: PageProps) {
           }
           
           // Start timer if durasi is set
-          if (data.asesmen.durasi) {
-            setTimeLeft(data.asesmen.durasi * 60) // Convert to seconds
-            setStartTime(new Date())
+          if (asesmenData.durasi && asesmenData.durasi > 0) {
+            const durasiSeconds = Number(asesmenData.durasi) * 60
+            setDurasiMenit(Number(asesmenData.durasi))
+
+            // Cek apakah sudah ada start time di sessionStorage (untuk handle refresh)
+            const storageKey = `kuis_start_${asesmenId}`
+            const savedStartTime = sessionStorage.getItem(storageKey)
+            
+            let start: Date
+            if (savedStartTime) {
+              start = new Date(savedStartTime)
+            } else {
+              start = new Date()
+              sessionStorage.setItem(storageKey, start.toISOString())
+            }
+            setStartTime(start)
+
+            // Hitung sisa waktu berdasarkan selisih waktu sekarang dan start time
+            const elapsedSeconds = Math.floor((Date.now() - start.getTime()) / 1000)
+            const remaining = durasiSeconds - elapsedSeconds
+
+            if (remaining <= 0) {
+              // Waktu sudah habis
+              setTimeLeft(0)
+              setTimeExpired(true)
+            } else {
+              setTimeLeft(remaining)
+            }
           }
         } else {
           router.push(`/courses/${courseId}`)
@@ -135,23 +162,34 @@ export default function KuisPage({ params }: PageProps) {
     fetchData()
   }, [user, authLoading, router, asesmenId, courseId])
 
-  // Timer countdown
+  // Timer countdown - menggunakan interval yang stabil tanpa dependency pada timeLeft
   useEffect(() => {
-    if (timeLeft === null || timeLeft <= 0 || hasSubmitted) return
+    if (startTime === null || durasiMenit === null || durasiMenit <= 0 || hasSubmitted) return
+
+    const durasiSeconds = durasiMenit * 60
 
     const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev === null || prev <= 1) {
-          // Auto submit when time runs out
-          handleSubmit(true)
-          return 0
-        }
-        return prev - 1
-      })
+      const elapsedSeconds = Math.floor((Date.now() - startTime.getTime()) / 1000)
+      const remaining = durasiSeconds - elapsedSeconds
+
+      if (remaining <= 0) {
+        setTimeLeft(0)
+        setTimeExpired(true)
+        clearInterval(timer)
+      } else {
+        setTimeLeft(remaining)
+      }
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [timeLeft, hasSubmitted])
+  }, [startTime, durasiMenit, hasSubmitted])
+
+  // Auto-submit saat waktu habis
+  useEffect(() => {
+    if (timeExpired && !hasSubmitted) {
+      handleSubmit(true)
+    }
+  }, [timeExpired, hasSubmitted])
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -216,6 +254,10 @@ export default function KuisPage({ params }: PageProps) {
     )
     
     if (confirmed || autoSubmit) {
+      // Bersihkan timer dari sessionStorage
+      sessionStorage.removeItem(`kuis_start_${asesmenId}`)
+      setHasSubmitted(true)
+
       success(
         "Berhasil!",
         autoSubmit 

@@ -268,7 +268,9 @@ export async function PUT(
     if (tipe === 'KUIS' && soal) {
       updateData.jml_soal = soal.length
     }
-    if (durasi !== undefined) updateData.durasi = durasi
+    if (durasi !== undefined) {
+      updateData.durasi = durasi !== null ? parseInt(String(durasi)) || null : null
+    }
     
     // Handle dates - allow null values
     if (tgl_mulai !== undefined) {
