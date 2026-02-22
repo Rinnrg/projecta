@@ -251,29 +251,51 @@ export default function KuisPage({ params }: PageProps) {
     setLeaveCount(prev => {
       const newCount = prev + 1
       sessionStorage.setItem(`kuis_leave_${asesmenId}`, String(newCount))
+      
+      // Auto-submit jika pelanggaran lebih dari 10
+      if (newCount > 10) {
+        setTimeout(() => {
+          if (!isSubmittingRef.current && !hasSubmitted) {
+            showError(
+              "Pelanggaran Berlebihan!",
+              `Anda telah meninggalkan jendela kuis sebanyak ${newCount} kali. Kuis akan dikumpulkan secara otomatis karena melanggar aturan anti-curang.`
+            )
+            setTimeout(() => {
+              setTimeExpired(true)
+            }, 3000) // Berikan waktu 3 detik untuk membaca pesan
+          }
+        }, 100)
+        return newCount
+      }
+      
       return newCount
     })
 
-    // Start 5 minute countdown for auto-submit
-    let countdown = 300 // 5 minutes in seconds
-    setLeaveCountdown(countdown)
+    // Start 30 second countdown for auto-submit (hanya jika belum lebih dari 10 pelanggaran)
+    setLeaveCount(currentCount => {
+      if (currentCount <= 10) {
+        let countdown = 30 // 30 seconds for anti-cheat
+        setLeaveCountdown(countdown)
 
-    if (leaveTimerRef.current) {
-      clearInterval(leaveTimerRef.current)
-    }
-
-    leaveTimerRef.current = setInterval(() => {
-      countdown--
-      setLeaveCountdown(countdown)
-      if (countdown <= 0) {
-        if (leaveTimerRef.current) clearInterval(leaveTimerRef.current)
-        // Auto-submit karena siswa tidak kembali dalam 5 menit
-        if (!isSubmittingRef.current) {
-          setTimeExpired(true)
+        if (leaveTimerRef.current) {
+          clearInterval(leaveTimerRef.current)
         }
+
+        leaveTimerRef.current = setInterval(() => {
+          countdown--
+          setLeaveCountdown(countdown)
+          if (countdown <= 0) {
+            if (leaveTimerRef.current) clearInterval(leaveTimerRef.current)
+            // Auto-submit karena siswa tidak kembali dalam 30 detik
+            if (!isSubmittingRef.current) {
+              setTimeExpired(true)
+            }
+          }
+        }, 1000)
       }
-    }, 1000)
-  }, [asesmenId, hasSubmitted])
+      return currentCount
+    })
+  }, [asesmenId, hasSubmitted, showError])
 
   const handleWindowReturn = useCallback(() => {
     // Clear the 5-minute leave timer
@@ -466,7 +488,7 @@ export default function KuisPage({ params }: PageProps) {
       <AlertComponent />
       
       {/* Anti-cheat leave countdown overlay */}
-      {antiCurang && leaveCountdown !== null && (
+      {antiCurang && leaveCountdown !== null && leaveCount <= 10 && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
           <Card className="max-w-md mx-4">
             <CardHeader>
@@ -484,9 +506,24 @@ export default function KuisPage({ params }: PageProps) {
                   {formatTime(leaveCountdown)}
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground text-center">
-                Pelanggaran ke-{leaveCount}
-              </p>
+              <div className="text-center space-y-1">
+                <p className="text-sm text-muted-foreground">
+                  Pelanggaran ke-{leaveCount}
+                </p>
+                <p className={`text-xs font-medium ${
+                  leaveCount >= 8 ? 'text-red-600' : 
+                  leaveCount >= 5 ? 'text-orange-600' : 
+                  'text-yellow-600'
+                }`}>
+                  {leaveCount >= 8 ? '🚨 Bahaya: Mendekati batas maksimal!' : 
+                   leaveCount >= 5 ? '⚠️ Peringatan: Batas pelanggaran tinggi!' :
+                   leaveCount >= 3 ? '⚡ Hati-hati dengan pelanggaran!' :
+                   '📢 Mohon tetap di halaman kuis'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Maksimal 10 pelanggaran
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>

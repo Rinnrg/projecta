@@ -295,7 +295,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                     const confirmed = await confirm(
                       "Mulai Kerjakan Kuis?",
                       {
-                        description: `Anda akan memulai kuis "${asesmen.nama}".${asesmen.durasi ? ` Durasi: ${asesmen.durasi} menit.` : ''} Pastikan Anda siap sebelum memulai. ${asesmen.antiCurang ? '\n\n⚠️ Anti-curang aktif: Anda tidak diperbolehkan meninggalkan jendela kuis selama pengerjaan.' : ''}`,
+                        description: `Anda akan memulai kuis "${asesmen.nama}".${asesmen.durasi ? ` Durasi: ${asesmen.durasi} menit.` : ''} Pastikan Anda siap sebelum memulai. ${asesmen.antiCurang ? '\n\n⚠️ Anti-curang aktif: Anda tidak diperbolehkan meninggalkan jendela kuis selama pengerjaan. Kuis akan otomatis dikumpulkan jika Anda meninggalkan jendela lebih dari 30 detik.' : ''}`,
                         confirmText: "Mulai Kuis",
                         cancelText: "Batal",
                         type: "warning",

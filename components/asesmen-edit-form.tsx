@@ -622,7 +622,8 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
                 </Label>
                 <p className="text-sm text-muted-foreground">
                   Jika diaktifkan, siswa akan mendapat peringatan saat meninggalkan jendela kuis. 
-                  Kuis akan otomatis dikumpulkan jika siswa tidak kembali dalam 5 menit.
+                  Kuis akan otomatis dikumpulkan jika siswa tidak kembali dalam 30 detik.
+                  Jika pelanggaran lebih dari 10 kali, kuis akan langsung dikumpulkan secara otomatis.
                 </p>
               </div>
               <Switch
