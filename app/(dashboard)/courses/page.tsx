@@ -12,7 +12,8 @@ import { Search, Plus, BookOpen, Users, FileText, MoreHorizontal, Pencil, Trash2
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
+import { useAsyncAction } from "@/hooks/use-async-action"
 import { AnimateIn } from "@/components/ui/animate-in"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
 import { CoursePageSkeleton } from "@/components/ui/loading-skeletons"
@@ -30,7 +31,8 @@ export default function CoursesPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState(locale === 'id' ? "Semua" : "All")
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
-  const { confirm, success, AlertComponent } = useSweetAlert()
+  const { confirm, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
   const { courses, loading, error, refetch } = useCourses(user?.id, user?.role)
 
   // Debounce search query untuk mengurangi re-render
@@ -56,16 +58,24 @@ export default function CoursesPage() {
       confirmText: t("Hapus"),
       cancelText: t("Batal"),
       type: "warning",
-      onConfirm: async () => {
+    })
+
+    if (!confirmed) return
+
+    await execute(
+      async () => {
         // TODO: Implement delete API call
         await new Promise((resolve) => setTimeout(resolve, 1000))
         refetch()
       },
-    })
-
-    if (confirmed) {
-      success(t("Berhasil"), `"${courseTitle}" ${t("berhasil dihapus")}`)
-    }
+      {
+        loadingMessage: t("Menghapus kursus..."),
+        successTitle: t("Berhasil!"),
+        successDescription: `"${courseTitle}" ${t("berhasil dihapus")}`,
+        errorTitle: t("Gagal"),
+        autoCloseMs: 1500,
+      }
+    )
   }
 
   if (loading) {
@@ -88,6 +98,7 @@ export default function CoursesPage() {
   return (
     <div className="w-full space-y-6 sm:space-y-8">
       <AlertComponent />
+      <ActionFeedback />
 
       <AnimateIn stagger={0}>
         <div className="flex flex-col gap-4 sm:gap-6 md:flex-row md:items-end md:justify-between">

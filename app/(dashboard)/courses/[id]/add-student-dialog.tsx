@@ -1,13 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+import {
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalBody,
+} from "@/components/ui/responsive-modal"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { GraduationCap, Loader2, UserPlus } from "lucide-react"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { GraduationCap, Loader2 } from "lucide-react"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
+import { useAsyncAction } from "@/hooks/use-async-action"
 
 interface ClassInfo {
   kelas: string
@@ -34,7 +39,8 @@ export default function AddStudentDialog({
   const [selectedClasses, setSelectedClasses] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const { success, error: showError, AlertComponent } = useSweetAlert()
+  const { error: showError, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
 
   useEffect(() => {
     if (open) {
@@ -49,7 +55,8 @@ export default function AddStudentDialog({
       // Get all students
       const allStudentsResponse = await fetch("/api/users?role=SISWA")
       if (!allStudentsResponse.ok) throw new Error("Gagal mengambil data siswa")
-      const allStudents = await allStudentsResponse.json()
+      const allStudentsData = await allStudentsResponse.json()
+      const allStudents = allStudentsData.users || []
 
       // Get enrolled students
       const enrollResponse = await fetch(`/api/courses/${courseId}/enrollments`)
@@ -119,43 +126,50 @@ export default function AddStudentDialog({
     if (studentIds.length === 0) return
 
     setSubmitting(true)
-    try {
-      const response = await fetch(`/api/courses/${courseId}/enrollments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentIds }),
-      })
+    await execute(
+      async () => {
+        const response = await fetch(`/api/courses/${courseId}/enrollments`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ studentIds }),
+        })
 
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || "Gagal menambahkan siswa")
+        if (!response.ok) {
+          const data = await response.json()
+          throw new Error(data.error || "Gagal menambahkan siswa")
+        }
+      },
+      {
+        loadingMessage: "Menambahkan siswa...",
+        successTitle: "Berhasil!",
+        successDescription: `${studentIds.length} siswa dari ${selectedClasses.length} kelas berhasil ditambahkan`,
+        errorTitle: "Gagal",
+        onSuccess: () => { onOpenChange(false); onSuccess?.() },
       }
-
-      await success("Berhasil", `${studentIds.length} siswa dari ${selectedClasses.length} kelas berhasil ditambahkan`)
-      onOpenChange(false)
-      onSuccess?.()
-    } catch (err) {
-      showError("Gagal", err instanceof Error ? err.message : "Gagal menambahkan siswa")
-    } finally {
-      setSubmitting(false)
-    }
+    )
+    setSubmitting(false)
   }
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Tambah Siswa ke Kursus</DialogTitle>
-            <DialogDescription>
-              Centang kelas untuk mendaftarkan seluruh siswa di kelas tersebut
-            </DialogDescription>
-          </DialogHeader>
+      <ActionFeedback />
+      <ResponsiveModal
+        open={open}
+        onOpenChange={onOpenChange}
+        onConfirm={handleSubmit}
+        confirmDisabled={selectedClasses.length === 0 || submitting}
+        confirmLoading={submitting}
+      >
+        <ResponsiveModalContent className="max-w-lg">
+          <ResponsiveModalHeader
+            title="Tambah Siswa"
+            description={`Pilih kelas • ${totalSelected > 0 ? `${totalSelected} siswa terpilih` : 'Belum ada yang dipilih'}`}
+          />
 
-          <div className="flex-1 overflow-hidden flex flex-col space-y-4">
+          <ResponsiveModalBody>
             {/* Select All */}
             {!loading && availableClasses.length > 0 && (
-              <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center justify-between border-b pb-3 mb-3">
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="dialog-select-all"
@@ -181,7 +195,7 @@ export default function AddStudentDialog({
             )}
 
             {/* Class List */}
-            <ScrollArea className="flex-1">
+            <ScrollArea className="max-h-[50vh] sm:max-h-[40vh]">
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-3" />
@@ -249,32 +263,9 @@ export default function AddStudentDialog({
                 </div>
               )}
             </ScrollArea>
-          </div>
-
-          <DialogFooter className="gap-2 border-t pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-              Batal
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={selectedClasses.length === 0 || submitting}
-              className="gap-2"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Menambahkan...
-                </>
-              ) : (
-                <>
-                  <UserPlus className="h-4 w-4" />
-                  Tambahkan {totalSelected > 0 ? `${totalSelected} Siswa` : ""}
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveModalBody>
+        </ResponsiveModalContent>
+      </ResponsiveModal>
       <AlertComponent />
     </>
   )

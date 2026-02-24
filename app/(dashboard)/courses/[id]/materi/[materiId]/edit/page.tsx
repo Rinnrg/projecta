@@ -33,5 +33,21 @@ export default async function EditMateriPage({ params }: PageProps) {
     notFound()
   }
 
-  return <EditMateriClient materi={materi} />
+  // Transform data for client component - exclude binary data
+  const materiForClient = {
+    id: materi.id,
+    judul: materi.judul,
+    deskripsi: materi.deskripsi,
+    lampiran: materi.lampiran,
+    fileName: materi.fileName,
+    fileType: materi.fileType,
+    fileSize: materi.fileSize,
+    tgl_unggah: materi.tgl_unggah,
+    courseId: materi.courseId,
+    course: materi.course,
+    // Don't send binary fileData to client component
+    hasFile: materi.fileData !== null && materi.fileType !== null,
+  }
+
+  return <EditMateriClient materi={materiForClient} />
 }

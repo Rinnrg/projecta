@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { useBreadcrumbPage } from "@/hooks/use-breadcrumb"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -28,7 +29,8 @@ import {
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
+import { useAsyncAction } from "@/hooks/use-async-action"
 
 interface MateriDetailClientProps {
   materi: {
@@ -64,13 +66,39 @@ interface MateriDetailClientProps {
 export default function MateriDetailClient({ materi, allMateri, courseId }: MateriDetailClientProps) {
   const router = useRouter()
   const { user } = useAuth()
-  const { confirm, success: showSuccess, error: showError, AlertComponent } = useSweetAlert()
+  const { confirm, error: showError, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
   const [selectedMateriId, setSelectedMateriId] = useState(materi.id)
   const [showPdfViewer, setShowPdfViewer] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null)
 
   const isTeacherOrAdmin = user?.role === "GURU" || user?.role === "ADMIN"
+
+  // Set custom breadcrumb with useMemo to prevent re-renders
+  const breadcrumbItems = useMemo(() => [
+    {
+      label: 'Dashboard',
+      href: '/dashboard',
+      icon: <BookOpen className="h-4 w-4" />
+    },
+    {
+      label: 'Kursus',
+      href: '/courses',
+      icon: <BookOpen className="h-4 w-4" />
+    },
+    {
+      label: materi.course.judul,
+      href: `/courses/${courseId}`,
+      icon: <BookOpen className="h-4 w-4" />
+    },
+    {
+      label: materi.judul,
+      icon: <FileText className="h-4 w-4" />
+    }
+  ], [materi.course.judul, materi.judul, courseId])
+
+  useBreadcrumbPage(breadcrumbItems)
 
   // Fetch PDF as blob for fast rendering
   const loadPdfBlob = useCallback(async () => {
@@ -177,26 +205,29 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
       confirmText: "Hapus",
       cancelText: "Batal",
       type: "warning",
-      onConfirm: async () => {
-        try {
-          const response = await fetch(`/api/materi/${materi.id}`, {
-            method: "DELETE",
-          })
-
-          if (!response.ok) {
-            throw new Error("Gagal menghapus materi")
-          }
-        } catch (error) {
-          console.error("Error deleting materi:", error)
-          throw error
-        }
-      },
     })
 
-    if (confirmed) {
-      showSuccess("Berhasil", `Materi "${materi.judul}" berhasil dihapus`)
-      router.push(`/courses/${courseId}`)
-    }
+    if (!confirmed) return
+
+    await execute(
+      async () => {
+        const response = await fetch(`/api/materi/${materi.id}`, {
+          method: "DELETE",
+        })
+
+        if (!response.ok) {
+          throw new Error("Gagal menghapus materi")
+        }
+      },
+      {
+        loadingMessage: "Menghapus materi...",
+        successTitle: "Berhasil!",
+        successDescription: `Materi "${materi.judul}" berhasil dihapus`,
+        errorTitle: "Gagal",
+        autoCloseMs: 1500,
+        onSuccess: () => router.push(`/courses/${courseId}`),
+      }
+    )
   }
 
   const handleMateriChange = (materiId: string) => {
@@ -216,17 +247,18 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
   }
 
   return (
-    <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-4rem)] lg:-m-6 xl:-m-8">
+    <div className="flex flex-col lg:flex-row min-h-0 lg:-m-6 xl:-m-8 relative">
       <AlertComponent />
+      <ActionFeedback />
 
       {/* Sidebar - Materi List */}
-      <div className="w-80 border-r bg-card/50 flex flex-col hidden lg:flex">
-        <div className="p-4 sm:p-6 border-b">
+      <div className="w-80 border-r bg-card/50 flex flex-col hidden lg:flex sticky top-8 h-[calc(100vh-4rem)] mt-8 relative z-0">
+        <div className="p-4 sm:p-6 border-b shrink-0">
           <h2 className="font-semibold text-lg mb-1">Daftar Materi</h2>
           <p className="text-sm text-muted-foreground">Pilih materi untuk melihat detail</p>
         </div>
 
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-y-auto">
           <div className="p-3 sm:p-4 space-y-2">
             {allMateri.map((m, index) => (
               <button
@@ -259,15 +291,12 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
               </button>
             ))}
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       {/* Main Content - Materi Detail */}
-      <div className="flex-1 overflow-auto bg-background">
+      <div className="flex-1 bg-background mt-8 relative z-0">
         <div className="p-4 sm:p-6 lg:p-8 w-full space-y-6 sm:space-y-8">
-          
-          {/* Floating Back Button */}
-          <FloatingBackButton href={`/courses/${courseId}`} />
 
           {/* Header Section */}
           <div className="space-y-4">

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
+import { useBreadcrumbPage } from "@/hooks/use-breadcrumb"
 import type { Course, Asesmen } from "@/lib/types"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -30,6 +31,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import AddStudentDialog from "./add-student-dialog"
 import EditTeacherDialog from "./edit-teacher-dialog"
+import { useAsyncAction } from "@/hooks/use-async-action"
 
 interface CourseDetailClientProps {
   course: Course
@@ -53,13 +55,34 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
   const { user } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { confirm, success, error: showError, AlertComponent } = useSweetAlert()
+  const { confirm, error: showError, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
   const [activeTab, setActiveTab] = useState("materials")
   const [tabKey, setTabKey] = useState(0) // For re-render animation
   const [addStudentOpen, setAddStudentOpen] = useState(false)
   const [editTeacherOpen, setEditTeacherOpen] = useState(false)
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [isLoadingStudents, setIsLoadingStudents] = useState(false)
+
+  // Set custom breadcrumb with useMemo to prevent re-renders
+  const breadcrumbItems = useMemo(() => [
+    {
+      label: 'Dashboard',
+      href: '/dashboard',
+      icon: <BookOpen className="h-4 w-4" />
+    },
+    {
+      label: 'Kursus',
+      href: '/courses',
+      icon: <BookOpen className="h-4 w-4" />
+    },
+    {
+      label: course.judul,
+      icon: <BookOpen className="h-4 w-4" />
+    }
+  ], [course.judul])
+
+  useBreadcrumbPage(breadcrumbItems)
 
   // TODO: Implement completed tracking in the database
   const completedCount = 0
@@ -129,23 +152,27 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
       confirmText: "Hapus",
       cancelText: "Batal",
       type: "warning",
-      onConfirm: async () => {
-        try {
-          const response = await fetch(
-            `/api/courses/${course.id}/enrollments?siswaId=${siswaId}`,
-            { method: "DELETE" }
-          )
-          if (!response.ok) throw new Error("Failed to remove student")
-        } catch (error) {
-          throw error
-        }
-      },
     })
 
-    if (confirmed) {
-      await success("Berhasil menghapus siswa dari course")
-      fetchEnrollments()
-    }
+    if (!confirmed) return
+
+    await execute(
+      async () => {
+        const response = await fetch(
+          `/api/courses/${course.id}/enrollments?siswaId=${siswaId}`,
+          { method: "DELETE" }
+        )
+        if (!response.ok) throw new Error("Failed to remove student")
+      },
+      {
+        loadingMessage: "Menghapus siswa...",
+        successTitle: "Berhasil!",
+        successDescription: "Berhasil menghapus siswa dari course",
+        errorTitle: "Gagal",
+        autoCloseMs: 1500,
+        onSuccess: () => fetchEnrollments(),
+      }
+    )
   }
 
   // Handler untuk delete materi
@@ -155,23 +182,26 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
       confirmText: "Hapus",
       cancelText: "Batal",
       type: "warning",
-      onConfirm: async () => {
-        try {
-          const response = await fetch(`/api/materi/${materiId}`, {
-            method: "DELETE",
-          })
-          if (!response.ok) throw new Error("Failed to delete materi")
-        } catch (error) {
-          throw error
-        }
-      },
     })
 
-    if (confirmed) {
-      await success("Berhasil", `Materi "${materiTitle}" berhasil dihapus`)
-      // Refresh the page to show updated data
-      router.refresh()
-    }
+    if (!confirmed) return
+
+    await execute(
+      async () => {
+        const response = await fetch(`/api/materi/${materiId}`, {
+          method: "DELETE",
+        })
+        if (!response.ok) throw new Error("Failed to delete materi")
+      },
+      {
+        loadingMessage: "Menghapus materi...",
+        successTitle: "Berhasil!",
+        successDescription: `Materi "${materiTitle}" berhasil dihapus`,
+        errorTitle: "Gagal",
+        autoCloseMs: 1500,
+        onSuccess: () => router.refresh(),
+      }
+    )
   }
 
   // Handler untuk delete asesmen
@@ -181,28 +211,32 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
       confirmText: "Hapus",
       cancelText: "Batal",
       type: "warning",
-      onConfirm: async () => {
-        try {
-          const response = await fetch(`/api/asesmen/${asesmenId}`, {
-            method: "DELETE",
-          })
-          if (!response.ok) throw new Error("Failed to delete asesmen")
-        } catch (error) {
-          throw error
-        }
-      },
     })
 
-    if (confirmed) {
-      await success("Berhasil", `Asesmen "${asesmenName}" berhasil dihapus`)
-      // Refresh the page to show updated data
-      router.refresh()
-    }
+    if (!confirmed) return
+
+    await execute(
+      async () => {
+        const response = await fetch(`/api/asesmen/${asesmenId}`, {
+          method: "DELETE",
+        })
+        if (!response.ok) throw new Error("Failed to delete asesmen")
+      },
+      {
+        loadingMessage: "Menghapus asesmen...",
+        successTitle: "Berhasil!",
+        successDescription: `Asesmen "${asesmenName}" berhasil dihapus`,
+        errorTitle: "Gagal",
+        autoCloseMs: 1500,
+        onSuccess: () => router.refresh(),
+      }
+    )
   }
 
   return (
     <div className="w-full space-y-4 sm:space-y-6">
       <AlertComponent />
+      <ActionFeedback />
       
       {/* Dialogs */}
       <EditTeacherDialog
@@ -327,8 +361,8 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
         setActiveTab(value)
         setTabKey(prev => prev + 1) // Trigger re-render for animation
       }} className="space-y-4 sm:space-y-6">
-        <div className="overflow-x-auto pb-2 scrollbar-hide">
-          <TabsList className="inline-flex w-max bg-muted/50 sm:w-auto">
+        <div className="overflow-visible">
+          <TabsList className="inline-flex w-max sm:w-auto">
             <TabsTrigger value="materials" className="text-xs sm:text-sm">
               Materi
             </TabsTrigger>
@@ -535,12 +569,10 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
                 <Badge variant="secondary" className="text-xs">
                   {enrollments.length} Siswa
                 </Badge>
-                <Link href={`/courses/${course.id}/students/add`}>
-                  <Button size="sm" className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">Tambah Siswa</span>
-                  </Button>
-                </Link>
+                <Button size="sm" className="gap-2" onClick={() => setAddStudentOpen(true)}>
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Tambah Siswa</span>
+                </Button>
               </div>
             </div>
             <Card className="border-border/50">
@@ -555,12 +587,10 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
                     <p className="text-sm text-muted-foreground mb-4">
                       Belum ada siswa yang terdaftar di course ini
                     </p>
-                    <Link href={`/courses/${course.id}/students/add`}>
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Tambah Siswa Pertama
-                      </Button>
-                    </Link>
+                    <Button variant="outline" size="sm" className="gap-2" onClick={() => setAddStudentOpen(true)}>
+                      <Plus className="h-4 w-4" />
+                      Tambah Siswa Pertama
+                    </Button>
                   </div>
                 ) : (
                   <div className="divide-y divide-border">
@@ -654,12 +684,6 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
       </Tabs>
 
       {/* Add Student Dialog */}
-      <AddStudentDialog
-        open={addStudentOpen}
-        onOpenChange={setAddStudentOpen}
-        courseId={course.id}
-        onSuccess={fetchEnrollments}
-      />
     </div>
   )
 }

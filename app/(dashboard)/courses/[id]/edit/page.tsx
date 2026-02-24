@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, X, ImageIcon, Loader2, Save } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
+import { useAsyncAction } from "@/hooks/use-async-action"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
 
 const categoriesMap = {
@@ -32,7 +33,8 @@ export default function EditCoursePage() {
   const params = useParams()
   const courseId = params.id as string
   const { t, locale } = useAutoTranslate()
-  const { success, error: showError, AlertComponent } = useSweetAlert()
+  const { error: showError, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
   
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -119,32 +121,34 @@ export default function EditCoursePage() {
         gambar: thumbnail || "/placeholder.svg",
       }
 
-      console.log("Updating course with data:", courseData)
+      await execute(
+        async () => {
+          const response = await fetch(`/api/courses/${courseId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(courseData),
+          })
 
-      const response = await fetch(`/api/courses/${courseId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+          const responseData = await response.json()
+
+          if (!response.ok) {
+            throw new Error(responseData.error || "Failed to update course")
+          }
         },
-        body: JSON.stringify(courseData),
-      })
-
-      const responseData = await response.json()
-      console.log("Update response:", responseData)
-
-      if (!response.ok) {
-        throw new Error(responseData.error || "Failed to update course")
-      }
-
-      await success(t("Berhasil"), t("Kursus berhasil diperbarui"))
-      
-      // Redirect to courses list or course detail
-      setTimeout(() => {
-        router.push("/courses")
-      }, 1000)
-    } catch (err: any) {
-      console.error("Error updating course:", err)
-      showError(t("Error"), err.message || t("Gagal memperbarui kursus"))
+        {
+          loadingMessage: t("Menyimpan kursus..."),
+          successTitle: t("Berhasil!"),
+          successDescription: t("Kursus berhasil diperbarui"),
+          errorTitle: t("Gagal"),
+          onSuccess: () => {
+            setTimeout(() => {
+              router.push("/courses")
+            }, 1000)
+          },
+        }
+      )
     } finally {
       setSaving(false)
     }
@@ -175,6 +179,7 @@ export default function EditCoursePage() {
   return (
     <div className="w-full space-y-6">
       <AlertComponent />
+      <ActionFeedback />
 
       {/* Back Button */}
       <Button variant="ghost" size="sm" asChild>

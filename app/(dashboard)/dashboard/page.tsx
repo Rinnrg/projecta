@@ -1,15 +1,15 @@
 "use client"
 
 import { useAuth } from "@/lib/auth-context"
-import { useRouter } from "next/navigation"
 import { StatsCard } from "@/components/ui/stats-card"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { AnimateIn } from "@/components/ui/animate-in"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
 import { DashboardSkeleton } from "@/components/ui/loading-skeletons"
+import { useTransitionRouter } from "@/hooks/use-transition-router"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import {
@@ -24,7 +24,7 @@ import {
   Play,
   Clock,
   ChevronRight,
-  Loader2,
+  Calendar,
 } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
@@ -34,7 +34,7 @@ export default function DashboardPage() {
   const { user } = useAuth()
   const { t, locale: currentLocale } = useAutoTranslate()
   const dateLocale = currentLocale === 'id' ? localeId : enUS
-  const router = useRouter()
+  const router = useTransitionRouter()
 
   // State untuk data dari API
   const [stats, setStats] = useState<any>(null)
@@ -43,13 +43,13 @@ export default function DashboardPage() {
   const [asesmenList, setAsesmenList] = useState<any[]>([])
   const [activities, setActivities] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentTime, setCurrentTime] = useState(new Date())
 
-  // Redirect to login if no user
+  // Update jam real-time setiap detik
   useEffect(() => {
-    if (!user) {
-      router.push('/login')
-    }
-  }, [user, router])
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   useEffect(() => {
     if (!user) return
@@ -109,7 +109,7 @@ export default function DashboardPage() {
     }
 
     fetchDashboardData()
-  }, [user, router])
+  }, [user])
 
   // Show loading while checking auth or fetching data
   if (!user || loading) {
@@ -117,11 +117,82 @@ export default function DashboardPage() {
   }
 
   const greeting = () => {
-    const hour = new Date().getHours()
-    if (hour < 12) return t("Selamat Pagi")
-    if (hour < 18) return t("Selamat Siang")
+    const hour = currentTime.getHours()
+    if (hour >= 5 && hour < 11) return t("Selamat Pagi")
+    if (hour >= 11 && hour < 15) return t("Selamat Siang")
+    if (hour >= 15 && hour < 18) return t("Selamat Sore")
     return t("Selamat Malam")
   }
+
+  // Warna berdasarkan waktu untuk welcome card
+  const getTimeBasedColors = () => {
+    const hour = currentTime.getHours()
+    if (hour >= 5 && hour < 11) {
+      return {
+        text: "text-yellow-600 dark:text-yellow-400",
+        gradient: "from-yellow-400 to-orange-500",
+        cardBg: "bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20",
+        cardBorder: "border-yellow-200 dark:border-yellow-800",
+      }
+    }
+    if (hour >= 11 && hour < 15) {
+      return {
+        text: "text-blue-600 dark:text-blue-400",
+        gradient: "from-blue-400 to-cyan-500",
+        cardBg: "bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20",
+        cardBorder: "border-blue-200 dark:border-blue-800",
+      }
+    }
+    if (hour >= 15 && hour < 18) {
+      return {
+        text: "text-orange-600 dark:text-orange-400",
+        gradient: "from-orange-400 to-red-500",
+        cardBg: "bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20",
+        cardBorder: "border-orange-200 dark:border-orange-800",
+      }
+    }
+    return {
+      text: "text-indigo-600 dark:text-indigo-400",
+      gradient: "from-indigo-400 to-purple-500",
+      cardBg: "bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20",
+      cardBorder: "border-indigo-200 dark:border-indigo-800",
+    }
+  }
+
+  // Posisi matahari/bulan berdasarkan waktu (arc movement)
+  const getCelestialPosition = () => {
+    const hour = currentTime.getHours()
+    const minute = currentTime.getMinutes()
+    const totalMinutes = hour * 60 + minute
+
+    let position = { x: 0, y: 0 }
+
+    if (hour >= 5 && hour < 18) {
+      const sunStart = 5 * 60
+      const sunEnd = 18 * 60
+      const elapsed = totalMinutes - sunStart
+      const progress = elapsed / (sunEnd - sunStart)
+      const angle = Math.PI * progress
+      position.x = Math.sin(angle) * 50
+      position.y = -Math.sin(angle) * 40
+    } else {
+      let moonMinutes = totalMinutes
+      if (hour < 5) moonMinutes = totalMinutes + 24 * 60
+      const moonStart = 18 * 60
+      const moonEnd = 29 * 60
+      const elapsed = moonMinutes - moonStart
+      const progress = elapsed / (moonEnd - moonStart)
+      const angle = Math.PI * progress
+      position.x = Math.sin(angle) * 50
+      position.y = -Math.sin(angle) * 40
+    }
+
+    return position
+  }
+
+  const timeColors = getTimeBasedColors()
+  const celestialPos = getCelestialPosition()
+  const isSunTime = currentTime.getHours() >= 5 && currentTime.getHours() < 18
 
   const formatTimeAgo = (dateString: string) => {
     const now = new Date()
@@ -148,29 +219,147 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="w-full space-y-4 sm:space-y-6 md:space-y-8">
+    <div className="w-full space-y-4 sm:space-y-6 md:space-y-8 pb-16 sm:pb-8">
+      {/* Welcome Card dengan Animasi Matahari/Bulan */}
       <AnimateIn stagger={1}>
-        <div className="flex flex-col gap-4 sm:gap-6 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground sm:text-sm">{greeting()}</p>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl md:text-3xl">{user.nama.split(" ")[0]}</h1>
-            <p className="max-w-md text-xs text-muted-foreground sm:text-[15px]">
-              {user.role === "SISWA" && t("Pantau perkembangan belajar Anda")}
-              {user.role === "GURU" && t("Kelola kursus dan materi pembelajaran")}
-              {user.role === "ADMIN" && t("Ringkasan Sistem")}
-            </p>
+        <Card className={`${timeColors.cardBg} border-2 ${timeColors.cardBorder} transition-all duration-1000 ease-in-out relative overflow-hidden`}>
+          {/* Sky Background */}
+          <div className={`absolute inset-0 transition-all duration-1000 ease-in-out ${
+            isSunTime
+              ? currentTime.getHours() < 11
+                ? 'bg-gradient-to-b from-yellow-100 via-orange-50 to-yellow-50 dark:from-yellow-900/30 dark:via-orange-900/20 dark:to-yellow-800/20'
+                : currentTime.getHours() < 15
+                ? 'bg-gradient-to-b from-sky-400 via-blue-300 to-cyan-200 dark:from-sky-900/40 dark:via-blue-800/30 dark:to-cyan-700/20'
+                : 'bg-gradient-to-b from-orange-400 via-orange-300 to-yellow-200 dark:from-orange-900/40 dark:via-orange-800/30 dark:to-yellow-700/20'
+              : 'bg-gradient-to-b from-slate-900 via-indigo-950 to-blue-950 dark:from-slate-950/60 dark:via-indigo-950/50 dark:to-blue-950/40'
+          }`} />
+
+          {/* Fade gradient overlay - konten di kiri terlihat, animasi di kanan */}
+          <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/50 to-transparent dark:from-background/90 dark:via-background/70 dark:to-transparent transition-all duration-1000 ease-in-out" />
+
+          {/* Horizon */}
+          <div className={`absolute bottom-0 left-0 right-0 h-1/3 transition-all duration-1000 ease-in-out ${
+            isSunTime
+              ? 'bg-gradient-to-t from-green-300/50 via-green-200/30 to-transparent dark:from-green-900/40 dark:via-green-800/20 dark:to-transparent'
+              : 'bg-gradient-to-t from-slate-800/50 via-slate-700/30 to-transparent dark:from-slate-950/50 dark:via-slate-900/30 dark:to-transparent'
+          }`} />
+
+          {/* Celestial Body (Matahari / Bulan) */}
+          <div
+            className="absolute right-4 md:right-8 top-1/2 transition-all duration-1000 ease-in-out z-0"
+            style={{
+              transform: `translate(${celestialPos.x}%, calc(-50% + ${celestialPos.y}%))`,
+            }}
+          >
+            {isSunTime ? (
+              /* 🌞 Matahari */
+              <div className="relative transition-all duration-1000 ease-in-out">
+                <div
+                  className={`w-16 h-16 md:w-28 md:h-28 lg:w-36 lg:h-36 rounded-full transition-all duration-1000 ease-in-out ${
+                    currentTime.getHours() < 11
+                      ? 'bg-gradient-to-br from-yellow-200 via-yellow-400 to-orange-500'
+                      : currentTime.getHours() < 15
+                      ? 'bg-gradient-to-br from-white via-yellow-100 to-yellow-400'
+                      : 'bg-gradient-to-br from-orange-300 via-orange-500 to-red-500'
+                  }`}
+                  style={{
+                    boxShadow: `0 0 20px rgba(251, 191, 36, 0.8), 0 0 40px rgba(251, 191, 36, 0.6)`,
+                  }}
+                >
+                  {/* Sun surface texture */}
+                  <div className="absolute inset-0 rounded-full overflow-hidden opacity-20">
+                    <div className="absolute top-2 left-3 w-3 h-3 md:w-5 md:h-5 bg-yellow-600/30 rounded-full blur-sm" />
+                    <div className="absolute top-6 right-4 w-2 h-2 md:w-4 md:h-4 bg-orange-600/30 rounded-full blur-sm" />
+                    <div className="absolute bottom-4 left-5 w-4 h-4 md:w-6 md:h-6 bg-orange-700/30 rounded-full blur-sm" />
+                  </div>
+                </div>
+                {/* Sun glow */}
+                <div
+                  className="absolute inset-0 rounded-full bg-yellow-300/20 transition-all duration-1000 ease-in-out"
+                  style={{ filter: 'blur(15px)', transform: 'scale(1.3)' }}
+                />
+              </div>
+            ) : (
+              /* 🌙 Bulan + Bintang ✨ */
+              <div className="relative transition-all duration-1000 ease-in-out">
+                <div
+                  className="w-16 h-16 md:w-28 md:h-28 lg:w-36 lg:h-36 rounded-full bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 dark:from-gray-300 dark:via-gray-400 dark:to-gray-500 relative overflow-hidden"
+                  style={{
+                    boxShadow: `0 0 30px rgba(203, 213, 225, 0.6), 0 0 60px rgba(203, 213, 225, 0.4)`,
+                  }}
+                >
+                  {/* Moon craters */}
+                  <div className="absolute top-3 left-3 md:top-5 md:left-5 w-2.5 h-2.5 md:w-4 md:h-4 rounded-full bg-gray-400/50 dark:bg-gray-600/50 shadow-inner" />
+                  <div className="absolute top-7 left-5 md:top-14 md:left-10 w-3 h-3 md:w-5 md:h-5 rounded-full bg-gray-400/40 dark:bg-gray-600/40 shadow-inner" />
+                  <div className="absolute top-4 right-3 md:top-8 md:right-6 w-2 h-2 md:w-3 md:h-3 rounded-full bg-gray-400/45 dark:bg-gray-600/45 shadow-inner" />
+                  <div className="absolute bottom-3 left-3 md:bottom-6 md:left-6 w-1.5 h-1.5 md:w-2.5 md:h-2.5 rounded-full bg-gray-400/40 dark:bg-gray-600/40 shadow-inner" />
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-transparent via-gray-300/10 to-gray-500/20" />
+                </div>
+                {/* Moon glow */}
+                <div
+                  className="absolute inset-0 rounded-full bg-slate-300/15 dark:bg-slate-200/20"
+                  style={{ filter: 'blur(20px)', transform: 'scale(1.4)' }}
+                />
+                {/* Stars twinkling ✨ */}
+                <div className="absolute -top-5 -right-3 md:-top-8 md:-right-6 w-1.5 h-1.5 md:w-2.5 md:h-2.5 bg-white rounded-full animate-twinkle shadow-[0_0_10px_rgba(255,255,255,0.8)]" />
+                <div className="absolute -top-3 -left-5 md:-top-5 md:-left-8 w-1 h-1 md:w-2 md:h-2 bg-yellow-100 rounded-full animate-twinkle shadow-[0_0_8px_rgba(254,243,199,0.7)]" style={{ animationDelay: '0.3s' }} />
+                <div className="absolute -bottom-4 -right-5 md:-bottom-7 md:-right-8 w-1.5 h-1.5 md:w-2.5 md:h-2.5 bg-white rounded-full animate-twinkle shadow-[0_0_10px_rgba(255,255,255,0.8)]" style={{ animationDelay: '0.6s' }} />
+                <div className="absolute -bottom-5 left-3 md:-bottom-8 md:left-6 w-1 h-1 md:w-2 md:h-2 bg-blue-100 rounded-full animate-twinkle shadow-[0_0_8px_rgba(219,234,254,0.7)]" style={{ animationDelay: '0.9s' }} />
+                <div className="absolute top-8 -left-3 md:top-14 md:-left-6 w-1.5 h-1.5 md:w-2 md:h-2 bg-white rounded-full animate-twinkle shadow-[0_0_9px_rgba(255,255,255,0.75)]" style={{ animationDelay: '1.2s' }} />
+              </div>
+            )}
           </div>
-          {user.role === "GURU" && (
-            <Button asChild className="w-full sm:w-fit" size="sm">
-              <Link href="/courses/add">
-                {t("Buat Kursus")}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+
+          {/* Clouds (siang hari saja) ☁️ */}
+          {isSunTime && (
+            <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+              <div className="absolute top-6 right-6 md:top-10 md:right-14 w-14 h-5 md:w-20 md:h-8 rounded-full blur-md bg-white/60 dark:bg-gray-300/30" />
+              <div className="absolute top-14 right-14 md:top-20 md:right-28 w-10 h-4 md:w-16 md:h-7 rounded-full blur-md bg-white/50 dark:bg-gray-300/25" />
+              <div className="absolute bottom-10 right-10 md:bottom-16 md:right-20 w-16 h-6 md:w-24 md:h-10 rounded-full blur-md bg-white/55 dark:bg-gray-300/28" />
+            </div>
           )}
-        </div>
+
+          {/* Content */}
+          <CardContent className="pt-4 md:pt-6 pb-4 md:pb-6 relative z-10 px-4 md:px-6">
+            <div className="flex flex-col items-start space-y-1.5 md:space-y-2.5">
+              {/* Tanggal & Waktu */}
+              <div className="flex items-center space-x-1.5 md:space-x-2 text-foreground animate-slide-in-left">
+                <Calendar className="h-3.5 w-3.5 md:h-4 md:w-4 flex-shrink-0" />
+                <p className="text-xs md:text-sm font-medium">
+                  {currentTime.toLocaleDateString(currentLocale === 'id' ? "id-ID" : "en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}{" "}
+                  - {currentTime.toLocaleTimeString(currentLocale === 'id' ? "id-ID" : "en-US")}
+                </p>
+              </div>
+
+              {/* Greeting */}
+              <p className="text-lg md:text-2xl lg:text-3xl text-foreground font-bold animate-scale-in">
+                {greeting()}, {user.nama.split(" ")[0]}! 👋
+              </p>
+
+              {/* Subtitle */}
+              <p className="text-xs md:text-sm text-muted-foreground max-w-md">
+                {user.role === "SISWA" && t("Pantau perkembangan belajar Anda")}
+                {user.role === "GURU" && t("Kelola kursus dan materi pembelajaran")}
+                {user.role === "ADMIN" && t("Ringkasan Sistem")}
+              </p>
+
+              {/* Role Badge */}
+              <div className={`inline-flex items-center px-2 py-1 md:px-3 md:py-1.5 rounded-full ${timeColors.cardBg} border ${timeColors.cardBorder} animate-slide-in-left`} style={{ animationDelay: "0.1s" }}>
+                <span className={`text-[10px] md:text-xs font-semibold ${timeColors.text} uppercase tracking-wide`}>
+                  {user.role === "SISWA" ? t("Siswa") : user.role === "GURU" ? t("Guru") : t("Administrator")}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </AnimateIn>
 
+      {/* Stats Cards */}
       <AnimateIn stagger={2}>
         <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
           {user.role === "SISWA" && stats && (
@@ -363,7 +552,7 @@ export default function DashboardPage() {
 
           {(user.role === "GURU" || user.role === "SISWA") && (
             <AnimateIn stagger={5}>
-              <Card className="border-border/50 p-3 sm:p-5">
+              <Card className="border-border/50 p-3 sm:p-5 mb-4 sm:mb-0">
                 <h3 className="mb-3 text-sm font-semibold sm:mb-4 sm:text-base">
                   {user.role === "SISWA" ? t("Siap Dikerjakan") : t("Asesmen Terbaru")}
                 </h3>
@@ -402,7 +591,7 @@ export default function DashboardPage() {
 
       {(user.role === "ADMIN" || user.role === "GURU" || user.role === "SISWA") && (
         <AnimateIn stagger={6}>
-          <Card className="border-border/50 p-3 sm:p-5">
+          <Card className="border-border/50 p-3 sm:p-5 mb-20 sm:mb-8">
             <h3 className="mb-3 text-sm font-semibold sm:mb-4 sm:text-base">{t("Aktivitas Terbaru")}</h3>
             <div className="grid gap-2 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
               {activities.slice(0, 4).map((activity, index) => (

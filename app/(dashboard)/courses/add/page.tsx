@@ -13,15 +13,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, ImageIcon, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
 import { AnimateIn } from "@/components/ui/animate-in"
+import { useAsyncAction } from "@/hooks/use-async-action"
 
 const categories = ["Programming", "Database", "Design", "Networking", "Security", "DevOps"]
 
 export default function AddCoursePage() {
   const router = useRouter()
   const { user } = useAuth()
-  const { error: showError, success: showSuccess, AlertComponent } = useSweetAlert()
+  const { error: showError, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [category, setCategory] = useState("")
@@ -49,40 +51,44 @@ export default function AddCoursePage() {
 
     setIsSubmitting(true)
 
-    try {
-      const response = await fetch("/api/courses", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          judul: title,
-          gambar: thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=300&fit=crop",
-          kategori: category,
-          guruId: user.id,
-        }),
-      })
+    await execute(
+      async () => {
+        const response = await fetch("/api/courses", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            judul: title,
+            gambar: thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=300&fit=crop",
+            kategori: category,
+            guruId: user.id,
+          }),
+        })
 
-      const data = await response.json()
+        const data = await response.json()
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to create course")
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to create course")
+        }
+      },
+      {
+        loadingMessage: "Membuat kursus...",
+        successTitle: "Berhasil!",
+        successDescription: "Kursus berhasil dibuat",
+        errorTitle: "Gagal",
+        autoCloseMs: 1500,
+        onSuccess: () => { router.push("/courses"); router.refresh() },
       }
+    )
 
-      await showSuccess("Success!", "Course created successfully")
-      router.push("/courses")
-      router.refresh()
-    } catch (error) {
-      console.error("Error creating course:", error)
-      showError("Error", error instanceof Error ? error.message : "Failed to create course")
-    } finally {
-      setIsSubmitting(false)
-    }
+    setIsSubmitting(false)
   }
 
   return (
     <div className="w-full space-y-6">
       <AlertComponent />
+      <ActionFeedback />
       
       <AnimateIn stagger={1}>
         <Card>

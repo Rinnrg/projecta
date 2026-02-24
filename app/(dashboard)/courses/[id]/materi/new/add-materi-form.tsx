@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
 import { Loader2 } from "lucide-react"
 import Link from "next/link"
 import { FileUploadField } from "@/components/file-upload-field"
+import { useAsyncAction } from "@/hooks/use-async-action"
 
 interface AddMateriFormProps {
   courseId: string
@@ -21,7 +22,8 @@ interface AddMateriFormProps {
 export default function AddMateriForm({ courseId, courseTitle }: AddMateriFormProps) {
   const router = useRouter()
   const { user } = useAuth()
-  const { error: showError, success: showSuccess, AlertComponent } = useSweetAlert()
+  const { error: showError, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     judul: "",
@@ -43,69 +45,71 @@ export default function AddMateriForm({ courseId, courseTitle }: AddMateriFormPr
     }
 
     setIsLoading(true)
-    try {
-      // Prepare the data to send
-      let bodyData: any = {
-        judul: formData.judul.trim(),
-        deskripsi: formData.deskripsi?.trim() || null,
-        courseId: courseId,
-        lampiran: null,
-        fileData: null,
-        fileName: null,
-        fileType: null,
-        fileSize: null,
-      }
-
-      // Check if lampiran is a data URL (uploaded file)
-      if (formData.lampiran && formData.lampiran.trim()) {
-        if (formData.lampiran.startsWith('data:')) {
-          // Extract file type from data URL
-          const matches = formData.lampiran.match(/^data:(.+?);base64,(.+)$/)
-          if (matches) {
-            const fileType = matches[1]
-            const fileData = matches[2]
-            
-            // Get file size from base64 string
-            const fileSize = Math.round((fileData.length * 3) / 4)
-            
-            bodyData.fileData = fileData
-            bodyData.fileType = fileType
-            bodyData.fileSize = fileSize
-            bodyData.fileName = `file_${Date.now()}`
-          }
-        } else {
-          // It's a URL
-          bodyData.lampiran = formData.lampiran
+    await execute(
+      async () => {
+        // Prepare the data to send
+        let bodyData: any = {
+          judul: formData.judul.trim(),
+          deskripsi: formData.deskripsi?.trim() || null,
+          courseId: courseId,
+          lampiran: null,
+          fileData: null,
+          fileName: null,
+          fileType: null,
+          fileSize: null,
         }
+
+        // Check if lampiran is a data URL (uploaded file)
+        if (formData.lampiran && formData.lampiran.trim()) {
+          if (formData.lampiran.startsWith('data:')) {
+            // Extract file type from data URL
+            const matches = formData.lampiran.match(/^data:(.+?);base64,(.+)$/)
+            if (matches) {
+              const fileType = matches[1]
+              const fileData = matches[2]
+              
+              // Get file size from base64 string
+              const fileSize = Math.round((fileData.length * 3) / 4)
+              
+              bodyData.fileData = fileData
+              bodyData.fileType = fileType
+              bodyData.fileSize = fileSize
+              bodyData.fileName = `file_${Date.now()}`
+            }
+          } else {
+            // It's a URL
+            bodyData.lampiran = formData.lampiran
+          }
+        }
+
+        const response = await fetch('/api/materi', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(bodyData),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to create materi')
+        }
+      },
+      {
+        loadingMessage: "Menambahkan materi...",
+        successTitle: "Berhasil!",
+        successDescription: "Materi berhasil ditambahkan",
+        errorTitle: "Gagal",
+        onSuccess: () => { router.push(`/courses/${courseId}`); router.refresh() },
       }
-
-      const response = await fetch('/api/materi', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bodyData),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create materi')
-      }
-
-      await showSuccess("Berhasil!", "Materi berhasil ditambahkan")
-      router.push(`/courses/${courseId}`)
-      router.refresh()
-    } catch (error) {
-      console.error('Error creating materi:', error)
-      showError("Error", error instanceof Error ? error.message : "Gagal menambahkan materi")
-    } finally {
-      setIsLoading(false)
-    }
+    )
+    setIsLoading(false)
   }
 
   return (
     <>
       <AlertComponent />
+      <ActionFeedback />
       
       <form onSubmit={handleSubmit}>
       <Card>

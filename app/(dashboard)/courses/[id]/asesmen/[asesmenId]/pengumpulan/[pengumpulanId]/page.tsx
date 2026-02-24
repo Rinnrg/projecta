@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
+import { useAsyncAction } from "@/hooks/use-async-action"
 import { 
   Download,
   Calendar,
@@ -37,7 +38,8 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
   const router = useRouter()
   const resolvedParams = use(params)
   const { id: courseId, asesmenId, pengumpulanId } = resolvedParams
-  const { success, error: showError, confirm, AlertComponent } = useSweetAlert()
+  const { error: showError, confirm, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
   const [pengumpulan, setPengumpulan] = useState<any>(null)
   const [asesmen, setAsesmen] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -99,37 +101,41 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
       confirmText: "Simpan",
       cancelText: "Batal",
       type: "warning",
-      onConfirm: async () => {
-        try {
-          const response = await fetch(`/api/pengumpulan/${pengumpulanId}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              nilai: nilaiNum,
-              catatan,
-            }),
-          })
-
-          if (!response.ok) {
-            const data = await response.json()
-            throw new Error(data.error || 'Failed to save')
-          }
-        } catch (error) {
-          console.error('Error saving nilai:', error)
-          throw error
-        }
-      },
     })
 
-    if (confirmed) {
-      await success("Berhasil!", "Nilai berhasil disimpan dan akan ditampilkan di detail asesmen siswa")
-      // Redirect ke detail asesmen setelah 1 detik
-      setTimeout(() => {
-        router.push(`/courses/${courseId}/asesmen/${asesmenId}`)
-      }, 1000)
-    }
+    if (!confirmed) return
+
+    await execute(
+      async () => {
+        const response = await fetch(`/api/pengumpulan/${pengumpulanId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            nilai: nilaiNum,
+            catatan,
+          }),
+        })
+
+        if (!response.ok) {
+          const data = await response.json()
+          throw new Error(data.error || 'Failed to save')
+        }
+      },
+      {
+        loadingMessage: "Menyimpan nilai...",
+        successTitle: "Berhasil!",
+        successDescription: "Nilai berhasil disimpan dan akan ditampilkan di detail asesmen siswa",
+        errorTitle: "Gagal",
+        autoCloseMs: 1500,
+        onSuccess: () => {
+          setTimeout(() => {
+            router.push(`/courses/${courseId}/asesmen/${asesmenId}`)
+          }, 1000)
+        },
+      }
+    )
   }
 
   if (authLoading || loading) {
@@ -149,6 +155,7 @@ export default function PengumpulanDetailPage({ params }: PageProps) {
   return (
     <div className="w-full py-6 sm:py-8 space-y-6">
       <AlertComponent />
+      <ActionFeedback />
       
       {/* Header */}
       <div className="space-y-4">

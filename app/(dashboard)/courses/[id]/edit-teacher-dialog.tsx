@@ -2,14 +2,19 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+import {
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalBody,
+} from "@/components/ui/responsive-modal"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Search, Check, Loader2 } from "lucide-react"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
+import { useAsyncAction } from "@/hooks/use-async-action"
 
 interface Teacher {
   id: string
@@ -37,7 +42,8 @@ export default function EditTeacherDialog({
   const [filteredTeachers, setFilteredTeachers] = useState<Teacher[]>([])
   const [loading, setLoading] = useState(false)
   const [updatingTeacherId, setUpdatingTeacherId] = useState<string | null>(null)
-  const { success, error: showError, AlertComponent } = useSweetAlert()
+  const { error: showError, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
 
   // Fetch teachers when dialog opens
   useEffect(() => {
@@ -86,57 +92,58 @@ export default function EditTeacherDialog({
     }
 
     setUpdatingTeacherId(teacherId)
-    try {
-      const response = await fetch(`/api/courses/${courseId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ guruId: teacherId }),
-      })
+    await execute(
+      async () => {
+        const response = await fetch(`/api/courses/${courseId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ guruId: teacherId }),
+        })
 
-      if (!response.ok) {
-        throw new Error("Gagal mengupdate guru pengampu")
+        if (!response.ok) {
+          throw new Error("Gagal mengupdate guru pengampu")
+        }
+      },
+      {
+        loadingMessage: "Mengupdate guru pengampu...",
+        successTitle: "Berhasil!",
+        successDescription: `${teacherName} telah ditetapkan sebagai guru pengampu`,
+        errorTitle: "Gagal",
+        onSuccess: () => { onOpenChange(false); router.refresh() },
       }
-
-      success("Berhasil", `${teacherName} telah ditetapkan sebagai guru pengampu`)
-      onOpenChange(false)
-      router.refresh()
-    } catch (error) {
-      console.error("Error updating teacher:", error)
-      showError("Error", "Gagal mengupdate guru pengampu")
-    } finally {
-      setUpdatingTeacherId(null)
-    }
+    )
+    setUpdatingTeacherId(null)
   }
 
   return (
     <>
       <AlertComponent />
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col p-0">
-          <DialogHeader className="px-6 pt-6 pb-4">
-            <DialogTitle>Edit Guru Pengampu</DialogTitle>
-            <DialogDescription>
-              Pilih guru yang akan mengampu kursus ini
-            </DialogDescription>
-          </DialogHeader>
+      <ActionFeedback />
+      <ResponsiveModal open={open} onOpenChange={onOpenChange}>
+        <ResponsiveModalContent className="max-w-2xl">
+          <ResponsiveModalHeader
+            title="Edit Guru Pengampu"
+            description="Pilih guru yang akan mengampu kursus ini"
+          />
 
-          {/* Search */}
-          <div className="px-6 pb-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Cari nama atau email guru..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
+          <ResponsiveModalBody>
+            {/* Search */}
+            <div className="pb-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cari nama atau email guru..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
             </div>
-          </div>
 
           {/* Teacher List */}
-          <ScrollArea className="flex-1 px-6">
+          <ScrollArea className="max-h-[50vh] sm:max-h-[40vh]">
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -148,71 +155,59 @@ export default function EditTeacherDialog({
                 </p>
               </div>
             ) : (
-              <div className="space-y-2 pb-6">
+              <div className="space-y-2">
                 {filteredTeachers.map((teacher) => {
                   const isCurrentTeacher = teacher.id === currentTeacherId
                   const isUpdating = updatingTeacherId === teacher.id
 
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={teacher.id}
-                      className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                      onClick={() => handleUpdateTeacher(teacher.id, teacher.nama)}
+                      disabled={isCurrentTeacher || isUpdating}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors text-left ${
                         isCurrentTeacher
                           ? "bg-primary/5 border-primary/20"
-                          : "hover:bg-muted/50"
-                      }`}
+                          : "hover:bg-muted/50 active:bg-muted/70"
+                      } disabled:opacity-60`}
                     >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <Avatar className="h-10 w-10 border-2 border-background">
-                          <AvatarImage src={teacher.foto || undefined} />
-                          <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                            {teacher.nama
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                              .toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium truncate">{teacher.nama}</p>
-                            {isCurrentTeacher && (
-                              <Badge variant="secondary" className="shrink-0">
-                                <Check className="h-3 w-3 mr-1" />
-                                Aktif
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {teacher.email}
-                          </p>
+                      <Avatar className="h-10 w-10 border-2 border-background shrink-0">
+                        <AvatarImage src={teacher.foto || undefined} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                          {teacher.nama
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium truncate text-sm">{teacher.nama}</p>
+                          {isCurrentTeacher && (
+                            <Badge variant="secondary" className="shrink-0 text-xs">
+                              <Check className="h-3 w-3 mr-1" />
+                              Aktif
+                            </Badge>
+                          )}
                         </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {teacher.email}
+                        </p>
                       </div>
-                      <Button
-                        size="sm"
-                        variant={isCurrentTeacher ? "secondary" : "default"}
-                        onClick={() => handleUpdateTeacher(teacher.id, teacher.nama)}
-                        disabled={isCurrentTeacher || isUpdating}
-                      >
-                        {isUpdating ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            Mengupdate...
-                          </>
-                        ) : isCurrentTeacher ? (
-                          "Guru Saat Ini"
-                        ) : (
-                          "Pilih"
-                        )}
-                      </Button>
-                    </div>
+                      {isUpdating && (
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground shrink-0" />
+                      )}
+                    </button>
                   )
                 })}
               </div>
             )}
           </ScrollArea>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveModalBody>
+        </ResponsiveModalContent>
+      </ResponsiveModal>
     </>
   )
 }

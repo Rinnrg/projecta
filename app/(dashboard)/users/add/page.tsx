@@ -11,12 +11,14 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { User, Mail, Lock, AtSign, Loader2 } from "lucide-react"
 import Link from "next/link"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
 import { AnimateIn } from "@/components/ui/animate-in"
+import { useAsyncAction } from "@/hooks/use-async-action"
 
 export default function AddUserPage() {
   const router = useRouter()
-  const { error: showError, success: showSuccess, AlertComponent } = useSweetAlert()
+  const { error: showError, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
   const [nama, setNama] = useState("")
   const [email, setEmail] = useState("")
   const [username, setUsername] = useState("")
@@ -28,7 +30,6 @@ export default function AddUserPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validasi form
     if (!nama.trim()) {
       showError("Error", "Full name is required")
       return
@@ -46,42 +47,46 @@ export default function AddUserPage() {
 
     setIsSubmitting(true)
 
-    try {
-      const response = await fetch("/api/users", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          nama,
-          email,
-          username: username || email.split('@')[0], // Default username from email if not provided
-          password: password || "password123", // Default password if not provided
-          role,
-          ...(role === "SISWA" && kelas && { kelas }),
-        }),
-      })
+    await execute(
+      async () => {
+        const response = await fetch("/api/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            nama,
+            email,
+            username: username || email.split('@')[0],
+            password: password || "password123",
+            role,
+            ...(role === "SISWA" && kelas && { kelas }),
+          }),
+        })
 
-      const data = await response.json()
+        const data = await response.json()
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to create user")
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to create user")
+        }
+      },
+      {
+        loadingMessage: "Membuat pengguna...",
+        successTitle: "Berhasil!",
+        successDescription: "Pengguna berhasil dibuat",
+        errorTitle: "Gagal",
+        autoCloseMs: 1500,
+        onSuccess: () => { router.push("/users"); router.refresh() },
       }
+    )
 
-      await showSuccess("Success!", "User created successfully")
-      router.push("/users")
-      router.refresh()
-    } catch (error) {
-      console.error("Error creating user:", error)
-      showError("Error", error instanceof Error ? error.message : "Failed to create user")
-    } finally {
-      setIsSubmitting(false)
-    }
+    setIsSubmitting(false)
   }
 
   return (
     <div className="w-full space-y-6">
       <AlertComponent />
+      <ActionFeedback />
       
       <AnimateIn stagger={1}>
         <Card>

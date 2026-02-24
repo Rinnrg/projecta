@@ -21,7 +21,9 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { FileUploadField } from "@/components/file-upload-field"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { DateTimePicker } from "@/components/ui/date-time-picker"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
+import { useAsyncAction } from "@/hooks/use-async-action"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Switch } from "@/components/ui/switch"
 
@@ -46,7 +48,8 @@ interface Soal {
 export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenFormProps) {
   const router = useRouter()
   const { user, isLoading: authLoading } = useAuth()
-  const { success, error: showError, AlertComponent } = useSweetAlert()
+  const { error: showError, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState<'basic' | 'questions'>('basic')
   const [soalList, setSoalList] = useState<Soal[]>([])
@@ -292,108 +295,98 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
     }
 
     setIsLoading(true)
-    try {
-      // Konversi datetime-local string ke ISO string agar timezone client terkirim dengan benar
-      const toISOWithTimezone = (dtLocal: string) => {
-        if (!dtLocal) return null
-        const d = new Date(dtLocal)
-        return isNaN(d.getTime()) ? null : d.toISOString()
-      }
+    await execute(
+      async () => {
+        // Konversi datetime-local string ke ISO string agar timezone client terkirim dengan benar
+        const toISOWithTimezone = (dtLocal: string) => {
+          if (!dtLocal) return null
+          const d = new Date(dtLocal)
+          return isNaN(d.getTime()) ? null : d.toISOString()
+        }
 
-      const bodyData: any = {
-        nama: formData.nama,
-        deskripsi: formData.deskripsi || null,
-        tipe: formData.tipe,
-        tipePengerjaan: formData.tipe === 'TUGAS' ? formData.tipePengerjaan : null,
-        tgl_mulai: toISOWithTimezone(formData.tgl_mulai),
-        tgl_selesai: toISOWithTimezone(formData.tgl_selesai),
-        durasi: formData.durasi ? parseInt(formData.durasi) : null,
-        courseId: courseId,
-        guruId: user.id,
-        antiCurang: formData.tipe === 'KUIS' ? formData.antiCurang : false,
-      }
+        const bodyData: any = {
+          nama: formData.nama,
+          deskripsi: formData.deskripsi || null,
+          tipe: formData.tipe,
+          tipePengerjaan: formData.tipe === 'TUGAS' ? formData.tipePengerjaan : null,
+          tgl_mulai: toISOWithTimezone(formData.tgl_mulai),
+          tgl_selesai: toISOWithTimezone(formData.tgl_selesai),
+          durasi: formData.durasi ? parseInt(formData.durasi) : null,
+          courseId: courseId,
+          guruId: user.id,
+          antiCurang: formData.tipe === 'KUIS' ? formData.antiCurang : false,
+        }
 
-      // Handle file upload for TUGAS
-      if (formData.tipe === 'TUGAS' && formData.lampiran) {
-        if (formData.lampiran.startsWith('data:')) {
-          // Extract file type from data URL
-          const matches = formData.lampiran.match(/^data:(.+?);base64,(.+)$/)
-          if (matches) {
-            const fileType = matches[1]
-            const fileData = matches[2]
-            
-            // Get file size from base64 string
-            const fileSize = Math.round((fileData.length * 3) / 4)
-            
-            bodyData.fileData = fileData
-            bodyData.fileType = fileType
-            bodyData.fileSize = fileSize
-            bodyData.fileName = `file_${Date.now()}`
-            bodyData.lampiran = null
+        // Handle file upload for TUGAS
+        if (formData.tipe === 'TUGAS' && formData.lampiran) {
+          if (formData.lampiran.startsWith('data:')) {
+            // Extract file type from data URL
+            const matches = formData.lampiran.match(/^data:(.+?);base64,(.+)$/)
+            if (matches) {
+              const fileType = matches[1]
+              const fileData = matches[2]
+              
+              // Get file size from base64 string
+              const fileSize = Math.round((fileData.length * 3) / 4)
+              
+              bodyData.fileData = fileData
+              bodyData.fileType = fileType
+              bodyData.fileSize = fileSize
+              bodyData.fileName = `file_${Date.now()}`
+              bodyData.lampiran = null
+            }
+          } else {
+            // It's a URL
+            bodyData.lampiran = formData.lampiran
           }
         } else {
-          // It's a URL
-          bodyData.lampiran = formData.lampiran
+          bodyData.lampiran = null
         }
-      } else {
-        bodyData.lampiran = null
-      }
 
-      // Tambahkan soal untuk KUIS
-      if (formData.tipe === 'KUIS') {
-        bodyData.soal = soalList.map(s => ({
-          pertanyaan: s.pertanyaan,
-          gambar: s.gambar || null,
-          bobot: s.bobot,
-          tipeJawaban: s.tipeJawaban,
-          opsi: s.tipeJawaban === 'PILIHAN_GANDA' 
-            ? s.opsi.filter(o => o.teks.trim() !== "").map(o => ({
-                teks: o.teks,
-                isBenar: o.isBenar
-              }))
-            : []
-        }))
-      }
+        // Tambahkan soal untuk KUIS
+        if (formData.tipe === 'KUIS') {
+          bodyData.soal = soalList.map(s => ({
+            pertanyaan: s.pertanyaan,
+            gambar: s.gambar || null,
+            bobot: s.bobot,
+            tipeJawaban: s.tipeJawaban,
+            opsi: s.tipeJawaban === 'PILIHAN_GANDA' 
+              ? s.opsi.filter(o => o.teks.trim() !== "").map(o => ({
+                  teks: o.teks,
+                  isBenar: o.isBenar
+                }))
+              : []
+          }))
+        }
 
-      console.log('Sending data to API:', {
-        ...bodyData,
-        fileData: bodyData.fileData ? '(base64 data)' : null
-      })
+        const response = await fetch('/api/asesmen', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(bodyData),
+        })
 
-      const response = await fetch('/api/asesmen', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+        const responseData = await response.json()
+
+        if (!response.ok) {
+          throw new Error(responseData.error || responseData.details || 'Failed to create asesmen')
+        }
+      },
+      {
+        loadingMessage: "Membuat asesmen...",
+        successTitle: "Berhasil!",
+        successDescription: "Asesmen berhasil dibuat",
+        errorTitle: "Gagal Membuat Asesmen",
+        onSuccess: () => {
+          setTimeout(() => {
+            router.push(`/courses/${courseId}`)
+            router.refresh()
+          }, 1500)
         },
-        body: JSON.stringify(bodyData),
-      })
-
-      console.log('Response status:', response.status)
-      const responseData = await response.json()
-      console.log('Response data:', responseData)
-
-      if (!response.ok) {
-        throw new Error(responseData.error || responseData.details || 'Failed to create asesmen')
       }
-
-      // Tampilkan Sweet Alert sukses
-      success("Berhasil!", "Asesmen berhasil dibuat")
-      
-      // Tunggu sebentar agar user melihat alert, lalu redirect
-      setTimeout(() => {
-        router.push(`/courses/${courseId}`)
-        router.refresh()
-      }, 1500)
-      
-    } catch (error) {
-      console.error('Error creating asesmen:', error)
-      showError(
-        "Gagal Membuat Asesmen",
-        error instanceof Error ? error.message : "Terjadi kesalahan saat membuat asesmen"
-      )
-    } finally {
-      setIsLoading(false)
-    }
+    )
+    setIsLoading(false)
   }
 
   // Render step pertanyaan untuk KUIS
@@ -401,6 +394,7 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
     return (
       <>
         <AlertComponent />
+        <ActionFeedback />
         
         <div className="space-y-6">
         {soalList.length > 0 && (
@@ -580,6 +574,7 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
   return (
     <>
       <AlertComponent />
+      <ActionFeedback />
       
       <form onSubmit={(e) => {
         e.preventDefault()
@@ -689,21 +684,21 @@ export default function AddAsesmenForm({ courseId, courseTitle }: AddAsesmenForm
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="tgl_mulai">Tanggal Mulai</Label>
-              <Input
+              <DateTimePicker
                 id="tgl_mulai"
-                type="datetime-local"
                 value={formData.tgl_mulai}
-                onChange={(e) => setFormData({ ...formData, tgl_mulai: e.target.value })}
+                onChange={(val) => setFormData({ ...formData, tgl_mulai: val })}
+                placeholder="Pilih tanggal & waktu mulai"
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="tgl_selesai">Tanggal Selesai</Label>
-              <Input
+              <DateTimePicker
                 id="tgl_selesai"
-                type="datetime-local"
                 value={formData.tgl_selesai}
-                onChange={(e) => setFormData({ ...formData, tgl_selesai: e.target.value })}
+                onChange={(val) => setFormData({ ...formData, tgl_selesai: val })}
+                placeholder="Pilih tanggal & waktu selesai"
               />
             </div>
           </div>

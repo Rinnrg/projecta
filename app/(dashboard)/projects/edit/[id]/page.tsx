@@ -11,10 +11,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { FileUploadField } from "@/components/file-upload-field"
-import { Edit, Calendar } from "lucide-react"
+import { DatePicker } from "@/components/ui/date-time-picker"
+import { Edit } from "lucide-react"
 import Link from "next/link"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
 import { AnimateIn } from "@/components/ui/animate-in"
+import { useAsyncAction } from "@/hooks/use-async-action"
 import { SINTAKS_MAP, SINTAKS_KEYS, SintaksKey } from "@/lib/constants/project"
 
 interface Proyek {
@@ -36,7 +38,8 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
   const { user } = useAuth()
   const { t } = useAutoTranslate()
   const router = useRouter()
-  const { success, error: showError, AlertComponent } = useSweetAlert()
+  const { error: showError, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
 
   const [proyek, setProyek] = useState<Proyek | null>(null)
   const [loading, setLoading] = useState(true)
@@ -146,25 +149,31 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
     try {
       setIsSubmitting(true)
       
-      const response = await fetch(`/api/proyek/${params.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+      await execute(
+        async () => {
+          const response = await fetch(`/api/proyek/${params.id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(formData),
+          })
+
+          const data = await response.json()
+
+          if (!response.ok) {
+            throw new Error(data.error || t("Gagal mengupdate proyek"))
+          }
         },
-        body: JSON.stringify(formData),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        await success(t("Berhasil"), t("Proyek berhasil diupdate"))
-        router.push(`/projects/${params.id}`)
-      } else {
-        showError(t("Gagal"), data.error || t("Gagal mengupdate proyek"))
-      }
-    } catch (error) {
-      console.error("Error updating project:", error)
-      showError(t("Error"), t("Terjadi kesalahan saat mengupdate proyek"))
+        {
+          loadingMessage: t("Menyimpan perubahan..."),
+          successTitle: t("Berhasil"),
+          successDescription: t("Proyek berhasil diupdate"),
+          errorTitle: t("Gagal"),
+          autoCloseMs: 1500,
+          onSuccess: () => router.push(`/projects/${params.id}`),
+        }
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -219,6 +228,7 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
   return (
     <div className="w-full">
       <AlertComponent />
+      <ActionFeedback />
       
       {/* Header */}
       <AnimateIn>
@@ -282,37 +292,29 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
                   <Label htmlFor="tgl_mulai" className="text-sm font-medium">
                     {t("Tanggal Mulai")} <span className="text-red-500">*</span>
                   </Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="tgl_mulai"
-                      name="tgl_mulai"
-                      type="date"
-                      value={formData.tgl_mulai}
-                      onChange={handleInputChange}
-                      required
-                      className="pl-9"
-                    />
-                  </div>
+                  <DatePicker
+                    id="tgl_mulai"
+                    name="tgl_mulai"
+                    value={formData.tgl_mulai}
+                    onChange={(val) => setFormData(prev => ({ ...prev, tgl_mulai: val }))}
+                    required
+                    placeholder={t("Pilih tanggal mulai")}
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="tgl_selesai" className="text-sm font-medium">
                     {t("Tanggal Selesai")} <span className="text-red-500">*</span>
                   </Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="tgl_selesai"
-                      name="tgl_selesai"
-                      type="date"
-                      value={formData.tgl_selesai}
-                      onChange={handleInputChange}
-                      min={formData.tgl_mulai}
-                      required
-                      className="pl-9"
-                    />
-                  </div>
+                  <DatePicker
+                    id="tgl_selesai"
+                    name="tgl_selesai"
+                    value={formData.tgl_selesai}
+                    onChange={(val) => setFormData(prev => ({ ...prev, tgl_selesai: val }))}
+                    min={formData.tgl_mulai}
+                    required
+                    placeholder={t("Pilih tanggal selesai")}
+                  />
                 </div>
               </div>
 

@@ -35,7 +35,7 @@ import {
   ClipboardList,
 } from "lucide-react"
 import Link from "next/link"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
 
 interface PageProps {
   params: Promise<{ 
@@ -56,7 +56,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
   const [showPdfViewer, setShowPdfViewer] = useState(false)
   const [activeTab, setActiveTab] = useState("info")
   const [tabKey, setTabKey] = useState(0) // For re-render animation
-  const { confirm, AlertComponent } = useSweetAlert()
+  const { confirm, AlertComponent } = useAdaptiveAlert()
 
   useEffect(() => {
     if (authLoading) return

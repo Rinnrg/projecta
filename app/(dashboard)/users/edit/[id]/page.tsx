@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User, Mail, Lock, AtSign, Upload, Loader2 } from "lucide-react"
 import Link from "next/link"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
+import { useAsyncAction } from "@/hooks/use-async-action"
 import { AnimateIn } from "@/components/ui/animate-in"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
 
@@ -19,7 +20,8 @@ export default function EditUserPage() {
   const router = useRouter()
   const params = useParams()
   const { t } = useAutoTranslate()
-  const { success, error: showError, AlertComponent } = useSweetAlert()
+  const { error: showError, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
   const userId = params.id as string
 
   const [loading, setLoading] = useState(true)
@@ -81,37 +83,41 @@ export default function EditUserPage() {
     e.preventDefault()
     setSubmitting(true)
 
-    try {
-      const response = await fetch(`/api/users/${userId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+    await execute(
+      async () => {
+        const response = await fetch(`/api/users/${userId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            nama,
+            email,
+            username,
+            ...(password && { password }),
+            role,
+            ...(role === "SISWA" && kelas && { kelas }),
+            foto: previewImage,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to update user")
+        }
+      },
+      {
+        loadingMessage: t("Menyimpan pengguna..."),
+        successTitle: t("Berhasil!"),
+        successDescription: t("Data pengguna berhasil diperbarui"),
+        errorTitle: t("Gagal"),
+        onSuccess: () => {
+          setTimeout(() => {
+            router.push("/users")
+          }, 1500)
         },
-        body: JSON.stringify({
-          nama,
-          email,
-          username,
-          ...(password && { password }),
-          role,
-          ...(role === "SISWA" && kelas && { kelas }),
-          foto: previewImage,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to update user")
       }
-
-      success(t("Berhasil"), t("Data pengguna berhasil diperbarui"))
-      setTimeout(() => {
-        router.push("/users")
-      }, 1500)
-    } catch (err) {
-      showError(t("Terjadi kesalahan"), t("Gagal memperbarui data pengguna"))
-      console.error(err)
-    } finally {
-      setSubmitting(false)
-    }
+    )
+    setSubmitting(false)
   }
 
   if (loading) {
@@ -128,6 +134,7 @@ export default function EditUserPage() {
   return (
     <div className="w-full space-y-4 sm:space-y-6">
       <AlertComponent />
+      <ActionFeedback />
 
       <AnimateIn stagger={1}>
         <Card>

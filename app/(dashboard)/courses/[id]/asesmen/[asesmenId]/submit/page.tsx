@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { FileUploadField } from "@/components/file-upload-field"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
+import { useAsyncAction } from "@/hooks/use-async-action"
 import { 
   Upload, 
   Loader2,
@@ -33,7 +34,8 @@ export default function SubmitAsesmenPage({ params }: PageProps) {
   const router = useRouter()
   const resolvedParams = use(params)
   const { id: courseId, asesmenId } = resolvedParams
-  const { confirm, success, error: showError, AlertComponent } = useSweetAlert()
+  const { confirm, error: showError, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
   
   const [asesmen, setAsesmen] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -134,53 +136,48 @@ export default function SubmitAsesmenPage({ params }: PageProps) {
         confirmText: existingSubmission ? "Perbarui" : "Kumpulkan",
         cancelText: "Batal",
         type: "info",
-        onConfirm: async () => {
-          try {
-            const payload = {
-              siswaId: user?.id,
-              namaKelompok: asesmen.tipePengerjaan === 'KELOMPOK' ? namaKelompok : null,
-              ketua: asesmen.tipePengerjaan === 'KELOMPOK' ? ketua : null,
-              anggota: asesmen.tipePengerjaan === 'KELOMPOK' ? anggota : null,
-              fileUrl,
-            }
-            
-            console.log('Submitting payload:', payload)
-            
-            const response = await fetch(`/api/asesmen/${asesmenId}/submit`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload),
-            })
-            
-            console.log('Response status:', response.status)
-            const responseData = await response.json()
-            console.log('Response data:', responseData)
-            
-            if (!response.ok) {
-              throw new Error(responseData.error || "Gagal mengumpulkan tugas")
-            }
-            
-            return responseData
-          } catch (error) {
-            console.error('Error submitting:', error)
-            throw error
-          }
-        }
       }
     )
     
-    if (confirmed) {
-      success(
-        "Berhasil!",
-        existingSubmission 
+    if (!confirmed) return
+
+    await execute(
+      async () => {
+        const payload = {
+          siswaId: user?.id,
+          namaKelompok: asesmen.tipePengerjaan === 'KELOMPOK' ? namaKelompok : null,
+          ketua: asesmen.tipePengerjaan === 'KELOMPOK' ? ketua : null,
+          anggota: asesmen.tipePengerjaan === 'KELOMPOK' ? anggota : null,
+          fileUrl,
+        }
+        
+        const response = await fetch(`/api/asesmen/${asesmenId}/submit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        
+        const responseData = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(responseData.error || "Gagal mengumpulkan tugas")
+        }
+      },
+      {
+        loadingMessage: existingSubmission ? "Memperbarui tugas..." : "Mengumpulkan tugas...",
+        successTitle: "Berhasil!",
+        successDescription: existingSubmission 
           ? "Tugas berhasil diperbarui" 
-          : "Tugas berhasil dikumpulkan"
-      )
-      // Redirect after a short delay to let user see the success message
-      setTimeout(() => {
-        router.push(`/courses/${courseId}/asesmen/${asesmenId}`)
-      }, 1500)
-    }
+          : "Tugas berhasil dikumpulkan",
+        errorTitle: "Gagal",
+        autoCloseMs: 1500,
+        onSuccess: () => {
+          setTimeout(() => {
+            router.push(`/courses/${courseId}/asesmen/${asesmenId}`)
+          }, 1500)
+        },
+      }
+    )
   }
 
   if (authLoading || loading) {
@@ -204,6 +201,7 @@ export default function SubmitAsesmenPage({ params }: PageProps) {
   return (
     <div className="w-full py-6 sm:py-8 space-y-6">
       <AlertComponent />
+      <ActionFeedback />
       
       {/* Header */}
       <div className="space-y-4">

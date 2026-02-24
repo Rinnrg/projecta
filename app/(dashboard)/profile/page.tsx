@@ -20,7 +20,8 @@ import { id as idLocale, enUS } from "date-fns/locale"
 import { AnimateIn } from "@/components/ui/animate-in"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
 import { useTheme } from "next-themes"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
+import { useAsyncAction } from "@/hooks/use-async-action"
 import { AvatarCropDialog } from "@/components/ui/avatar-crop-dialog"
 import { uploadProfilePhoto } from "../settings/actions"
 import { useRouter } from "next/navigation"
@@ -60,7 +61,8 @@ export default function ProfilePage() {
   const { t, locale, setLocale } = useAutoTranslate()
   const { theme, setTheme } = useTheme()
   const router = useRouter()
-  const { confirm, success, error: showError, AlertComponent } = useSweetAlert()
+  const { confirm, error: showError, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
   const [activeTab, setActiveTab] = useState(user?.role === "GURU" ? "courses" : "showcase")
   const [tabKey, setTabKey] = useState(0) // For re-render animation
   const [searchQuery, setSearchQuery] = useState("")
@@ -110,9 +112,17 @@ export default function ProfilePage() {
   }, [user])
 
   // Settings handlers
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaved(true)
-    success(t("Berhasil"), t("Profil berhasil disimpan"))
+    await execute(
+      async () => { /* profile save logic */ },
+      {
+        loadingMessage: t("Menyimpan profil..."),
+        successTitle: t("Berhasil!"),
+        successDescription: t("Profil berhasil disimpan"),
+        skipSuccessDialog: false,
+      }
+    )
     setTimeout(() => setSaved(false), 2000)
   }
 
@@ -134,24 +144,26 @@ export default function ProfilePage() {
 
   const handleCropComplete = async (blob: Blob) => {
     if (!user?.id) return
-    try {
-      setUploading(true)
-      const formData = new FormData()
-      formData.append('photo', blob, 'profile.jpg')
-      const result = await uploadProfilePhoto(user.id, formData)
-      if (result.success) {
-        success(t("Berhasil"), t("Foto profil berhasil diperbarui"))
+    setUploading(true)
+    await execute(
+      async () => {
+        const formData = new FormData()
+        formData.append('photo', blob, 'profile.jpg')
+        const result = await uploadProfilePhoto(user.id, formData)
+        if (!result.success) {
+          throw new Error(result.error || t("Terjadi kesalahan saat mengupload foto"))
+        }
         await refreshUser()
         router.refresh()
-      } else {
-        showError(t("Gagal Upload"), result.error || t("Terjadi kesalahan saat mengupload foto"))
+      },
+      {
+        loadingMessage: t("Mengupload foto..."),
+        successTitle: t("Berhasil!"),
+        successDescription: t("Foto profil berhasil diperbarui"),
+        errorTitle: t("Gagal Upload"),
       }
-    } catch (error) {
-      console.error('Error in handleCropComplete:', error)
-      showError("Error", t("Terjadi kesalahan saat mengupload foto"))
-    } finally {
-      setUploading(false)
-    }
+    )
+    setUploading(false)
   }
 
   const handleAvatarClick = () => {
@@ -166,7 +178,14 @@ export default function ProfilePage() {
       type: "question",
     })
     if (confirmed) {
-      success(t("Berhasil"), t("Kata sandi berhasil diperbarui"))
+      await execute(
+        async () => { /* password update logic */ },
+        {
+          loadingMessage: t("Memperbarui kata sandi..."),
+          successTitle: t("Berhasil!"),
+          successDescription: t("Kata sandi berhasil diperbarui"),
+        }
+      )
     }
   }
 
@@ -231,6 +250,7 @@ export default function ProfilePage() {
   return (
     <div className="w-full space-y-4 sm:space-y-6">
       <AlertComponent />
+      <ActionFeedback />
 
       <AnimateIn stagger={0}>
         <Card>
@@ -301,7 +321,7 @@ export default function ProfilePage() {
                 setSettingsTab(value)
                 setSettingsTabKey(prev => prev + 1)
               }} className="space-y-4 sm:space-y-6">
-                <div className="overflow-x-auto pb-2 scrollbar-hide">
+                <div className="overflow-visible">
                   <TabsList className="inline-flex w-max sm:w-auto">
                     <TabsTrigger value="profile" className="gap-1.5 text-xs sm:gap-2 sm:text-sm">
                       <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -540,7 +560,7 @@ export default function ProfilePage() {
           setActiveTab(value)
           setTabKey(prev => prev + 1) // Trigger re-render for animation
         }} className="space-y-4 sm:space-y-6">
-          <div className="overflow-x-auto pb-2 scrollbar-hide">
+          <div className="overflow-visible">
             <TabsList className="inline-flex w-max sm:w-auto">
               {user?.role !== "GURU" && (
                 <TabsTrigger value="showcase" className="gap-1.5 text-xs sm:gap-2 sm:text-sm">

@@ -40,9 +40,10 @@ import {
 import Link from "next/link"
 import { format } from "date-fns"
 import { id as idLocale, enUS } from "date-fns/locale"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
 import { AnimateIn } from "@/components/ui/animate-in"
 import { cn } from "@/lib/utils"
+import { useAsyncAction } from "@/hooks/use-async-action"
 
 export default function UsersPage() {
   const { t, locale: currentLocale, setLocale } = useAutoTranslate()
@@ -54,7 +55,8 @@ export default function UsersPage() {
   const [importStep, setImportStep] = useState<"choose" | "uploading" | "success" | "error" | "download-template">("choose")
   const [importResult, setImportResult] = useState<{ message: string; success: number; failed: number; errors: string[]; importedUsers: { nama: string; email: string; username: string; role: string; kelas?: string }[] } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const { confirm, success, error: showError, AlertComponent } = useSweetAlert()
+  const { confirm, error: showError, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
   const { users, loading, error, refetch } = useUsers()
 
   const dateLocale = currentLocale === 'id' ? idLocale : enUS
@@ -101,23 +103,25 @@ export default function UsersPage() {
       cancelText: t("Batal"),
       type: "warning",
       onConfirm: async () => {
-        try {
-          const response = await fetch(`/api/users/${userId}`, {
-            method: 'DELETE',
-          })
-
-          const data = await response.json()
-
-          if (!response.ok) {
-            throw new Error(data.error || 'Gagal menghapus user')
+        await execute(
+          async () => {
+            const response = await fetch(`/api/users/${userId}`, {
+              method: 'DELETE',
+            })
+            const data = await response.json()
+            if (!response.ok) {
+              throw new Error(data.error || 'Gagal menghapus user')
+            }
+            await refetch()
+          },
+          {
+            loadingMessage: t("Menghapus pengguna..."),
+            successTitle: t("Berhasil"),
+            successDescription: `"${userName}" ${t("berhasil dihapus")}`,
+            errorTitle: t("Gagal"),
+            autoCloseMs: 1500,
           }
-
-          await refetch()
-          success(t("Berhasil"), `"${userName}" ${t("berhasil dihapus")}`)
-        } catch (err) {
-          console.error('Error deleting user:', err)
-          showError("Gagal", (err as Error).message || "Terjadi kesalahan saat menghapus user")
-        }
+        )
       },
     })
   }
@@ -205,6 +209,7 @@ export default function UsersPage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <AlertComponent />
+      <ActionFeedback />
 
       <AnimateIn stagger={0}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">

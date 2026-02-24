@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
 import { Loader2, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { FileUploadField } from "@/components/file-upload-field"
+import { useAsyncAction } from "@/hooks/use-async-action"
 
 interface MateriData {
   id: string
@@ -36,7 +37,8 @@ interface EditMateriClientProps {
 export default function EditMateriClient({ materi }: EditMateriClientProps) {
   const router = useRouter()
   const { user, isLoading: authLoading } = useAuth()
-  const { error: showError, success: showSuccess, confirm, AlertComponent } = useSweetAlert()
+  const { error: showError, confirm, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
   const [isLoading, setIsLoading] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [formData, setFormData] = useState({
@@ -78,64 +80,58 @@ export default function EditMateriClient({ materi }: EditMateriClientProps) {
     }
 
     setIsLoading(true)
-    try {
-      // Prepare the data to send
-      let bodyData: any = {
-        judul: formData.judul.trim(),
-        deskripsi: formData.deskripsi?.trim() || null,
-        lampiran: null,
-        fileData: null,
-        fileName: null,
-        fileType: null,
-        fileSize: null,
-      }
-
-      // Check if lampiran is a data URL (uploaded file)
-      if (formData.lampiran && formData.lampiran.trim()) {
-        if (formData.lampiran.startsWith('data:')) {
-          // Extract file type from data URL
-          const matches = formData.lampiran.match(/^data:(.+?);base64,(.+)$/)
-          if (matches) {
-            const fileType = matches[1]
-            const fileData = matches[2]
-            
-            // Get file size from base64 string
-            const fileSize = Math.round((fileData.length * 3) / 4)
-            
-            bodyData.fileData = fileData
-            bodyData.fileType = fileType
-            bodyData.fileSize = fileSize
-            bodyData.fileName = `file_${Date.now()}`
-          }
-        } else if (!formData.lampiran.startsWith('/api/')) {
-          // It's a URL (not the existing file API path)
-          bodyData.lampiran = formData.lampiran
+    await execute(
+      async () => {
+        // Prepare the data to send
+        let bodyData: any = {
+          judul: formData.judul.trim(),
+          deskripsi: formData.deskripsi?.trim() || null,
+          lampiran: null,
+          fileData: null,
+          fileName: null,
+          fileType: null,
+          fileSize: null,
         }
-        // If it's /api/materi/[id]/file, we keep the existing file (no changes)
+
+        // Check if lampiran is a data URL (uploaded file)
+        if (formData.lampiran && formData.lampiran.trim()) {
+          if (formData.lampiran.startsWith('data:')) {
+            const matches = formData.lampiran.match(/^data:(.+?);base64,(.+)$/)
+            if (matches) {
+              const fileType = matches[1]
+              const fileData = matches[2]
+              const fileSize = Math.round((fileData.length * 3) / 4)
+              bodyData.fileData = fileData
+              bodyData.fileType = fileType
+              bodyData.fileSize = fileSize
+              bodyData.fileName = `file_${Date.now()}`
+            }
+          } else if (!formData.lampiran.startsWith('/api/')) {
+            bodyData.lampiran = formData.lampiran
+          }
+        }
+
+        const response = await fetch(`/api/materi/${materi.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bodyData),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to update materi')
+        }
+      },
+      {
+        loadingMessage: "Menyimpan materi...",
+        successTitle: "Berhasil!",
+        successDescription: "Materi berhasil diperbarui",
+        errorTitle: "Gagal",
+        autoCloseMs: 1500,
+        onSuccess: () => { router.push(`/courses/${materi.course.id}`); router.refresh() },
       }
-
-      const response = await fetch(`/api/materi/${materi.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bodyData),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to update materi')
-      }
-
-      await showSuccess("Berhasil!", "Materi berhasil diperbarui")
-      router.push(`/courses/${materi.course.id}`)
-      router.refresh()
-    } catch (error) {
-      console.error('Error updating materi:', error)
-      showError("Error", error instanceof Error ? error.message : "Gagal memperbarui materi")
-    } finally {
-      setIsLoading(false)
-    }
+    )
+    setIsLoading(false)
   }
 
   const handleDelete = async () => {
@@ -149,25 +145,27 @@ export default function EditMateriClient({ materi }: EditMateriClientProps) {
     if (!confirmed) return
 
     setIsDeleting(true)
-    try {
-      const response = await fetch(`/api/materi/${materi.id}`, {
-        method: 'DELETE',
-      })
+    await execute(
+      async () => {
+        const response = await fetch(`/api/materi/${materi.id}`, {
+          method: 'DELETE',
+        })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to delete materi')
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to delete materi')
+        }
+      },
+      {
+        loadingMessage: "Menghapus materi...",
+        successTitle: "Berhasil!",
+        successDescription: "Materi berhasil dihapus",
+        errorTitle: "Gagal",
+        autoCloseMs: 1500,
+        onSuccess: () => { router.push(`/courses/${materi.course.id}`); router.refresh() },
       }
-
-      await showSuccess("Berhasil!", "Materi berhasil dihapus")
-      router.push(`/courses/${materi.course.id}`)
-      router.refresh()
-    } catch (error) {
-      console.error('Error deleting materi:', error)
-      showError("Error", error instanceof Error ? error.message : "Gagal menghapus materi")
-    } finally {
-      setIsDeleting(false)
-    }
+    )
+    setIsDeleting(false)
   }
 
   if (authLoading) {
@@ -185,6 +183,7 @@ export default function EditMateriClient({ materi }: EditMateriClientProps) {
   return (
     <>
       <AlertComponent />
+      <ActionFeedback />
       
       <form onSubmit={handleSubmit}>
         <Card>

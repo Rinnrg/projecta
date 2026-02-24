@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
+import { useAsyncAction } from "@/hooks/use-async-action"
 import { 
   Loader2,
   Clock,
@@ -53,7 +54,8 @@ export default function KuisPage({ params }: PageProps) {
   const router = useRouter()
   const resolvedParams = use(params)
   const { id: courseId, asesmenId } = resolvedParams
-  const { confirm, success, error: showError, warning: showWarning, AlertComponent } = useSweetAlert()
+  const { confirm, error: showError, warning: showWarning, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
   
   const [asesmen, setAsesmen] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -386,13 +388,20 @@ export default function KuisPage({ params }: PageProps) {
         sessionStorage.removeItem(`kuis_start_${asesmenId}`)
         sessionStorage.removeItem(`kuis_leave_${asesmenId}`)
         setHasSubmitted(true)
-        success(
-          "Berhasil!",
-          "Waktu habis! Kuis telah dikumpulkan secara otomatis."
+        await execute(
+          async () => {},
+          {
+            loadingMessage: "Mengumpulkan kuis...",
+            successTitle: "Berhasil!",
+            successDescription: "Waktu habis! Kuis telah dikumpulkan secara otomatis.",
+            autoCloseMs: 2000,
+            onSuccess: () => {
+              setTimeout(() => {
+                router.push(`/courses/${courseId}/asesmen/${asesmenId}`)
+              }, 2000)
+            },
+          }
         )
-        setTimeout(() => {
-          router.push(`/courses/${courseId}/asesmen/${asesmenId}`)
-        }, 2000)
       } catch {
         isSubmittingRef.current = false
       }
@@ -406,18 +415,30 @@ export default function KuisPage({ params }: PageProps) {
         confirmText: "Kumpulkan",
         cancelText: "Batal",
         type: "warning",
-        onConfirm: doSubmit,
       }
     )
     
     if (confirmed) {
-      sessionStorage.removeItem(`kuis_start_${asesmenId}`)
-      sessionStorage.removeItem(`kuis_leave_${asesmenId}`)
-      setHasSubmitted(true)
-      success("Berhasil!", "Kuis berhasil dikumpulkan")
-      setTimeout(() => {
-        router.push(`/courses/${courseId}/asesmen/${asesmenId}`)
-      }, 2000)
+      await execute(
+        async () => {
+          await doSubmit()
+        },
+        {
+          loadingMessage: "Mengumpulkan kuis...",
+          successTitle: "Berhasil!",
+          successDescription: "Kuis berhasil dikumpulkan",
+          errorTitle: "Gagal",
+          autoCloseMs: 2000,
+          onSuccess: () => {
+            sessionStorage.removeItem(`kuis_start_${asesmenId}`)
+            sessionStorage.removeItem(`kuis_leave_${asesmenId}`)
+            setHasSubmitted(true)
+            setTimeout(() => {
+              router.push(`/courses/${courseId}/asesmen/${asesmenId}`)
+            }, 2000)
+          },
+        }
+      )
     } else {
       isSubmittingRef.current = false
     }
@@ -471,6 +492,7 @@ export default function KuisPage({ params }: PageProps) {
   return (
     <div className="w-full py-6 sm:py-8 space-y-6">
       <AlertComponent />
+      <ActionFeedback />
       
       {/* Anti-cheat leave countdown overlay */}
       {antiCurang && leaveCountdown !== null && leaveCount <= 10 && (

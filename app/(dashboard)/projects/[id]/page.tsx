@@ -24,7 +24,7 @@ import Link from "next/link"
 import { format, isPast, isFuture, isWithinInterval } from "date-fns"
 import { id as idLocale, enUS } from "date-fns/locale"
 import { AnimateIn } from "@/components/ui/animate-in"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
 import ProjectGroupsManagement from "@/components/project-groups-management"
 import { SINTAKS_MAP, getSintaksInfo } from "@/lib/constants/project"
 
@@ -60,7 +60,7 @@ interface Proyek {
 export default function ProjectDetailPage({ params }: { params: { id: string } }) {
   const { user } = useAuth()
   const { t, locale } = useAutoTranslate()
-  const { error: showError, AlertComponent } = useSweetAlert()
+  const { error: showError, AlertComponent } = useAdaptiveAlert()
   
   const [proyek, setProyek] = useState<Proyek | null>(null)
   const [loading, setLoading] = useState(true)
@@ -266,7 +266,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
       {/* Main Content */}
       <AnimateIn stagger={1}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          <div className="overflow-x-auto pb-2 scrollbar-hide">
+          <div className="overflow-visible">
             <TabsList className="inline-flex w-max sm:w-auto">
               <TabsTrigger value="overview" className="text-xs sm:text-sm">{t("Overview")}</TabsTrigger>
               <TabsTrigger value="kelompok" className="text-xs sm:text-sm">{t("Kelompok")}</TabsTrigger>

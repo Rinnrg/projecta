@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
+import { useBreadcrumbPage } from "@/hooks/use-breadcrumb"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,7 +27,8 @@ import Link from "next/link"
 import { format, isPast, isFuture, isWithinInterval } from "date-fns"
 import { id as idLocale, enUS } from "date-fns/locale"
 import { AnimateIn } from "@/components/ui/animate-in"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
+import { useAsyncAction } from "@/hooks/use-async-action"
 import { SINTAKS_MAP } from "@/lib/constants/project"
 
 interface Proyek {
@@ -64,7 +66,23 @@ interface Proyek {
 export default function ProjectsPage() {
   const { user } = useAuth()
   const { t, locale } = useAutoTranslate()
-  const { success, error: showError, confirm, AlertComponent } = useSweetAlert()
+  const { error: showError, confirm, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
+  
+  // Set custom breadcrumb with useMemo to prevent re-renders
+  const breadcrumbItems = useMemo(() => [
+    {
+      label: 'Dashboard',
+      href: '/dashboard',
+      icon: <BookOpen className="h-4 w-4" />
+    },
+    {
+      label: 'Proyek',
+      icon: <BookOpen className="h-4 w-4" />
+    }
+  ], [])
+  
+  useBreadcrumbPage(breadcrumbItems)
   
   const [proyeks, setProyeks] = useState<Proyek[]>([])
   const [loading, setLoading] = useState(true)
@@ -131,25 +149,30 @@ export default function ProjectsPage() {
       confirmText: t("Hapus"),
       cancelText: t("Batal"),
       type: "warning",
-      onConfirm: async () => {
-        try {
-          const response = await fetch(`/api/proyek/${projectId}`, {
-            method: 'DELETE',
-          })
+    })
 
-          if (response.ok) {
-            await success(t("Berhasil"), `"${projectTitle}" ${t("berhasil dihapus")}`)
-            loadProyeks()
-          } else {
-            const data = await response.json()
-            showError(t("Gagal"), data.error || t("Gagal menghapus proyek"))
-          }
-        } catch (error) {
-          console.error('Error deleting project:', error)
-          showError(t("Error"), t("Terjadi kesalahan saat menghapus proyek"))
+    if (!confirmed) return
+
+    await execute(
+      async () => {
+        const response = await fetch(`/api/proyek/${projectId}`, {
+          method: 'DELETE',
+        })
+
+        if (!response.ok) {
+          const data = await response.json()
+          throw new Error(data.error || t("Gagal menghapus proyek"))
         }
       },
-    })
+      {
+        loadingMessage: t("Menghapus proyek..."),
+        successTitle: t("Berhasil!"),
+        successDescription: `"${projectTitle}" ${t("berhasil dihapus")}`,
+        errorTitle: t("Gagal"),
+        autoCloseMs: 1500,
+        onSuccess: () => loadProyeks(),
+      }
+    )
   }
 
   const filteredProyeks = proyeks.filter(proyek =>
@@ -169,6 +192,7 @@ export default function ProjectsPage() {
   return (
     <div className="w-full">
       <AlertComponent />
+      <ActionFeedback />
       
       {/* Header */}
       <AnimateIn>

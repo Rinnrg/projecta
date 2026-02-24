@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
+import { useAsyncAction } from "@/hooks/use-async-action"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -34,7 +35,8 @@ export default function AddStudentsClient({
   totalAvailable,
 }: AddStudentsClientProps) {
   const router = useRouter()
-  const { success, error: showError, AlertComponent } = useSweetAlert()
+  const { error: showError, AlertComponent } = useAdaptiveAlert()
+  const { execute, ActionFeedback } = useAsyncAction()
   const [selectedClasses, setSelectedClasses] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -74,26 +76,27 @@ export default function AddStudentsClient({
 
     setIsSubmitting(true)
 
-    try {
-      const response = await fetch(`/api/courses/${course.id}/enrollments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentIds }),
-      })
+    await execute(
+      async () => {
+        const response = await fetch(`/api/courses/${course.id}/enrollments`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ studentIds }),
+        })
 
-      if (!response.ok) {
-        throw new Error("Failed to enroll students")
+        if (!response.ok) {
+          throw new Error("Failed to enroll students")
+        }
+      },
+      {
+        loadingMessage: "Menambahkan siswa...",
+        successTitle: "Berhasil!",
+        successDescription: `${studentIds.length} siswa dari ${selectedClasses.length} kelas berhasil ditambahkan`,
+        errorTitle: "Gagal",
+        onSuccess: () => { router.push(`/courses/${course.id}?tab=students`); router.refresh() },
       }
-
-      await success("Berhasil", `${studentIds.length} siswa dari ${selectedClasses.length} kelas berhasil ditambahkan`)
-      router.push(`/courses/${course.id}?tab=students`)
-      router.refresh()
-    } catch (error) {
-      console.error("Error enrolling students:", error)
-      showError("Gagal", "Gagal menambahkan siswa")
-    } finally {
-      setIsSubmitting(false)
-    }
+    )
+    setIsSubmitting(false)
   }
 
   const availableClasses = classData.filter((c) => c.available > 0)
@@ -101,6 +104,7 @@ export default function AddStudentsClient({
   return (
     <div className="w-full">
       <AlertComponent />
+      <ActionFeedback />
 
       <div className="mb-6 space-y-4">
         <div>
