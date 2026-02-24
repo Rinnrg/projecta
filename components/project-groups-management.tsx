@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -62,7 +62,7 @@ export default function ProjectGroupsManagement({
   proyekId,
   proyekTitle,
 }: ProjectGroupsManagementProps) {
-  const { success, error: showError, confirm, AlertComponent } = useSweetAlert()
+  const { success, error: showError, confirm, AlertComponent } = useAdaptiveAlert()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Groups management state

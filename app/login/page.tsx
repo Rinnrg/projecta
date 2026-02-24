@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useAsyncAction } from "@/hooks/use-async-action"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -19,6 +20,7 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const { user, isLoading: authLoading, setUser, setUserRole } = useAuth()
   const router = useRouter()
+  const { execute, ActionFeedback } = useAsyncAction()
 
   // Redirect to dashboard if already logged in
   useEffect(() => {
@@ -50,51 +52,63 @@ export default function LoginPage() {
       return
     }
 
-    setIsLoading(true)
-
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok && data.success) {
-        // Set user data dari database
-        setUser({
-          id: data.user.id,
-          username: data.user.username,
-          email: data.user.email,
-          nama: data.user.nama,
-          role: data.user.role,
-          foto: data.user.foto,
-          createdAt: new Date(data.user.createdAt || Date.now()),
+    await execute(
+      async () => {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
         })
-        router.push("/dashboard")
-      } else {
-        setError(data.error || "Email atau password salah")
-        setIsLoading(false)
+
+        const data = await response.json()
+
+        if (response.ok && data.success) {
+          setUser({
+            id: data.user.id,
+            username: data.user.username,
+            email: data.user.email,
+            nama: data.user.nama,
+            role: data.user.role,
+            foto: data.user.foto,
+            createdAt: new Date(data.user.createdAt || Date.now()),
+          })
+        } else {
+          throw new Error(data.error || "Email atau password salah")
+        }
+      },
+      {
+        loadingMessage: "Masuk...",
+        successTitle: "Berhasil!",
+        successDescription: "Selamat datang kembali",
+        errorTitle: "Login Gagal",
+        autoCloseMs: 1500,
+        onSuccess: () => router.push("/dashboard"),
+        onError: (err) => setError(err.message),
       }
-    } catch (error) {
-      console.error('Login error:', error)
-      setError("Terjadi kesalahan saat login")
-      setIsLoading(false)
-    }
+    )
   }
 
   const handleQuickLogin = async (role: "SISWA" | "GURU" | "ADMIN") => {
-    setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 400))
-    setUserRole(role)
-    router.push("/dashboard")
+    await execute(
+      async () => {
+        await new Promise((resolve) => setTimeout(resolve, 400))
+        setUserRole(role)
+      },
+      {
+        loadingMessage: "Masuk...",
+        successTitle: "Berhasil!",
+        successDescription: `Login sebagai ${role}`,
+        autoCloseMs: 1200,
+        onSuccess: () => router.push("/dashboard"),
+      }
+    )
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+      <ActionFeedback />
 
       <Card className="w-full max-w-sm border-border/60 shadow-sm animate-fade-in">
         <CardHeader className="text-center pb-4">

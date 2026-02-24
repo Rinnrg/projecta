@@ -7,7 +7,24 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card"
       className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm transition-all duration-200 hover:shadow-md",
+        /**
+         * Liquid Glass Card — from tema/src/styles/components/ion-card.scss
+         * border-radius: 24px + tema/src/styles/utils/api.scss glass-background
+         */
+        "bg-card/90 dark:bg-card/80 text-card-foreground flex flex-col gap-6 rounded-3xl py-6",
+        "backdrop-blur-[2px] backdrop-saturate-[360%]",
+        /* Glass border from api.scss: asymmetric 0.5px borders */
+        "border-[0.5px] border-t-white/100 border-b-white/100 border-r-white/80 border-l-white/60",
+        "dark:border-t-white/12 dark:border-b-white/12 dark:border-r-white/10 dark:border-l-white/8",
+        /* Shadow from api.scss glass-background mixin */
+        "shadow-[inset_0_0_8px_0_rgba(220,220,220,0.2),0_0_10px_0_rgba(220,220,220,0.82)]",
+        "dark:shadow-[inset_0_0_8px_0_rgba(40,40,40,0.3),0_0_10px_0_rgba(0,0,0,0.5)]",
+        /* Transition: 140ms from default-variables.scss --ios26-activated-transition-duration */
+        "transition-[box-shadow,transform,border-color] duration-[140ms] ease-[cubic-bezier(0.32,0.72,0,1)]",
+        "hover:shadow-[inset_0_0_8px_0_rgba(220,220,220,0.25),0_2px_16px_0_rgba(220,220,220,0.9)]",
+        "hover:border-white/90 dark:hover:border-white/16",
+        /* GPU compositing from api.scss */
+        "transform-gpu backface-hidden",
         className,
       )}
       {...props}

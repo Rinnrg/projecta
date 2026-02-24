@@ -38,7 +38,13 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50',
+        /**
+         * Enhanced Liquid Glass overlay with full coverage blur using utility class
+         * From tema/src/styles/components/ion-modal.scss: --backdrop-opacity: 0.2
+         */
+        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+        'fixed inset-0 z-50',
+        'bg-black/30 backdrop-modal',
         className,
       )}
       {...props}
@@ -60,7 +66,32 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg',
+          /**
+           * Liquid Glass dialog panel
+           * From tema/src/styles/components/ion-modal.scss:
+           * - modal-sheet: --border-radius: 30px
+           * - glass-background(1) on ::part(content)
+           * From tema/src/styles/utils/api.scss: full glass mixin
+           */
+          'bg-background/90 dark:bg-background/85',
+          'backdrop-blur-[8px] backdrop-saturate-[360%]',
+          /* Asymmetric borders from api.scss */
+          'border-[0.5px] border-t-white/100 border-b-white/100 border-r-white/80 border-l-white/60',
+          'dark:border-t-white/12 dark:border-b-white/12 dark:border-r-white/10 dark:border-l-white/8',
+          /* Glass shadow from api.scss */
+          'shadow-[inset_0_0_8px_0_rgba(220,220,220,0.2),0_0_10px_0_rgba(220,220,220,0.82)]',
+          'dark:shadow-[inset_0_0_8px_0_rgba(40,40,40,0.3),0_0_10px_0_rgba(0,0,0,0.5)]',
+          /* border-radius: 30px from ion-modal.scss modal-sheet */
+          'rounded-[30px] p-6 gap-4',
+          /* Animations — easing from ios.transition.ts */
+          'data-[state=open]:animate-in data-[state=closed]:animate-out',
+          'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+          'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+          'fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)]',
+          'translate-x-[-50%] translate-y-[-50%]',
+          'duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]',
+          'sm:max-w-lg',
+          'transform-gpu backface-hidden',
           className,
         )}
         {...props}
@@ -69,7 +100,17 @@ function DialogContent({
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+            className={cn(
+              "ring-offset-background focus:ring-ring",
+              "data-[state=open]:bg-accent data-[state=open]:text-muted-foreground",
+              "absolute top-4 right-4 rounded-full opacity-70",
+              /* Transition: 140ms from default-variables.scss */
+              "transition-[opacity,transform] duration-[140ms] ease-[cubic-bezier(0.32,0.72,0,1)]",
+              "hover:opacity-100 hover:scale-[1.1]",
+              "focus:ring-2 focus:ring-offset-2 focus:outline-hidden",
+              "disabled:pointer-events-none",
+              "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+            )}
           >
             <XIcon />
             <span className="sr-only">Close</span>

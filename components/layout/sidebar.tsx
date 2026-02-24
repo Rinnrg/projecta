@@ -56,7 +56,10 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, onNavClick }: S
       onMouseEnter={() => !isMobile && isCollapsed && setIsHovered(true)}
       onMouseLeave={() => !isMobile && isCollapsed && setIsHovered(false)}
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out flex flex-col",
+        "fixed left-0 top-0 z-40 h-screen bg-sidebar border-r border-sidebar-border flex flex-col",
+        /* Sidebar transition from tema/ion-menu.scss: --border: none, transparent bg */
+        /* Transition easing: cubic-bezier(0.32, 0.72, 0, 1) from ios.transition.ts EASING */
+        "transition-all duration-[540ms] ease-[cubic-bezier(0.32,0.72,0,1)]",
         isMobile ? "w-[280px]" : isExpanded ? "w-[260px] shadow-lg" : "w-[70px]",
       )}
     >
@@ -92,11 +95,18 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, onNavClick }: S
                 href={item.href}
                 onClick={onNavClick}
                 className={cn(
-                  "group relative flex items-center rounded-md py-2.5 px-2 text-sm font-medium transition-all duration-300 animate-slide-in-left overflow-hidden",
+                  /* Nav item from tema/ion-tabs.scss ion-tab-button pattern */
+                  "group relative flex items-center rounded-[14px] py-2.5 px-2 text-sm font-medium overflow-hidden",
+                  /* Transition from tema: transform 140ms ease-out, color 140ms ease */
+                  "transition-[background,color,transform,box-shadow] duration-[140ms]",
+                  "ease-[cubic-bezier(0.32,0.72,0,1)]",
+                  "transform-gpu backface-hidden",
                   `stagger-${Math.min(index + 1, 5)}`,
+                  "animate-slide-in-left",
                   isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                    ? "bg-primary/10 text-primary shadow-[inset_0_0_4px_0_rgba(var(--ios26-accent-rgb,0,122,255),0.08)]"
+                    /* Hover: from ion-button :not(.ion-activated):hover opacity 0.72 pattern */
+                    : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/8 hover:text-accent-foreground active:scale-[1.03]",
                 )}
               >
               {isActive && (
@@ -135,10 +145,14 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, onNavClick }: S
                   href={item.href}
                   onClick={onNavClick}
                   className={cn(
-                    "group relative flex items-center rounded-md py-2.5 px-2 text-sm font-medium transition-all duration-300 overflow-hidden",
+                    /* Admin nav item — same pattern as ion-tab-button */
+                    "group relative flex items-center rounded-[14px] py-2.5 px-2 text-sm font-medium overflow-hidden",
+                    "transition-[background,color,transform,box-shadow] duration-[140ms]",
+                    "ease-[cubic-bezier(0.32,0.72,0,1)]",
+                    "transform-gpu backface-hidden",
                     isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                      ? "bg-primary/10 text-primary shadow-[inset_0_0_4px_0_rgba(var(--ios26-accent-rgb,0,122,255),0.08)]"
+                      : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/8 hover:text-accent-foreground active:scale-[1.03]",
                   )}
                 >
                   {isActive && (
@@ -173,7 +187,14 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, onNavClick }: S
           variant="outline"
           size="icon"
           className={cn(
-            "absolute top-5 -right-3 h-6 w-6 rounded-md border-2 bg-sidebar hover:bg-accent z-50 shadow-md transition-all duration-300",
+            /* Collapse button — glass pill from api.scss glass-background */
+            "absolute top-5 -right-3 h-6 w-6 rounded-full border-[0.5px] border-white/70 dark:border-white/15",
+            "bg-sidebar/90 backdrop-blur-[4px] backdrop-saturate-[200%]",
+            "shadow-[inset_0_0_4px_0_rgba(255,255,255,0.1),0_2px_8px_-2px_rgba(0,0,0,0.1)]",
+            /* Scale from ion-button.scss $scaleup-small-icon-only = 1.18, adapted */
+            "hover:bg-accent hover:scale-[1.15] active:scale-[1.05]",
+            /* Transition easing from tema: 140ms cubic-bezier(0.32, 0.72, 0, 1) */
+            "z-50 transition-[background,transform,box-shadow] duration-[140ms] ease-[cubic-bezier(0.32,0.72,0,1)]",
             "flex items-center justify-center"
           )}
           onClick={() => {

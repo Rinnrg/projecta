@@ -18,6 +18,8 @@ import {
   CheckSquare,
   BookMarked,
   ClipboardList,
+  Sparkles,
+  UserCircle,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
@@ -47,6 +49,7 @@ interface SearchResults {
     judul: string
     deskripsi: string | null
     tgl_unggah: Date
+    courseId: string
     course: {
       id: string
       judul: string
@@ -59,6 +62,7 @@ interface SearchResults {
     deskripsi: string | null
     tipe: string
     tgl_selesai: Date | null
+    courseId: string
     course: {
       id: string
       judul: string
@@ -77,6 +81,13 @@ interface SearchResults {
       nama: string
     }
   }>
+  users: Array<{
+    id: string
+    nama: string
+    email: string
+    role: string
+    foto: string | null
+  }>
 }
 
 export function SearchDropdown() {
@@ -86,11 +97,13 @@ export function SearchDropdown() {
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(false)
+  const [isRecent, setIsRecent] = React.useState(false)
   const [searchResults, setSearchResults] = React.useState<SearchResults>({
     courses: [],
     materi: [],
     asesmen: [],
     schedules: [],
+    users: [],
   })
   const dropdownRef = React.useRef<HTMLDivElement>(null)
   const inputRef = React.useRef<HTMLInputElement>(null)
@@ -124,29 +137,24 @@ export function SearchDropdown() {
     return () => document.removeEventListener("keydown", down)
   }, [])
 
-  // Fetch search results from API
+  // Fetch search results from API (including recent suggestions when empty)
   React.useEffect(() => {
-    if (!debouncedSearch) {
-      setSearchResults({
-        courses: [],
-        materi: [],
-        asesmen: [],
-        schedules: [],
-      })
-      return
-    }
-
     const fetchSearchResults = async () => {
       setIsLoading(true)
       try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(debouncedSearch)}`)
+        const url = debouncedSearch 
+          ? `/api/search?q=${encodeURIComponent(debouncedSearch)}`
+          : `/api/search`
+        const response = await fetch(url)
         if (response.ok) {
           const data = await response.json()
+          setIsRecent(data.isRecent || false)
           setSearchResults(data.results || {
             courses: [],
             materi: [],
             asesmen: [],
             schedules: [],
+            users: [],
           })
         }
       } catch (error) {
@@ -237,6 +245,7 @@ export function SearchDropdown() {
     ]
 
     // Add courses from search results
+    const courseCategory = isRecent ? t("Kursus Terbaru") : t("Kursus")
     searchResults.courses.forEach((course) => {
       items.push({
         id: `course-${course.id}`,
@@ -244,25 +253,27 @@ export function SearchDropdown() {
         description: course.kategori,
         icon: BookOpen,
         href: `/courses/${course.id}`,
-        category: t("Kursus"),
+        category: courseCategory,
         badge: course.kategori,
       })
     })
 
     // Add materi from search results
+    const materiCategory = isRecent ? t("Materi Terbaru") : t("Materi")
     searchResults.materi.forEach((materi) => {
       items.push({
         id: `materi-${materi.id}`,
         title: materi.judul,
         description: `${materi.course.judul} • ${materi.deskripsi?.substring(0, 50) || ''}`,
         icon: BookMarked,
-        href: `/courses/${materi.course.id}/materi/${materi.id}`,
-        category: t("Materi"),
+        href: `/courses/${materi.courseId || materi.course.id}/materi/${materi.id}`,
+        category: materiCategory,
         badge: materi.course.kategori,
       })
     })
 
     // Add asesmen from search results
+    const asesmenCategory = isRecent ? t("Asesmen Terbaru") : t("Asesmen")
     searchResults.asesmen.forEach((asesmen) => {
       const tipeLabel = asesmen.tipe === 'KUIS' ? 'Kuis' : 'Tugas'
       const badge = asesmen.tipe === 'KUIS' 
@@ -274,8 +285,8 @@ export function SearchDropdown() {
         title: asesmen.nama,
         description: `${asesmen.course.judul} • ${asesmen.deskripsi?.substring(0, 50) || tipeLabel}`,
         icon: asesmen.tipe === 'KUIS' ? FileText : ClipboardList,
-        href: `/courses/${asesmen.courseId}/asesmen/${asesmen.id}`,
-        category: t("Asesmen"),
+        href: `/courses/${asesmen.courseId || asesmen.course.id}/asesmen/${asesmen.id}`,
+        category: asesmenCategory,
         badge: badge,
         badgeVariant: asesmen.tipe === 'KUIS' ? 'default' : 'secondary',
       })
@@ -297,6 +308,30 @@ export function SearchDropdown() {
       })
     })
 
+    // Add users from search results
+    if (searchResults.users && searchResults.users.length > 0) {
+      const roleLabel = (role: string) => {
+        switch (role) {
+          case 'ADMIN': return 'Admin'
+          case 'GURU': return 'Guru'
+          case 'SISWA': return 'Siswa'
+          default: return role
+        }
+      }
+      searchResults.users.forEach((u) => {
+        items.push({
+          id: `user-${u.id}`,
+          title: u.nama,
+          description: u.email,
+          icon: UserCircle,
+          href: `/users`,
+          category: t("Pengguna"),
+          badge: roleLabel(u.role),
+          badgeVariant: 'outline',
+        })
+      })
+    }
+
     // Filter items berdasarkan role ADMIN
     const ADMIN_RESTRICTED_PATHS = ['/courses', '/compiler', '/projects']
     const filteredByRole = user?.role === 'ADMIN' 
@@ -304,10 +339,13 @@ export function SearchDropdown() {
       : items
 
     return filteredByRole
-  }, [t, searchResults, user])
+  }, [t, searchResults, user, isRecent])
 
   const filteredItems = React.useMemo(() => {
-    if (!search) return searchItems.slice(0, 10)
+    if (!search) {
+      // Show navigation items + recent/suggested items from API
+      return searchItems.slice(0, 30)
+    }
 
     const searchLower = search.toLowerCase()
     const filtered = searchItems.filter(
@@ -318,7 +356,7 @@ export function SearchDropdown() {
         item.badge?.toLowerCase().includes(searchLower)
     )
     
-    return filtered.slice(0, 20)
+    return filtered.slice(0, 30)
   }, [search, searchItems])
 
   const groupedItems = React.useMemo(() => {
@@ -371,7 +409,7 @@ export function SearchDropdown() {
               </div>
             ) : filteredItems.length === 0 ? (
               <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-                {search ? t("Tidak ada hasil ditemukan") : t("Ketik untuk mencari...")}
+                {search ? t("Tidak ada hasil ditemukan") : t("Mulai ketik untuk mencari...")}
               </div>
             ) : (
               <>

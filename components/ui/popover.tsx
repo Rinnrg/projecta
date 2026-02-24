@@ -23,14 +23,41 @@ function PopoverContent({
   sideOffset = 4,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Content>) {
+  const contentRef = React.useRef<HTMLDivElement>(null)
+
+  // iOS 26 Control Center blob entrance
+  React.useEffect(() => {
+    const el = contentRef.current
+    if (!el) return
+    el.animate([
+      { transform: 'scale(0.4, 0.3)', borderRadius: '28px', opacity: 0, filter: 'blur(8px)', offset: 0 },
+      { transform: 'scale(1.06, 1.08)', borderRadius: '18px', opacity: 1, filter: 'blur(0px)', offset: 0.55 },
+      { transform: 'scale(0.98, 0.99)', borderRadius: '15px', opacity: 1, filter: 'blur(0px)', offset: 0.78 },
+      { transform: 'scale(1, 1)', borderRadius: '16px', opacity: 1, filter: 'blur(0px)', offset: 1 },
+    ], { duration: 420, easing: 'cubic-bezier(0.23, 1, 0.32, 1)', fill: 'forwards' })
+  }, [])
+
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content
+        ref={contentRef}
         data-slot="popover-content"
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-72 origin-(--radix-popover-content-transform-origin) rounded-md border p-4 shadow-md outline-hidden',
+          /* Liquid Glass popover — frosted glass panel */
+          'bg-popover/85 dark:bg-popover/80 text-popover-foreground',
+          'backdrop-blur-[12px] backdrop-saturate-[200%]',
+          'border-[0.5px] border-white/60 dark:border-white/10',
+          'shadow-[inset_0_0_4px_0_rgba(255,255,255,0.08),0_4px_24px_-4px_rgba(0,0,0,0.12),0_0_10px_0_rgba(0,0,0,0.06)]',
+          'dark:shadow-[inset_0_0_4px_0_rgba(255,255,255,0.03),0_4px_24px_-4px_rgba(0,0,0,0.4),0_0_10px_0_rgba(0,0,0,0.2)]',
+          'rounded-2xl p-4 outline-hidden',
+          /* Close animation fallback */
+          'data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
+          'data-[state=closed]:zoom-out-[0.85]',
+          'data-[state=closed]:duration-[200ms] data-[state=closed]:ease-[cubic-bezier(0.32,0.72,0,1)]',
+          'z-50 w-72 origin-(--radix-popover-content-transform-origin)',
+          'transform-gpu backface-hidden will-change-[transform,border-radius,opacity,filter]',
           className,
         )}
         {...props}

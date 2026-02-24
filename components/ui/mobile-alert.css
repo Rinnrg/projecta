@@ -1,0 +1,95 @@
+/* Mobile Alert Liquid Drop Animation */
+
+@keyframes liquidDrop {
+  0% {
+    transform: scale(0.7) translateY(-20px);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05) translateY(-5px);
+    opacity: 0.8;
+  }
+  70% {
+    transform: scale(0.98) translateY(2px);
+    opacity: 1;
+  }
+  85% {
+    transform: scale(1.01) translateY(-1px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes liquidDropOut {
+  0% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.85) translateY(-10px);
+    opacity: 0;
+  }
+}
+
+@keyframes backdropFadeIn {
+  0% {
+    opacity: 0;
+    -webkit-backdrop-filter: blur(0px);
+    backdrop-filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+}
+
+@keyframes backdropFadeOut {
+  0% {
+    opacity: 1;
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+  100% {
+    opacity: 0;
+    -webkit-backdrop-filter: blur(0px);
+    backdrop-filter: blur(0px);
+  }
+}
+
+/* Enhanced backdrop classes for smooth transitions */
+.mobile-alert-backdrop-enter {
+  animation: backdropFadeIn 0.3s ease-out forwards;
+}
+
+.mobile-alert-backdrop-exit {
+  animation: backdropFadeOut 0.3s ease-out forwards;
+}
+
+/* Mobile Alert Liquid Drop Classes */
+.mobile-alert-enter {
+  animation: liquidDrop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.mobile-alert-exit {
+  animation: liquidDropOut 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Micro animations for buttons */
+.mobile-alert-button {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-alert-button:active {
+  transform: scale(0.98);
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Enhanced glass effect with full backdrop blur coverage using utility class */
+.mobile-alert-glass {
+  -webkit-backdrop-filter: blur(25px) saturate(180%) brightness(1.1);
+  backdrop-filter: blur(25px) saturate(180%) brightness(1.1);
+}

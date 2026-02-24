@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/command"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
 import { useAuth } from "@/lib/auth-context"
+import { useDebounce } from "@/hooks/use-debounce"
+import { Badge } from "@/components/ui/badge"
 import { 
   FileText, 
   BookOpen, 
@@ -22,7 +24,12 @@ import {
   Code,
   FolderOpen,
   User,
-  GraduationCap
+  GraduationCap,
+  BookMarked,
+  CheckSquare,
+  ClipboardList,
+  UserCircle,
+  Loader2,
 } from "lucide-react"
 
 interface SearchItem {
@@ -32,7 +39,8 @@ interface SearchItem {
   url: string
   icon: React.ReactNode
   category: string
-  keywords?: string[] // Add keywords for better search
+  keywords?: string[]
+  badge?: string
 }
 
 interface SearchDialogProps {
@@ -43,125 +51,199 @@ interface SearchDialogProps {
 export function SearchDialog({ open: controlledOpen, onOpenChange }: SearchDialogProps = {}) {
   const [internalOpen, setInternalOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [apiResults, setApiResults] = React.useState<any>(null)
+  const [isRecent, setIsRecent] = React.useState(false)
   const router = useRouter()
   const { t } = useAutoTranslate()
   const { user } = useAuth()
+
+  const debouncedSearch = useDebounce(searchQuery, 300)
 
   // Use controlled or internal state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen
   const setOpen = onOpenChange || setInternalOpen
 
-  // Define searchable items
-  const searchItems: SearchItem[] = [
-    // Dashboard
-    {
-      id: "dashboard",
-      title: t("Dashboard"),
-      description: t("Halaman utama"),
-      url: "/dashboard",
-      icon: <LayoutDashboard className="h-4 w-4" />,
-      category: t("Navigasi"),
-      keywords: ["dashboard", "home", "beranda", "utama", "main"],
-    },
-    // Courses
-    {
-      id: "courses",
-      title: t("Kursus"),
-      description: t("Lihat semua kursus"),
-      url: "/courses",
-      icon: <BookOpen className="h-4 w-4" />,
-      category: t("Navigasi"),
-      keywords: ["courses", "kursus", "pelajaran", "class", "kelas"],
-    },
-    {
-      id: "course-web-dev",
-      title: t("Pengembangan Web Lanjutan"),
-      description: t("Kursus pengembangan web"),
-      url: "/courses/1",
-      icon: <Code className="h-4 w-4" />,
-      category: t("Kursus"),
-      keywords: ["web", "development", "pengembangan", "programming", "coding", "html", "css", "javascript"],
-    },
-    {
-      id: "course-design",
-      title: t("Desain UI/UX"),
-      description: t("Kursus desain antarmuka"),
-      url: "/courses/2",
-      icon: <Code className="h-4 w-4" />,
-      category: t("Kursus"),
-      keywords: ["ui", "ux", "design", "desain", "interface", "antarmuka", "figma"],
-    },
-    // Assignments
-    {
-      id: "assignments",
-      title: t("Tugas"),
-      description: t("Lihat semua tugas"),
-      url: "/assignments",
-      icon: <FileText className="h-4 w-4" />,
-      category: t("Navigasi"),
-      keywords: ["assignments", "tugas", "homework", "pr", "task"],
-    },
-    // Projects
-    {
-      id: "projects",
-      title: t("Proyek"),
-      description: t("Kelola proyek"),
-      url: "/projects",
-      icon: <FolderOpen className="h-4 w-4" />,
-      category: t("Navigasi"),
-      keywords: ["projects", "proyek", "project", "portfolio"],
-    },
-    // Schedule
-    {
-      id: "schedule",
-      title: t("Jadwal"),
-      description: t("Lihat jadwal kelas"),
-      url: "/schedule",
-      icon: <Calendar className="h-4 w-4" />,
-      category: t("Navigasi"),
-      keywords: ["schedule", "jadwal", "calendar", "kalender", "time", "waktu"],
-    },
-    // Users
-    {
-      id: "users",
-      title: t("Pengguna"),
-      description: t("Kelola pengguna sistem"),
-      url: "/users",
-      icon: <Users className="h-4 w-4" />,
-      category: t("Navigasi"),
-      keywords: ["users", "pengguna", "student", "siswa", "teacher", "guru", "admin"],
-    },
-    // Profile
-    {
-      id: "profile",
-      title: t("Profil"),
-      description: t("Lihat dan edit profil"),
-      url: "/profile",
-      icon: <User className="h-4 w-4" />,
-      category: t("Akun"),
-      keywords: ["profile", "profil", "account", "akun", "settings", "pengaturan"],
-    },
-    // Settings
-    {
-      id: "settings",
-      title: t("Pengaturan"),
-      description: t("Kelola pengaturan akun"),
-      url: "/settings",
-      icon: <Settings className="h-4 w-4" />,
-      category: t("Akun"),
-      keywords: ["settings", "pengaturan", "config", "konfigurasi", "preferences"],
-    },
-    // Compiler
-    {
-      id: "compiler",
-      title: t("Python Compiler"),
-      description: t("Jalankan kode Python"),
-      url: "/compiler",
-      icon: <Code className="h-4 w-4" />,
-      category: t("Alat"),
-      keywords: ["compiler", "python", "code", "kode", "editor", "run", "jalankan"],
-    },
-  ]
+  // Fetch from API
+  React.useEffect(() => {
+    if (!open) return
+
+    const fetchResults = async () => {
+      setIsLoading(true)
+      try {
+        const url = debouncedSearch
+          ? `/api/search?q=${encodeURIComponent(debouncedSearch)}`
+          : `/api/search`
+        const response = await fetch(url)
+        if (response.ok) {
+          const data = await response.json()
+          setApiResults(data.results || null)
+          setIsRecent(data.isRecent || false)
+        }
+      } catch (error) {
+        console.error('Error fetching search:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchResults()
+  }, [debouncedSearch, open])
+
+  // Build searchable items - static navigation + API results
+  const searchItems: SearchItem[] = React.useMemo(() => {
+    const items: SearchItem[] = [
+      {
+        id: "dashboard",
+        title: t("Dashboard"),
+        description: t("Halaman utama"),
+        url: "/dashboard",
+        icon: <LayoutDashboard className="h-4 w-4" />,
+        category: t("Navigasi"),
+        keywords: ["dashboard", "home", "beranda", "utama", "main"],
+      },
+      {
+        id: "courses",
+        title: t("Kursus"),
+        description: t("Lihat semua kursus"),
+        url: "/courses",
+        icon: <BookOpen className="h-4 w-4" />,
+        category: t("Navigasi"),
+        keywords: ["courses", "kursus", "pelajaran", "class", "kelas"],
+      },
+      {
+        id: "assignments",
+        title: t("Asesmen"),
+        description: t("Lihat tugas dan kuis"),
+        url: "/asesmen",
+        icon: <CheckSquare className="h-4 w-4" />,
+        category: t("Navigasi"),
+        keywords: ["assignments", "tugas", "homework", "asesmen", "kuis", "quiz"],
+      },
+      {
+        id: "projects",
+        title: t("Proyek"),
+        description: t("Kelola proyek"),
+        url: "/projects",
+        icon: <FolderOpen className="h-4 w-4" />,
+        category: t("Navigasi"),
+        keywords: ["projects", "proyek", "project", "portfolio"],
+      },
+      {
+        id: "schedule",
+        title: t("Jadwal"),
+        description: t("Lihat jadwal kelas"),
+        url: "/schedule",
+        icon: <Calendar className="h-4 w-4" />,
+        category: t("Navigasi"),
+        keywords: ["schedule", "jadwal", "calendar", "kalender", "time", "waktu"],
+      },
+      {
+        id: "users",
+        title: t("Pengguna"),
+        description: t("Kelola pengguna sistem"),
+        url: "/users",
+        icon: <Users className="h-4 w-4" />,
+        category: t("Navigasi"),
+        keywords: ["users", "pengguna", "student", "siswa", "teacher", "guru", "admin"],
+      },
+      {
+        id: "profile",
+        title: t("Profil"),
+        description: t("Lihat dan edit profil"),
+        url: "/profile",
+        icon: <User className="h-4 w-4" />,
+        category: t("Akun"),
+        keywords: ["profile", "profil", "account", "akun"],
+      },
+      {
+        id: "settings",
+        title: t("Pengaturan"),
+        description: t("Kelola pengaturan akun"),
+        url: "/settings",
+        icon: <Settings className="h-4 w-4" />,
+        category: t("Akun"),
+        keywords: ["settings", "pengaturan", "config", "konfigurasi"],
+      },
+      {
+        id: "compiler",
+        title: t("Python Compiler"),
+        description: t("Jalankan kode Python"),
+        url: "/compiler",
+        icon: <Code className="h-4 w-4" />,
+        category: t("Alat"),
+        keywords: ["compiler", "python", "code", "kode", "editor", "run"],
+      },
+    ]
+
+    // Add dynamic API results
+    if (apiResults) {
+      const courseCategory = isRecent ? t("Kursus Terbaru") : t("Kursus")
+      apiResults.courses?.forEach((course: any) => {
+        items.push({
+          id: `course-${course.id}`,
+          title: course.judul,
+          description: course.kategori,
+          url: `/courses/${course.id}`,
+          icon: <BookOpen className="h-4 w-4" />,
+          category: courseCategory,
+          badge: course.kategori,
+        })
+      })
+
+      const materiCategory = isRecent ? t("Materi Terbaru") : t("Materi")
+      apiResults.materi?.forEach((materi: any) => {
+        items.push({
+          id: `materi-${materi.id}`,
+          title: materi.judul,
+          description: `${materi.course.judul}`,
+          url: `/courses/${materi.courseId || materi.course.id}/materi/${materi.id}`,
+          icon: <BookMarked className="h-4 w-4" />,
+          category: materiCategory,
+        })
+      })
+
+      const asesmenCategory = isRecent ? t("Asesmen Terbaru") : t("Asesmen Ditemukan")
+      apiResults.asesmen?.forEach((asesmen: any) => {
+        const tipeLabel = asesmen.tipe === 'KUIS' ? 'Kuis' : 'Tugas'
+        items.push({
+          id: `asesmen-${asesmen.id}`,
+          title: asesmen.nama,
+          description: `${asesmen.course.judul} • ${tipeLabel}`,
+          url: `/courses/${asesmen.courseId || asesmen.course.id}/asesmen/${asesmen.id}`,
+          icon: asesmen.tipe === 'KUIS' ? <FileText className="h-4 w-4" /> : <ClipboardList className="h-4 w-4" />,
+          category: asesmenCategory,
+          badge: tipeLabel,
+        })
+      })
+
+      apiResults.schedules?.forEach((schedule: any) => {
+        items.push({
+          id: `schedule-${schedule.id}`,
+          title: schedule.judul,
+          description: `${schedule.guru.nama}`,
+          url: `/projects/${schedule.id}`,
+          icon: <Calendar className="h-4 w-4" />,
+          category: t("Jadwal"),
+        })
+      })
+
+      apiResults.users?.forEach((u: any) => {
+        const roleLabel = u.role === 'ADMIN' ? 'Admin' : u.role === 'GURU' ? 'Guru' : 'Siswa'
+        items.push({
+          id: `user-${u.id}`,
+          title: u.nama,
+          description: `${u.email} • ${roleLabel}`,
+          url: `/users`,
+          icon: <UserCircle className="h-4 w-4" />,
+          category: t("Pengguna"),
+          badge: roleLabel,
+        })
+      })
+    }
+
+    return items
+  }, [t, apiResults, isRecent])
 
   // Filter items berdasarkan role ADMIN
   const ADMIN_RESTRICTED_PATHS = ['/courses', '/compiler', '/projects']
@@ -187,7 +269,7 @@ export function SearchDialog({ open: controlledOpen, onOpenChange }: SearchDialo
     router.push(url)
   }
 
-  // Filter items based on search query
+  // Filter items based on search query (for static nav items)
   const filteredItems = React.useMemo(() => {
     if (!searchQuery.trim()) {
       return roleFilteredItems
@@ -200,7 +282,8 @@ export function SearchDialog({ open: controlledOpen, onOpenChange }: SearchDialo
       const keywordMatch = item.keywords?.some(keyword => 
         keyword.toLowerCase().includes(query)
       )
-      return titleMatch || descriptionMatch || keywordMatch
+      const badgeMatch = item.badge?.toLowerCase().includes(query)
+      return titleMatch || descriptionMatch || keywordMatch || badgeMatch
     })
   }, [searchQuery, roleFilteredItems])
 
@@ -225,23 +308,36 @@ export function SearchDialog({ open: controlledOpen, onOpenChange }: SearchDialo
         value={searchQuery}
         onValueChange={setSearchQuery}
       />
-      <CommandList>
+      <CommandList className="max-h-[60vh]">
+        {isLoading && (
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mr-2" />
+            <span className="text-sm text-muted-foreground">{t("Mencari")}...</span>
+          </div>
+        )}
         <CommandEmpty>{t("Tidak ada hasil ditemukan.")}</CommandEmpty>
         {Object.entries(groupedItems).map(([category, items]) => (
           <CommandGroup key={category} heading={category}>
             {items.map((item) => (
               <CommandItem
                 key={item.id}
-                value={item.id}
+                value={`${item.id} ${item.title} ${item.description || ''} ${item.keywords?.join(' ') || ''}`}
                 onSelect={() => handleSelect(item.url)}
                 className="cursor-pointer"
               >
                 <div className="flex items-center gap-3 w-full">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary/10 text-primary">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary/10 text-primary shrink-0">
                     {item.icon}
                   </div>
                   <div className="flex flex-col flex-1 min-w-0">
-                    <span className="font-medium truncate">{item.title}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium truncate">{item.title}</span>
+                      {item.badge && (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </div>
                     {item.description && (
                       <span className="text-xs text-muted-foreground truncate">
                         {item.description}

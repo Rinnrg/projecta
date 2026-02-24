@@ -14,11 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useSweetAlert } from "@/components/ui/sweet-alert"
+import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
 import { Loader2, Plus, Trash2, Check, X, ImagePlus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { FileUploadField } from "@/components/file-upload-field"
+import { DateTimePicker } from "@/components/ui/date-time-picker"
 import { Switch } from "@/components/ui/switch"
 
 interface AsesmenEditFormProps {
@@ -43,7 +44,7 @@ interface Soal {
 
 export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
   const router = useRouter()
-  const { error: showError, success: showSuccess, AlertComponent } = useSweetAlert()
+  const { error: showError, success: showSuccess, AlertComponent } = useAdaptiveAlert()
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [courses, setCourses] = useState<any[]>([])
@@ -648,15 +649,13 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="tgl_mulai">Tanggal Mulai</Label>
-              <Input
+              <DateTimePicker
                 id="tgl_mulai"
-                type="datetime-local"
                 value={formData.tgl_mulai}
-                onChange={(e) => {
-                  console.log('tgl_mulai onChange:', e.target.value)
-                  setFormData({ ...formData, tgl_mulai: e.target.value })
+                onChange={(val) => {
+                  console.log('tgl_mulai onChange:', val)
+                  setFormData({ ...formData, tgl_mulai: val })
                 }}
-                className="cursor-pointer"
               />
               <p className="text-xs text-muted-foreground">
                 Current: {formData.tgl_mulai || 'Not set'}
@@ -665,15 +664,13 @@ export function AsesmenEditForm({ asesmenId, courseId }: AsesmenEditFormProps) {
 
             <div className="space-y-2">
               <Label htmlFor="tgl_selesai">Tanggal Selesai</Label>
-              <Input
+              <DateTimePicker
                 id="tgl_selesai"
-                type="datetime-local"
                 value={formData.tgl_selesai}
-                onChange={(e) => {
-                  console.log('tgl_selesai onChange:', e.target.value)
-                  setFormData({ ...formData, tgl_selesai: e.target.value })
+                onChange={(val) => {
+                  console.log('tgl_selesai onChange:', val)
+                  setFormData({ ...formData, tgl_selesai: val })
                 }}
-                className="cursor-pointer"
               />
               <p className="text-xs text-muted-foreground">
                 Current: {formData.tgl_selesai || 'Not set'}

@@ -2,14 +2,15 @@
 
 import { useState } from "react"
 import Editor from "@monaco-editor/react"
-import { Button } from "@/components/ui/button"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
+import { cn } from "@/lib/utils"
 import {
   Play,
   Loader2,
   Trash2,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
   MoreVertical,
   Copy,
   Code2,
@@ -18,8 +19,15 @@ import {
   PlayCircle,
   Upload,
   FileDown,
+  Sparkles,
+  Check,
+  X,
+  FileText,
+  Printer,
+  Package,
+  Braces,
+  SquareTerminal,
 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 type OutputSegment = {
   type: "text" | "image"
@@ -401,353 +409,536 @@ export default function PythonCompiler({ onBack }: PythonCompilerProps) {
   }
 
   return (
-    <div className="h-full w-full flex flex-col bg-background overflow-hidden relative">
-      {/* Toast Notification untuk Copy Success */}
+    <div className="h-full w-full flex flex-col bg-gradient-to-br from-background via-background to-muted/30 overflow-hidden relative">
+      {/* Toast Notification - iOS Style */}
       {copySuccess && (
-        <div className="fixed top-20 right-4 z-50 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-          {t("outputCopied")}
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className={cn(
+            "flex items-center gap-2.5 px-5 py-3 rounded-2xl",
+            "bg-foreground/90 dark:bg-white/90",
+            "text-background dark:text-black",
+            "backdrop-blur-xl shadow-2xl shadow-black/20",
+            "border border-white/10 dark:border-black/10"
+          )}>
+            <div className="h-5 w-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+              <Check className="h-3 w-3 text-white" strokeWidth={3} />
+            </div>
+            <span className="text-sm font-medium">{t("outputCopied")}</span>
+          </div>
         </div>
       )}
 
-      <div className="bg-card text-card-foreground px-2 sm:px-4 py-2 flex items-center justify-between border-b border-border flex-shrink-0 gap-1 sm:gap-0">
-        <div className="flex items-center gap-1 sm:gap-3 min-w-0">
-          <Button variant="ghost" size="sm" onClick={onBack} className="h-8 cursor-pointer shrink-0 px-1 sm:px-3">
-            ← <span className="hidden sm:inline ml-1">{t("back")}</span>
-          </Button>
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="h-7 w-7 bg-gradient-to-br from-blue-500 to-green-500 rounded flex items-center justify-center">
-              <span className="text-xs font-bold text-white">Py</span>
-            </div>
-            <div className="hidden sm:block">
-              <h2 className="text-sm font-semibold">{t("compilerTitle")}</h2>
-              <p className="text-xs text-muted-foreground">{t("compilerVersion")}</p>
+      {/* ─── Header Bar ─── iOS Navigation Bar Style */}
+      <div className={cn(
+        "flex-shrink-0 z-40",
+        "bg-card/80 backdrop-blur-xl",
+        "border-b border-border/50",
+        "supports-[backdrop-filter]:bg-card/60"
+      )}>
+        {/* Top row */}
+        <div className="px-3 sm:px-5 py-2.5 flex items-center justify-between gap-2">
+          {/* Left section */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            {/* Back button */}
+            <button
+              onClick={onBack}
+              className={cn(
+                "h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0",
+                "bg-primary/10 hover:bg-primary/20 active:scale-95",
+                "text-primary transition-all duration-200",
+                "md:h-8 md:w-auto md:px-3 md:gap-1.5 md:rounded-lg"
+              )}
+            >
+              <ChevronLeft className="h-4.5 w-4.5 md:h-4 md:w-4" />
+              <span className="hidden md:inline text-sm font-medium">{t("back")}</span>
+            </button>
+
+            {/* Logo & Title */}
+            <div className="flex items-center gap-2.5">
+              <div className={cn(
+                "h-8 w-8 rounded-xl flex items-center justify-center flex-shrink-0",
+                "bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600",
+                "shadow-lg shadow-blue-500/30"
+              )}>
+                <Braces className="h-4 w-4 text-white" strokeWidth={2.5} />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold truncate leading-tight">{t("compilerTitle")}</h2>
+                <p className="text-[11px] text-muted-foreground leading-tight hidden sm:block">{t("compilerVersion")}</p>
+              </div>
             </div>
           </div>
 
-          {/* Tombol Tambah Code dan Teks */}
-          <div className="hidden md:flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => addCell("code")} className="h-8 text-xs cursor-pointer">
-              <Plus className="h-3.5 w-3.5 mr-1" />
-              {t("addCode")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => addCell("markdown")}
-              className="h-8 text-xs cursor-pointer"
+          {/* Right section */}
+          <div className="flex items-center gap-1.5">
+            {installedPackages.length > 0 && (
+              <div className={cn(
+                "hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg",
+                "bg-green-500/10 text-green-600 dark:text-green-400",
+                "text-xs font-medium"
+              )}>
+                <Package className="h-3 w-3" />
+                {installedPackages.length} pkg
+              </div>
+            )}
+
+            {/* Run All Button */}
+            <button
+              onClick={runAllCells}
+              className={cn(
+                "h-9 flex items-center gap-1.5 px-3 rounded-xl",
+                "bg-green-500 hover:bg-green-600 active:scale-95",
+                "text-white text-sm font-medium",
+                "shadow-lg shadow-green-500/30",
+                "transition-all duration-200",
+                "cursor-pointer"
+              )}
             >
-              <Plus className="h-3.5 w-3.5 mr-1" />
-              {t("addText")}
-            </Button>
+              <PlayCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">{t("runAll")}</span>
+            </button>
+
+            {/* More Menu */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  aria-label="More options"
+                  className={cn(
+                  "h-9 w-9 rounded-xl flex items-center justify-center",
+                  "hover:bg-muted/80 active:scale-95",
+                  "text-muted-foreground hover:text-foreground",
+                  "transition-all duration-200 cursor-pointer"
+                )}>
+                  <MoreVertical className="h-4.5 w-4.5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-52 p-1.5 rounded-2xl border-border/50 shadow-2xl bg-popover/95 backdrop-blur-xl">
+                <div className="space-y-0.5">
+                  {/* Mobile only: add cells */}
+                  <button
+                    onClick={() => addCell("code")}
+                    className="w-full px-3 py-2.5 text-left text-sm hover:bg-accent rounded-xl flex items-center gap-3 transition-colors cursor-pointer md:hidden"
+                  >
+                    <div className="h-7 w-7 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                      <Code2 className="h-3.5 w-3.5 text-blue-500" />
+                    </div>
+                    {t("addCode")}
+                  </button>
+                  <button
+                    onClick={() => addCell("markdown")}
+                    className="w-full px-3 py-2.5 text-left text-sm hover:bg-accent rounded-xl flex items-center gap-3 transition-colors cursor-pointer md:hidden"
+                  >
+                    <div className="h-7 w-7 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                      <FileText className="h-3.5 w-3.5 text-purple-500" />
+                    </div>
+                    {t("addText")}
+                  </button>
+                  <div className="border-t border-border/50 my-1 md:hidden"></div>
+                  <button
+                    onClick={importFile}
+                    className="w-full px-3 py-2.5 text-left text-sm hover:bg-accent rounded-xl flex items-center gap-3 transition-colors cursor-pointer"
+                  >
+                    <div className="h-7 w-7 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                      <Upload className="h-3.5 w-3.5 text-orange-500" />
+                    </div>
+                    {t("importFile")}
+                  </button>
+                  <button
+                    onClick={exportFile}
+                    className="w-full px-3 py-2.5 text-left text-sm hover:bg-accent rounded-xl flex items-center gap-3 transition-colors cursor-pointer"
+                  >
+                    <div className="h-7 w-7 rounded-lg bg-teal-500/10 flex items-center justify-center">
+                      <FileDown className="h-3.5 w-3.5 text-teal-500" />
+                    </div>
+                    {t("exportFile")}
+                  </button>
+                  <div className="border-t border-border/50 my-1"></div>
+                  <button
+                    onClick={printNotebook}
+                    className="w-full px-3 py-2.5 text-left text-sm hover:bg-accent rounded-xl flex items-center gap-3 transition-colors cursor-pointer"
+                  >
+                    <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center">
+                      <Printer className="h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
+                    {t("printNotebook")}
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-2">
-          {installedPackages.length > 0 && (
-            <Badge variant="secondary" className="text-xs h-6 hidden sm:flex">
-              {installedPackages.length} {t("packagesInstalled")}
-              {installedPackages.length > 1 ? "s" : ""}
-            </Badge>
-          )}
-          <Button variant="ghost" size="sm" onClick={runAllCells} className="h-8 cursor-pointer px-1 sm:px-3">
-            <PlayCircle className="h-4 w-4 sm:mr-1" />
-            <span className="hidden sm:inline">{t("runAll")}</span>
-          </Button>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 cursor-pointer">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-48 p-0">
-              <div className="py-1">
-                <button
-                  onClick={() => addCell("code")}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2 transition-colors cursor-pointer md:hidden"
-                >
-                  <Plus className="h-4 w-4" />
-                  {t("addCode")}
-                </button>
-                <button
-                  onClick={() => addCell("markdown")}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2 transition-colors cursor-pointer md:hidden"
-                >
-                  <Plus className="h-4 w-4" />
-                  {t("addText")}
-                </button>
-                <div className="border-t border-border my-1 md:hidden"></div>
-                <button
-                  onClick={importFile}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2 transition-colors cursor-pointer"
-                >
-                  <Upload className="h-4 w-4" />
-                  {t("importFile")}
-                </button>
-                <button
-                  onClick={exportFile}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2 transition-colors cursor-pointer"
-                >
-                  <FileDown className="h-4 w-4" />
-                  {t("exportFile")}
-                </button>
-                <div className="border-t border-border my-1"></div>
-                <button
-                  onClick={printNotebook}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2 transition-colors cursor-pointer"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                    />
-                  </svg>
-                  {t("printNotebook")}
-                </button>
-              </div>
-            </PopoverContent>
-          </Popover>
+        {/* Desktop action bar */}
+        <div className="hidden md:flex items-center gap-2 px-5 pb-2.5">
+          <button
+            onClick={() => addCell("code")}
+            className={cn(
+              "h-8 flex items-center gap-1.5 px-3 rounded-lg",
+              "bg-muted/80 hover:bg-muted text-foreground",
+              "text-xs font-medium transition-all duration-200",
+              "active:scale-95 cursor-pointer"
+            )}
+          >
+            <Code2 className="h-3.5 w-3.5 text-blue-500" />
+            {t("addCode")}
+          </button>
+          <button
+            onClick={() => addCell("markdown")}
+            className={cn(
+              "h-8 flex items-center gap-1.5 px-3 rounded-lg",
+              "bg-muted/80 hover:bg-muted text-foreground",
+              "text-xs font-medium transition-all duration-200",
+              "active:scale-95 cursor-pointer"
+            )}
+          >
+            <FileText className="h-3.5 w-3.5 text-purple-500" />
+            {t("addText")}
+          </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto bg-background w-full scrollbar-colab pt-6">
+      {/* ─── Cell Area ─── */}
+      <div className="flex-1 overflow-y-auto w-full scrollbar-colab">
         {cells.length === 0 ? (
-          <div className="flex items-center justify-center h-full w-full">
-            <div className="text-center space-y-4">
-              <Code2 className="h-16 w-16 text-muted-foreground mx-auto" />
-              <div>
-                <h3 className="text-lg font-semibold">{t("noCell")}</h3>
-                <p className="text-sm text-muted-foreground">{t("noCellDesc")}</p>
+          /* Empty State - iOS Style */
+          <div className="flex items-center justify-center h-full w-full px-6">
+            <div className="text-center space-y-5 max-w-xs">
+              <div className={cn(
+                "h-20 w-20 mx-auto rounded-3xl flex items-center justify-center",
+                "bg-gradient-to-br from-blue-500/20 via-primary/10 to-purple-500/20",
+                "border border-primary/10"
+              )}>
+                <SquareTerminal className="h-10 w-10 text-primary/60" />
               </div>
-              <Button onClick={() => addCell("code")} className="cursor-pointer">
-                <Plus className="h-4 w-4 mr-2" />
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold">{t("noCell")}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t("noCellDesc")}</p>
+              </div>
+              <button
+                onClick={() => addCell("code")}
+                className={cn(
+                  "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl",
+                  "bg-primary text-primary-foreground",
+                  "text-sm font-medium",
+                  "shadow-lg shadow-primary/30",
+                  "hover:shadow-xl hover:shadow-primary/40",
+                  "active:scale-95 transition-all duration-200",
+                  "cursor-pointer"
+                )}
+              >
+                <Sparkles className="h-4 w-4" />
                 {t("addNewCell")}
-              </Button>
+              </button>
             </div>
           </div>
         ) : (
-          <div className="w-full h-full scrollbar-colab">
+          <div className="w-full h-full scrollbar-colab px-2 sm:px-4 md:px-6 lg:px-8 py-4 space-y-3 pb-28 md:pb-6">
             {cells.map((cell, index) => (
-              <div key={cell.id} className="relative w-full px-2">
+              <div key={cell.id} className="relative w-full group/wrapper">
+                {/* Insert cell divider - appears on hover between cells */}
+                {index > 0 && (
+                  <div className="group/insert -mt-1.5 mb-1.5 h-3 flex items-center justify-center relative z-20">
+                    <div className="absolute inset-x-0 top-1/2 h-px bg-border/0 group-hover/insert:bg-border/50 transition-colors" />
+                    <div className="opacity-0 group-hover/insert:opacity-100 transition-all duration-200 flex gap-1 relative">
+                      <button
+                        onClick={() => addCell("code", index)}
+                        className={cn(
+                          "px-2.5 py-0.5 text-[11px] font-medium rounded-full",
+                          "bg-card border border-border/80 shadow-md",
+                          "text-primary hover:bg-primary hover:text-primary-foreground",
+                          "transition-all duration-200 cursor-pointer",
+                          "active:scale-95"
+                        )}
+                      >
+                        + Code
+                      </button>
+                      <button
+                        onClick={() => addCell("markdown", index)}
+                        className={cn(
+                          "px-2.5 py-0.5 text-[11px] font-medium rounded-full",
+                          "bg-card border border-border/80 shadow-md",
+                          "text-purple-500 hover:bg-purple-500 hover:text-white",
+                          "transition-all duration-200 cursor-pointer",
+                          "active:scale-95"
+                        )}
+                      >
+                        + Text
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* ─── Cell Card ─── */}
                 <div
-                  className={`group/cell group/container relative overflow-visible transition-all w-full rounded-lg my-2 mx-2 ${
+                  className={cn(
+                    "relative rounded-2xl overflow-hidden transition-all duration-300",
+                    "border shadow-sm",
                     cell.isFocused
-                      ? "border-primary border-2 bg-primary/5 shadow-md"
-                      : "border-border border hover:border-muted-foreground/30 bg-card"
-                  }`}
+                      ? "border-primary/40 shadow-lg shadow-primary/10 bg-card ring-1 ring-primary/20"
+                      : "border-border/60 bg-card hover:border-border hover:shadow-md",
+                  )}
                   onClick={() => setFocusedCell(cell.id)}
                 >
-                  {/* Hover area untuk menambah cell di atas - tepat di border atas */}
-                  <div className="group/top-hover absolute -top-3 left-0 right-0 h-6 z-30 flex items-center justify-center">
-                    <div className="opacity-0 group-hover/top-hover:opacity-100 transition-opacity duration-200">
-                      <div className="flex gap-1.5">
+                  {/* Cell header bar */}
+                  <div className={cn(
+                    "flex items-center justify-between px-3 py-2 gap-2",
+                    "border-b",
+                    cell.isFocused ? "border-primary/20 bg-primary/5" : "border-border/40 bg-muted/30"
+                  )}>
+                    <div className="flex items-center gap-2 min-w-0">
+                      {/* Cell type indicator */}
+                      {(!cell.cellType || cell.cellType === "code") ? (
+                        <div className={cn(
+                          "h-6 px-2 rounded-md flex items-center gap-1.5",
+                          "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+                          "text-[11px] font-semibold uppercase tracking-wider"
+                        )}>
+                          <Code2 className="h-3 w-3" />
+                          <span className="hidden sm:inline">Python</span>
+                        </div>
+                      ) : (
+                        <div className={cn(
+                          "h-6 px-2 rounded-md flex items-center gap-1.5",
+                          "bg-purple-500/10 text-purple-600 dark:text-purple-400",
+                          "text-[11px] font-semibold uppercase tracking-wider"
+                        )}>
+                          <FileText className="h-3 w-3" />
+                          <span className="hidden sm:inline">Markdown</span>
+                        </div>
+                      )}
+
+                      {/* Execution count */}
+                      {cell.executionCount !== null && (
+                        <span className="text-[11px] text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded">
+                          [{cell.executionCount}]
+                        </span>
+                      )}
+
+                      {/* Running indicator */}
+                      {cell.isRunning && (
+                        <div className="flex items-center gap-1.5 text-[11px] text-amber-500 font-medium">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          <span className="hidden sm:inline">Running...</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Cell actions */}
+                    <div className="flex items-center gap-0.5">
+                      {(!cell.cellType || cell.cellType === "code") && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            addCell("code", index)
+                            runCell(cell.id)
                           }}
-                          className="px-3 py-1 text-xs font-medium text-primary bg-card border border-border hover:bg-accent rounded-full shadow-lg flex items-center gap-1.5 transition-all cursor-pointer"
+                          disabled={cell.isRunning}
+                          className={cn(
+                            "h-7 flex items-center gap-1 px-2 rounded-lg",
+                            "text-xs font-medium transition-all duration-200",
+                            "cursor-pointer active:scale-95",
+                            cell.isRunning
+                              ? "opacity-50 cursor-not-allowed"
+                              : "bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20"
+                          )}
                         >
-                          <Plus className="h-3.5 w-3.5" />
-                          {t("addCode")}
+                          <Play className="h-3 w-3" fill="currentColor" />
+                          <span className="hidden sm:inline">{t("runAll") === "Run All" ? "Run" : "Jalankan"}</span>
                         </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            addCell("markdown", index)
-                          }}
-                          className="px-3 py-1 text-xs font-medium text-primary bg-card border border-border hover:bg-accent rounded-full shadow-lg flex items-center gap-1.5 transition-all cursor-pointer"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          {t("addText")}
-                        </button>
-                      </div>
+                      )}
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          deleteCell(cell.id)
+                        }}
+                        className={cn(
+                          "h-7 w-7 rounded-lg flex items-center justify-center",
+                          "text-muted-foreground hover:text-destructive hover:bg-destructive/10",
+                          "opacity-0 group-hover/wrapper:opacity-100 transition-all duration-200",
+                          "cursor-pointer active:scale-95"
+                        )}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex w-full p-2">
-                    {/* Execution count / run button area */}
-                    {(!cell.cellType || cell.cellType === "code") && (
-                      <div className="w-10 sm:w-16 flex-shrink-0 flex flex-col items-center pt-1 h-fit">
-                        <div className="flex flex-col items-center gap-2">
-                          {cell.isRunning ? (
-                            <div className="relative">
-                              <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping"></div>
-                              <Loader2 className="h-6 w-6 animate-spin text-primary relative z-10" />
-                            </div>
-                          ) : (
-                            <button
-                              className="h-10 w-10 rounded-full border-2 border-border flex items-center justify-center hover:bg-primary/10 hover:border-primary transition-all group/button shadow-sm cursor-pointer"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                runCell(cell.id)
-                              }}
-                              aria-label="Run cell"
-                            >
-                              <Play
-                                className="h-4 w-4 text-muted-foreground group-hover/button:text-primary transition-colors"
-                                fill="currentColor"
-                              />
-                            </button>
-                          )}
-                          {cell.executionCount !== null && (
-                            <span className="text-[11px] text-muted-foreground font-mono">[{cell.executionCount}]</span>
-                          )}
-                        </div>
+
+                  {/* Code editor / markdown area */}
+                  <div className="relative">
+                    {cell.cellType === "markdown" ? (
+                      <textarea
+                        value={cell.code}
+                        onChange={(e) => updateCellCode(cell.id, e.target.value)}
+                        placeholder={t("writeMarkdown")}
+                        className={cn(
+                          "w-full min-h-[80px] max-h-[300px] p-4 text-sm resize-none",
+                          "bg-transparent border-none focus:outline-none focus:ring-0",
+                          "overflow-y-auto font-mono",
+                          "placeholder:text-muted-foreground/50"
+                        )}
+                      />
+                    ) : (
+                      <div className="relative editor-container">
+                        <Editor
+                          height={`${Math.max(cell.code.split("\n").length * 19 + 16, 50)}px`}
+                          language="python"
+                          value={cell.code}
+                          onChange={(value) => updateCellCode(cell.id, value || "")}
+                          theme="vs-dark"
+                          options={{
+                            minimap: { enabled: false },
+                            fontSize: 13,
+                            lineNumbers: "on",
+                            scrollBeyondLastLine: false,
+                            automaticLayout: true,
+                            tabSize: 4,
+                            wordWrap: "on",
+                            padding: { top: 8, bottom: 8 },
+                            scrollbar: {
+                              vertical: "hidden",
+                              horizontal: "hidden",
+                              handleMouseWheel: true,
+                              alwaysConsumeMouseWheel: false,
+                            },
+                            overviewRulerLanes: 0,
+                            hideCursorInOverviewRuler: true,
+                            overviewRulerBorder: false,
+                            lineNumbersMinChars: 3,
+                            folding: false,
+                            glyphMargin: false,
+                            renderLineHighlight: "line",
+                            renderLineHighlightOnlyWhenFocus: true,
+                            cursorBlinking: "smooth",
+                            cursorSmoothCaretAnimation: "on",
+                            smoothScrolling: true,
+                            fontLigatures: true,
+                            fontFamily: "'SF Mono', 'Fira Code', 'JetBrains Mono', Menlo, monospace",
+                          }}
+                        />
                       </div>
                     )}
+                  </div>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="p-0 m-0">
-                        {/* Delete button */}
-                        <div className="absolute top-3 right-5 z-20 opacity-0 group-hover/container:opacity-100 transition-opacity">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 w-7 rounded p-0 hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              deleteCell(cell.id)
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-
-                        {/* Code editor or markdown */}
-                        <div className="overflow-hidden mb-0 pb-0">
-                          {cell.cellType === "markdown" ? (
-                            <textarea
-                              value={cell.code}
-                              onChange={(e) => updateCellCode(cell.id, e.target.value)}
-                              placeholder={t("writeMarkdown")}
-                              className="w-full min-h-[60px] max-h-[300px] p-2 text-sm font-mono resize-none bg-transparent border-none focus:outline-none focus:ring-0 overflow-y-auto"
-                            />
-                          ) : (
-                            <div className="relative editor-container mb-0 pb-0">
-                              <Editor
-                                height={`${Math.max(cell.code.split("\n").length * 19 + 8, 21)}px`}
-                                language="python"
-                                value={cell.code}
-                                onChange={(value) => updateCellCode(cell.id, value || "")}
-                                theme="vs-dark"
-                                options={{
-                                  minimap: { enabled: false },
-                                  fontSize: 14,
-                                  lineNumbers: "on",
-                                  scrollBeyondLastLine: false,
-                                  automaticLayout: true,
-                                  tabSize: 4,
-                                  wordWrap: "on",
-                                  padding: { top: 4, bottom: 4 },
-                                  scrollbar: {
-                                    vertical: "hidden",
-                                    horizontal: "hidden",
-                                    handleMouseWheel: true,
-                                    alwaysConsumeMouseWheel: false,
-                                  },
-                                  overviewRulerLanes: 0,
-                                  hideCursorInOverviewRuler: true,
-                                  overviewRulerBorder: false,
-                                }}
-                              />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Output area */}
-                        {(cell.output || (cell.outputSegments && cell.outputSegments.length > 0)) && (
-                          <div className="border-t border-border">
-                            <div className="flex items-center justify-between px-3 py-1.5 bg-muted/30">
-                              <div className="flex items-center gap-2">
-                                <Terminal className="h-3.5 w-3.5 text-muted-foreground" />
-                                <span className="text-xs font-medium text-muted-foreground">{t("output")}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-6 px-2 text-xs cursor-pointer"
-                                  onClick={() => copyOutput(cell.output)}
-                                >
-                                  <Copy className="h-3 w-3 mr-1" />
-                                  {t("copyOutput")}
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-6 px-2 text-xs cursor-pointer"
-                                  onClick={() => toggleOutputCollapse(cell.id)}
-                                >
-                                  {cell.isOutputCollapsed ? (
-                                    <>
-                                      <ChevronDown className="h-3 w-3 mr-1" />
-                                      {t("showOutput")}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <ChevronUp className="h-3 w-3 mr-1" />
-                                      {t("hideOutput")}
-                                    </>
-                                  )}
-                                </Button>
-                              </div>
-                            </div>
-                            {!cell.isOutputCollapsed && (
-                              <div
-                                className={`p-3 font-mono text-sm whitespace-pre-wrap ${
-                                  cell.isError ? "text-red-500" : "text-foreground"
-                                }`}
-                              >
-                                {cell.outputSegments && cell.outputSegments.length > 0 ? (
-                                  cell.outputSegments.map((segment, idx) => (
-                                    <div key={idx}>
-                                      {segment.type === "text" ? (
-                                        <span>{segment.content}</span>
-                                      ) : (
-                                        <img
-                                          src={segment.content || "/placeholder.svg"}
-                                          alt="Output chart"
-                                          className="max-w-full h-auto rounded mt-2"
-                                        />
-                                      )}
-                                    </div>
-                                  ))
-                                ) : (
-                                  <span>{cell.output}</span>
-                                )}
-                              </div>
+                  {/* ─── Output Area ─── */}
+                  {(cell.output || (cell.outputSegments && cell.outputSegments.length > 0)) && (
+                    <div className="border-t border-border/40">
+                      {/* Output header */}
+                      <div className={cn(
+                        "flex items-center justify-between px-3 py-1.5",
+                        "bg-muted/20"
+                      )}>
+                        <div className="flex items-center gap-2">
+                          <div className={cn(
+                            "h-4.5 w-4.5 rounded flex items-center justify-center",
+                            cell.isError ? "text-red-500" : "text-green-500"
+                          )}>
+                            {cell.isError ? (
+                              <X className="h-3.5 w-3.5" />
+                            ) : (
+                              <Terminal className="h-3.5 w-3.5" />
                             )}
                           </div>
-                        )}
+                          <span className={cn(
+                            "text-xs font-medium",
+                            cell.isError ? "text-red-500" : "text-muted-foreground"
+                          )}>
+                            {cell.isError ? "Error" : t("output")}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-0.5">
+                          <button
+                            onClick={() => copyOutput(cell.output)}
+                            className={cn(
+                              "h-6 flex items-center gap-1 px-2 rounded-md",
+                              "text-[11px] text-muted-foreground hover:text-foreground",
+                              "hover:bg-muted/80 transition-all duration-200",
+                              "cursor-pointer active:scale-95"
+                            )}
+                          >
+                            <Copy className="h-3 w-3" />
+                            <span className="hidden sm:inline">{t("copyOutput")}</span>
+                          </button>
+                          <button
+                            onClick={() => toggleOutputCollapse(cell.id)}
+                            className={cn(
+                              "h-6 flex items-center gap-1 px-2 rounded-md",
+                              "text-[11px] text-muted-foreground hover:text-foreground",
+                              "hover:bg-muted/80 transition-all duration-200",
+                              "cursor-pointer active:scale-95"
+                            )}
+                          >
+                            {cell.isOutputCollapsed ? (
+                              <ChevronDown className="h-3 w-3" />
+                            ) : (
+                              <ChevronUp className="h-3 w-3" />
+                            )}
+                            <span className="hidden sm:inline">
+                              {cell.isOutputCollapsed ? t("showOutput") : t("hideOutput")}
+                            </span>
+                          </button>
+                        </div>
                       </div>
+
+                      {/* Output content */}
+                      {!cell.isOutputCollapsed && (
+                        <div className={cn(
+                          "px-4 py-3 font-mono text-[13px] leading-relaxed whitespace-pre-wrap",
+                          "max-h-[400px] overflow-y-auto scrollbar-hide",
+                          cell.isError
+                            ? "text-red-500 dark:text-red-400 bg-red-500/5"
+                            : "text-foreground/90 bg-muted/10"
+                        )}>
+                          {cell.outputSegments && cell.outputSegments.length > 0 ? (
+                            cell.outputSegments.map((segment, idx) => (
+                              <div key={idx}>
+                                {segment.type === "text" ? (
+                                  <span>{segment.content}</span>
+                                ) : (
+                                  <img
+                                    src={segment.content || "/placeholder.svg"}
+                                    alt="Output chart"
+                                    className="max-w-full h-auto rounded-lg mt-2 border border-border/30"
+                                  />
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <span>{cell.output}</span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  )}
                 </div>
 
-                {/* Hover area untuk menambah cell di bawah (hanya untuk cell terakhir) */}
+                {/* Add cell after last cell */}
                 {index === cells.length - 1 && (
-                  <div className="group/bottom-hover h-6 flex items-center justify-center">
-                    <div className="opacity-0 group-hover/bottom-hover:opacity-100 transition-opacity duration-200">
-                      <div className="flex gap-1.5">
-                        <button
-                          onClick={() => addCell("code")}
-                          className="px-3 py-1 text-xs font-medium text-primary bg-card border border-border hover:bg-accent rounded-full shadow-lg flex items-center gap-1.5 transition-all cursor-pointer"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          {t("addCode")}
-                        </button>
-                        <button
-                          onClick={() => addCell("markdown")}
-                          className="px-3 py-1 text-xs font-medium text-primary bg-card border border-border hover:bg-accent rounded-full shadow-lg flex items-center gap-1.5 transition-all cursor-pointer"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          {t("addText")}
-                        </button>
-                      </div>
+                  <div className="group/insert mt-1.5 h-6 flex items-center justify-center relative">
+                    <div className="opacity-0 group-hover/insert:opacity-100 transition-all duration-200 flex gap-1 relative">
+                      <button
+                        onClick={() => addCell("code")}
+                        className={cn(
+                          "px-2.5 py-0.5 text-[11px] font-medium rounded-full",
+                          "bg-card border border-border/80 shadow-md",
+                          "text-primary hover:bg-primary hover:text-primary-foreground",
+                          "transition-all duration-200 cursor-pointer",
+                          "active:scale-95"
+                        )}
+                      >
+                        + Code
+                      </button>
+                      <button
+                        onClick={() => addCell("markdown")}
+                        className={cn(
+                          "px-2.5 py-0.5 text-[11px] font-medium rounded-full",
+                          "bg-card border border-border/80 shadow-md",
+                          "text-purple-500 hover:bg-purple-500 hover:text-white",
+                          "transition-all duration-200 cursor-pointer",
+                          "active:scale-95"
+                        )}
+                      >
+                        + Text
+                      </button>
                     </div>
                   </div>
                 )}
@@ -756,6 +947,53 @@ export default function PythonCompiler({ onBack }: PythonCompilerProps) {
           </div>
         )}
       </div>
+
+      {/* ─── Mobile Floating Action Button ─── iOS Style */}
+      {cells.length > 0 && (
+        <div className="fixed bottom-24 right-4 z-50 flex flex-col gap-2 md:hidden">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                aria-label="Add new cell"
+                className={cn(
+                  "h-14 w-14 rounded-2xl flex items-center justify-center",
+                  "bg-primary text-primary-foreground",
+                  "shadow-2xl shadow-primary/40",
+                  "active:scale-90 transition-all duration-200",
+                  "cursor-pointer",
+                  "ring-4 ring-primary/20"
+                )}
+              >
+                <Plus className="h-6 w-6" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              side="top"
+              align="end"
+              className="w-48 p-1.5 rounded-2xl border-border/50 shadow-2xl bg-popover/95 backdrop-blur-xl mb-2"
+            >
+              <button
+                onClick={() => addCell("code")}
+                className="w-full px-3 py-2.5 text-left text-sm hover:bg-accent rounded-xl flex items-center gap-3 transition-colors cursor-pointer"
+              >
+                <div className="h-7 w-7 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <Code2 className="h-3.5 w-3.5 text-blue-500" />
+                </div>
+                {t("addCode")}
+              </button>
+              <button
+                onClick={() => addCell("markdown")}
+                className="w-full px-3 py-2.5 text-left text-sm hover:bg-accent rounded-xl flex items-center gap-3 transition-colors cursor-pointer"
+              >
+                <div className="h-7 w-7 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                  <FileText className="h-3.5 w-3.5 text-purple-500" />
+                </div>
+                {t("addText")}
+              </button>
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
     </div>
   )
 }

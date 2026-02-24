@@ -1,30 +1,32 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
-import { Bell, Award, Upload, BookOpen, Clock, CheckCircle2, Loader2, Check, CheckCheck } from "lucide-react"
-import Link from "next/link"
+import { Bell, Award, Upload, BookOpen, Clock, Loader2, Check, CheckCheck, FileText, FolderKanban, UserPlus, BookMarked } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { id as localeId, enUS } from "date-fns/locale"
 
 interface Activity {
+  id: string
   action: string
   item: string
   course?: string
   time: string
   type: string
   score?: number
+  detail?: string
+  group?: string
+  progress?: number
 }
 
 export function ActivityDropdown() {
@@ -41,69 +43,63 @@ export function ActivityDropdown() {
     if (user) {
       const stored = localStorage.getItem(`read-activities-${user.id}`)
       if (stored) {
-        setReadActivities(new Set(JSON.parse(stored)))
+        try {
+          setReadActivities(new Set(JSON.parse(stored)))
+        } catch {
+          setReadActivities(new Set())
+        }
       }
     }
   }, [user])
 
   // Save read activities to localStorage
-  const saveReadActivities = (readSet: Set<string>) => {
+  const saveReadActivities = useCallback((readSet: Set<string>) => {
     if (user) {
       localStorage.setItem(`read-activities-${user.id}`, JSON.stringify(Array.from(readSet)))
       setReadActivities(readSet)
     }
-  }
+  }, [user])
 
-  // Fetch activities on mount and periodically (untuk update badge)
+  const fetchActivities = useCallback(async () => {
+    if (!user) return
+    try {
+      const response = await fetch(`/api/activity?userId=${user.id}&role=${user.role}&limit=20`)
+      if (response.ok) {
+        const data = await response.json()
+        setActivities(data.activities || [])
+      }
+    } catch (error) {
+      console.error('Error fetching activities:', error)
+    }
+  }, [user])
+
+  // Fetch activities on mount and periodically
   useEffect(() => {
     if (!user) return
 
-    const fetchActivities = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch(`/api/activity?userId=${user.id}&role=${user.role}&limit=10`)
-        if (response.ok) {
-          const data = await response.json()
-          setActivities(data.activities || [])
-        }
-      } catch (error) {
-        console.error('Error fetching activities:', error)
-      } finally {
-        setLoading(false)
-      }
+    const doFetch = async () => {
+      setLoading(true)
+      await fetchActivities()
+      setLoading(false)
     }
+    doFetch()
 
-    // Fetch immediately
-    fetchActivities()
-
-    // Fetch every 2 minutes to check for new activities
-    const interval = setInterval(fetchActivities, 120000) // 2 minutes
-
+    // Fetch every 2 minutes
+    const interval = setInterval(fetchActivities, 120000)
     return () => clearInterval(interval)
-  }, [user])
+  }, [user, fetchActivities])
 
   // Refresh when dropdown opens
   useEffect(() => {
-    if (!user || !open) return
-
-    const fetchActivities = async () => {
-      try {
-        const response = await fetch(`/api/activity?userId=${user.id}&role=${user.role}&limit=10`)
-        if (response.ok) {
-          const data = await response.json()
-          setActivities(data.activities || [])
-        }
-      } catch (error) {
-        console.error('Error fetching activities:', error)
-      }
+    if (open) {
+      fetchActivities()
     }
-
-    fetchActivities()
-  }, [user, open])
+  }, [open, fetchActivities])
 
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'quiz':
+        return <Award className="h-4 w-4" />
       case 'grade':
         return <Award className="h-4 w-4" />
       case 'assignment':
@@ -111,8 +107,18 @@ export function ActivityDropdown() {
         return <Upload className="h-4 w-4" />
       case 'enrollment':
         return <BookOpen className="h-4 w-4" />
+      case 'course':
+        return <BookOpen className="h-4 w-4" />
+      case 'materi':
+        return <BookMarked className="h-4 w-4" />
+      case 'assessment':
+        return <FileText className="h-4 w-4" />
+      case 'project':
+        return <FolderKanban className="h-4 w-4" />
+      case 'user':
+        return <UserPlus className="h-4 w-4" />
       default:
-        return <CheckCircle2 className="h-4 w-4" />
+        return <Bell className="h-4 w-4" />
     }
   }
 
@@ -126,6 +132,16 @@ export function ActivityDropdown() {
         return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
       case 'enrollment':
         return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+      case 'course':
+        return "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400"
+      case 'materi':
+        return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+      case 'assessment':
+        return "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400"
+      case 'project':
+        return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+      case 'user':
+        return "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400"
       default:
         return "bg-muted text-muted-foreground"
     }
@@ -140,15 +156,29 @@ export function ActivityDropdown() {
       case 'graded':
         return t('Dinilai')
       case 'enrolled':
-        return t('Bergabung')
+        return t('Bergabung ke')
+      case 'created':
+        return t('Membuat')
+      case 'new_materi':
+        return t('Materi baru:')
+      case 'student_enrolled':
+        return t('Siswa bergabung:')
+      case 'user_created':
+        return t('Pengguna baru:')
+      case 'course_created':
+        return t('Kursus baru:')
+      case 'assessment_created':
+        return t('Asesmen baru:')
+      case 'materi_created':
+        return t('Materi baru:')
       default:
         return action
     }
   }
 
-  // Generate unique ID for activity
-  const getActivityId = (activity: Activity, index: number) => {
-    return `${activity.type}-${activity.item}-${activity.time}-${index}`
+  // Use stable ID from API
+  const getActivityId = (activity: Activity) => {
+    return activity.id || `${activity.type}-${activity.item}-${activity.time}`
   }
 
   // Mark single activity as read
@@ -160,15 +190,15 @@ export function ActivityDropdown() {
 
   // Mark all activities as read
   const markAllAsRead = () => {
-    const newReadSet = new Set<string>()
-    activities.forEach((activity, index) => {
-      newReadSet.add(getActivityId(activity, index))
+    const newReadSet = new Set(readActivities)
+    activities.forEach((activity) => {
+      newReadSet.add(getActivityId(activity))
     })
     saveReadActivities(newReadSet)
   }
 
-  const unreadCount = activities.filter((activity, index) => 
-    !readActivities.has(getActivityId(activity, index))
+  const unreadCount = activities.filter((activity) => 
+    !readActivities.has(getActivityId(activity))
   ).length
 
   return (
@@ -177,22 +207,26 @@ export function ActivityDropdown() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative h-9 w-9 text-muted-foreground hover:text-primary transition-colors duration-150 group"
+          className="relative h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-primary transition-colors duration-150 group"
         >
-          <Bell className="h-5 w-5 transition-transform duration-150 group-hover:scale-110" />
+          <Bell className="h-4 w-4 sm:h-5 sm:w-5 transition-transform duration-150 group-hover:scale-110" />
           {unreadCount > 0 && (
-            <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
-              {unreadCount}
+            <span className="absolute right-0.5 top-0.5 sm:right-1 sm:top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white animate-in zoom-in-50">
+              {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 sm:w-96 p-0">
-        <div className="flex items-center justify-between p-4 pb-2">
-          <h3 className="font-semibold text-base">{t("Aktivitas Terbaru")}</h3>
-          <div className="flex items-center gap-2">
+      <DropdownMenuContent 
+        align="end" 
+        className="w-[calc(100vw-1rem)] sm:w-96 max-w-[400px] p-0"
+        sideOffset={8}
+      >
+        <div className="flex items-center justify-between p-3 sm:p-4 pb-2">
+          <h3 className="font-semibold text-sm sm:text-base">{t("Aktivitas Terbaru")}</h3>
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {unreadCount > 0 && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-[10px] sm:text-xs px-1.5 py-0">
                 {unreadCount} {t("baru")}
               </Badge>
             )}
@@ -200,11 +234,16 @@ export function ActivityDropdown() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 text-xs gap-1.5 px-2"
-                onClick={markAllAsRead}
+                className="h-6 sm:h-7 text-[10px] sm:text-xs gap-1 sm:gap-1.5 px-1.5 sm:px-2"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  markAllAsRead()
+                }}
               >
-                <CheckCheck className="h-3.5 w-3.5" />
-                {t("Tandai Semua")}
+                <CheckCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span className="hidden xs:inline">{t("Tandai Semua")}</span>
+                <span className="xs:hidden">✓</span>
               </Button>
             )}
           </div>
@@ -216,33 +255,34 @@ export function ActivityDropdown() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : activities.length > 0 ? (
-          <ScrollArea className="h-[400px]">
-            <div className="p-2">
-              {activities.map((activity, index) => {
-                const activityId = getActivityId(activity, index)
+          <ScrollArea className="h-[min(400px,60vh)]">
+            <div className="p-1.5 sm:p-2">
+              {activities.map((activity) => {
+                const activityId = getActivityId(activity)
                 const isRead = readActivities.has(activityId)
                 
                 return (
                   <div
-                    key={index}
-                    className={`mb-2 rounded-lg border p-3 transition-all ${
+                    key={activityId}
+                    className={`mb-1.5 sm:mb-2 rounded-lg border p-2.5 sm:p-3 transition-all ${
                       isRead 
                         ? 'border-border/50 bg-muted/30 hover:bg-muted/50' 
                         : 'border-primary/30 bg-primary/5 hover:bg-primary/10'
                     }`}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className={`rounded-full p-2 ${getActivityColor(activity.type)}`}>
+                    <div className="flex items-start gap-2.5 sm:gap-3">
+                      <div className={`rounded-full p-1.5 sm:p-2 shrink-0 ${getActivityColor(activity.type)}`}>
                         {getActivityIcon(activity.type)}
                       </div>
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className={`text-sm leading-tight ${isRead ? 'font-normal' : 'font-medium'}`}>
-                            {getActivityLabel(activity.action)} {activity.item}
+                      <div className="flex-1 min-w-0 space-y-0.5 sm:space-y-1">
+                        <div className="flex items-start justify-between gap-1.5 sm:gap-2">
+                          <p className={`text-xs sm:text-sm leading-tight ${isRead ? 'font-normal' : 'font-medium'}`}>
+                            {getActivityLabel(activity.action)}{' '}
+                            <span className="font-medium">{activity.item}</span>
                           </p>
-                          <div className="flex items-center gap-1 shrink-0">
+                          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                             {activity.score !== undefined && (
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline" className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0">
                                 {activity.score}
                               </Badge>
                             )}
@@ -250,22 +290,31 @@ export function ActivityDropdown() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-6 w-6"
-                                onClick={() => markAsRead(activityId)}
+                                className="h-5 w-5 sm:h-6 sm:w-6"
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  markAsRead(activityId)
+                                }}
                                 title={t("Tandai telah dibaca")}
                               >
-                                <Check className="h-3.5 w-3.5" />
+                                <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                               </Button>
                             )}
                           </div>
                         </div>
                         {activity.course && (
-                          <p className="text-xs text-muted-foreground truncate">
+                          <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
                             {activity.course}
                           </p>
                         )}
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3" />
+                        {activity.detail && (
+                          <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                            {activity.detail}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground">
+                          <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                           {formatDistanceToNow(new Date(activity.time), {
                             addSuffix: true,
                             locale: dateLocale,

@@ -6,14 +6,93 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('q') || ''
 
+    // If no query, return recent/popular items as suggestions
     if (!query) {
-      return NextResponse.json({ results: [] })
+      const [recentCourses, recentMateri, recentAsesmen, recentSchedules] = await Promise.all([
+        prisma.course.findMany({
+          select: {
+            id: true,
+            judul: true,
+            kategori: true,
+            gambar: true,
+          },
+          take: 5,
+          orderBy: { id: 'desc' },
+        }),
+        prisma.materi.findMany({
+          select: {
+            id: true,
+            judul: true,
+            deskripsi: true,
+            tgl_unggah: true,
+            courseId: true,
+            course: {
+              select: {
+                id: true,
+                judul: true,
+                kategori: true,
+              },
+            },
+          },
+          take: 5,
+          orderBy: { tgl_unggah: 'desc' },
+        }),
+        prisma.asesmen.findMany({
+          select: {
+            id: true,
+            nama: true,
+            deskripsi: true,
+            tipe: true,
+            tgl_selesai: true,
+            courseId: true,
+            course: {
+              select: {
+                id: true,
+                judul: true,
+              },
+            },
+            _count: {
+              select: {
+                soal: true,
+              },
+            },
+          },
+          take: 5,
+          orderBy: { id: 'desc' },
+        }),
+        prisma.proyek.findMany({
+          select: {
+            id: true,
+            judul: true,
+            deskripsi: true,
+            tgl_mulai: true,
+            tgl_selesai: true,
+            guru: {
+              select: {
+                nama: true,
+              },
+            },
+          },
+          take: 5,
+          orderBy: { tgl_mulai: 'desc' },
+        }),
+      ])
+
+      return NextResponse.json({
+        results: {
+          courses: recentCourses,
+          materi: recentMateri,
+          asesmen: recentAsesmen,
+          schedules: recentSchedules,
+        },
+        isRecent: true,
+      })
     }
 
     const searchLower = query.toLowerCase()
 
     // Search in parallel for better performance
-    const [courses, materi, asesmen, schedules] = await Promise.all([
+    const [courses, materi, asesmen, schedules, users] = await Promise.all([
       // Search Courses
       prisma.course.findMany({
         where: {
@@ -44,6 +123,7 @@ export async function GET(request: NextRequest) {
           judul: true,
           deskripsi: true,
           tgl_unggah: true,
+          courseId: true,
           course: {
             select: {
               id: true,
@@ -58,7 +138,7 @@ export async function GET(request: NextRequest) {
         },
       }),
 
-      // Search Asesmen
+      // Search Asesmen - include courseId
       prisma.asesmen.findMany({
         where: {
           OR: [
@@ -66,7 +146,13 @@ export async function GET(request: NextRequest) {
             { deskripsi: { contains: searchLower, mode: 'insensitive' } },
           ],
         },
-        include: {
+        select: {
+          id: true,
+          nama: true,
+          deskripsi: true,
+          tipe: true,
+          tgl_selesai: true,
+          courseId: true,
           course: {
             select: {
               id: true,
@@ -80,7 +166,8 @@ export async function GET(request: NextRequest) {
           },
         },
         take: 10,
-      }).then(data => data as any),
+        orderBy: { id: 'desc' },
+      }),
 
       // Search Jadwal/Schedule (Proyek)
       prisma.proyek.findMany({
@@ -104,6 +191,25 @@ export async function GET(request: NextRequest) {
         },
         take: 10,
       }),
+
+      // Search Users
+      prisma.user.findMany({
+        where: {
+          OR: [
+            { nama: { contains: searchLower, mode: 'insensitive' } },
+            { email: { contains: searchLower, mode: 'insensitive' } },
+            { username: { contains: searchLower, mode: 'insensitive' } },
+          ],
+        },
+        select: {
+          id: true,
+          nama: true,
+          email: true,
+          role: true,
+          foto: true,
+        },
+        take: 10,
+      }),
     ])
 
     return NextResponse.json({
@@ -112,6 +218,7 @@ export async function GET(request: NextRequest) {
         materi,
         asesmen,
         schedules,
+        users,
       },
     })
   } catch (error) {

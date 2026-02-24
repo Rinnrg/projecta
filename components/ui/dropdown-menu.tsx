@@ -33,16 +33,77 @@ function DropdownMenuTrigger({
 
 function DropdownMenuContent({
   className,
-  sideOffset = 4,
+  sideOffset = 6,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+  const contentRef = React.useRef<HTMLDivElement>(null)
+
+  // iOS 26 Control Center blob entrance — Web Animations API
+  React.useEffect(() => {
+    const el = contentRef.current
+    if (!el) return
+
+    // Blob morph: starts as small compressed blob, expands with elastic overshoot
+    el.animate([
+      {
+        transform: 'scale(0.4, 0.3)',
+        borderRadius: '28px',
+        opacity: 0,
+        filter: 'blur(8px)',
+        offset: 0,
+      },
+      {
+        transform: 'scale(1.06, 1.08)',
+        borderRadius: '18px',
+        opacity: 1,
+        filter: 'blur(0px)',
+        offset: 0.55,
+      },
+      {
+        transform: 'scale(0.98, 0.99)',
+        borderRadius: '15px',
+        opacity: 1,
+        filter: 'blur(0px)',
+        offset: 0.78,
+      },
+      {
+        transform: 'scale(1, 1)',
+        borderRadius: '16px',
+        opacity: 1,
+        filter: 'blur(0px)',
+        offset: 1,
+      },
+    ], {
+      duration: 420,
+      easing: 'cubic-bezier(0.23, 1, 0.32, 1)',
+      fill: 'forwards',
+    })
+  }, [])
+
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Content
+        ref={contentRef}
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}
         className={cn(
-          'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md',
+          /* Liquid Glass dropdown — Control Center glass panel */
+          'bg-popover/80 dark:bg-popover/75 text-popover-foreground',
+          'backdrop-blur-[24px] backdrop-saturate-[280%]',
+          /* Asymmetric glass borders from tema api.scss */
+          'border-[0.5px] border-white/70 dark:border-white/12',
+          /* Water-glass shadow */
+          'shadow-[inset_0_0.5px_0_0_rgba(255,255,255,0.4),inset_0_0_6px_0_rgba(255,255,255,0.06),0_4px_24px_-4px_rgba(0,0,0,0.14),0_1px_4px_0_rgba(0,0,0,0.06),0_0_0_0.5px_rgba(0,0,0,0.03)]',
+          'dark:shadow-[inset_0_0.5px_0_0_rgba(255,255,255,0.05),inset_0_0_6px_0_rgba(255,255,255,0.02),0_4px_24px_-4px_rgba(0,0,0,0.5),0_1px_4px_0_rgba(0,0,0,0.2),0_0_0_0.5px_rgba(255,255,255,0.04)]',
+          'rounded-2xl p-1.5',
+          /* Close animation — CSS fallback for exit (blob can't animate exit via WAAPI easily) */
+          'data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
+          'data-[state=closed]:zoom-out-[0.85]',
+          'data-[state=closed]:duration-[200ms] data-[state=closed]:ease-[cubic-bezier(0.32,0.72,0,1)]',
+          'z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem]',
+          'origin-(--radix-dropdown-menu-content-transform-origin)',
+          'overflow-x-hidden overflow-y-auto',
+          'transform-gpu backface-hidden will-change-[transform,border-radius,opacity,filter]',
           className,
         )}
         {...props}
@@ -74,7 +135,23 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:!text-destructive [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        /* Liquid Glass menu item — rounded pill with fluid water transition */
+        "focus:bg-accent/50 focus:text-accent-foreground",
+        "data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10",
+        "dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive",
+        "data-[variant=destructive]:*:[svg]:!text-destructive",
+        "[&_svg:not([class*='text-'])]:text-muted-foreground",
+        "relative flex cursor-default items-center gap-2 rounded-xl px-2.5 py-2 text-sm outline-hidden select-none",
+        /* Liquid blob transition — smooth morphing color/bg/scale/shadow */
+        "transition-[background,color,transform,box-shadow,filter] duration-[350ms] ease-[cubic-bezier(0.23,1,0.32,1)]",
+        /* Hover: liquid glass glow — water surface refraction */
+        "hover:shadow-[inset_0_0_10px_0_rgba(0,0,0,0.03),0_0_8px_0_rgba(0,0,0,0.02)]",
+        "dark:hover:shadow-[inset_0_0_10px_0_rgba(255,255,255,0.04),0_0_8px_0_rgba(255,255,255,0.02)]",
+        /* Active: liquid blob squish with brightness pulse */
+        "active:scale-[1.03] active:brightness-[1.03]",
+        "data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8",
+        "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "transform-gpu backface-hidden",
         className,
       )}
       {...props}
@@ -92,7 +169,10 @@ function DropdownMenuCheckboxItem({
     <DropdownMenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "focus:bg-accent/50 focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-xl py-2 pr-2.5 pl-8 text-sm outline-hidden select-none",
+        "transition-[background,color,transform,box-shadow,filter] duration-[350ms] ease-[cubic-bezier(0.23,1,0.32,1)]",
+        "active:scale-[1.03] active:brightness-[1.03] transform-gpu backface-hidden",
+        "data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       checked={checked}
@@ -128,7 +208,10 @@ function DropdownMenuRadioItem({
     <DropdownMenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "focus:bg-accent/50 focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-xl py-2 pr-2.5 pl-8 text-sm outline-hidden select-none",
+        "transition-[background,color,transform,box-shadow,filter] duration-[350ms] ease-[cubic-bezier(0.23,1,0.32,1)]",
+        "active:scale-[1.03] active:brightness-[1.03] transform-gpu backface-hidden",
+        "data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
@@ -170,7 +253,7 @@ function DropdownMenuSeparator({
   return (
     <DropdownMenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
-      className={cn('bg-border -mx-1 my-1 h-px', className)}
+      className={cn('bg-border/50 -mx-1.5 my-1 h-px', className)}
       {...props}
     />
   )
@@ -211,7 +294,12 @@ function DropdownMenuSubTrigger({
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "focus:bg-accent/50 focus:text-accent-foreground data-[state=open]:bg-accent/40 data-[state=open]:text-accent-foreground",
+        "[&_svg:not([class*='text-'])]:text-muted-foreground flex cursor-default items-center gap-2 rounded-xl px-2.5 py-2 text-sm outline-hidden select-none",
+        /* Liquid blob transition — smooth morphing with settle easing */
+        "transition-[background,color,transform,box-shadow,filter] duration-[350ms] ease-[cubic-bezier(0.23,1,0.32,1)]",
+        "active:scale-[1.03] active:brightness-[1.03] transform-gpu backface-hidden",
+        "data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
@@ -226,11 +314,34 @@ function DropdownMenuSubContent({
   className,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
+  const subRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    const el = subRef.current
+    if (!el) return
+    el.animate([
+      { transform: 'scale(0.4, 0.3)', borderRadius: '28px', opacity: 0, filter: 'blur(8px)', offset: 0 },
+      { transform: 'scale(1.06, 1.08)', borderRadius: '18px', opacity: 1, filter: 'blur(0px)', offset: 0.55 },
+      { transform: 'scale(0.98, 0.99)', borderRadius: '15px', opacity: 1, filter: 'blur(0px)', offset: 0.78 },
+      { transform: 'scale(1, 1)', borderRadius: '16px', opacity: 1, filter: 'blur(0px)', offset: 1 },
+    ], { duration: 420, easing: 'cubic-bezier(0.23, 1, 0.32, 1)', fill: 'forwards' })
+  }, [])
+
   return (
     <DropdownMenuPrimitive.SubContent
+      ref={subRef}
       data-slot="dropdown-menu-sub-content"
       className={cn(
-        'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-md border p-1 shadow-lg',
+        'bg-popover/80 dark:bg-popover/75 text-popover-foreground',
+        'backdrop-blur-[24px] backdrop-saturate-[280%]',
+        'border-[0.5px] border-white/70 dark:border-white/12',
+        'shadow-[inset_0_0.5px_0_0_rgba(255,255,255,0.4),inset_0_0_6px_0_rgba(255,255,255,0.06),0_4px_24px_-4px_rgba(0,0,0,0.14),0_1px_4px_0_rgba(0,0,0,0.06)]',
+        'dark:shadow-[inset_0_0.5px_0_0_rgba(255,255,255,0.05),inset_0_0_6px_0_rgba(255,255,255,0.02),0_4px_24px_-4px_rgba(0,0,0,0.5),0_1px_4px_0_rgba(0,0,0,0.2)]',
+        /* Close animation fallback */
+        'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-[0.85]',
+        'data-[state=closed]:duration-[200ms] data-[state=closed]:ease-[cubic-bezier(0.32,0.72,0,1)]',
+        'z-50 min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-2xl p-1.5',
+        'transform-gpu backface-hidden will-change-[transform,border-radius,opacity,filter]',
         className,
       )}
       {...props}

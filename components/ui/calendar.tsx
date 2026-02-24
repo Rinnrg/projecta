@@ -29,7 +29,25 @@ function Calendar({
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn(
-        'bg-background group/calendar p-3 [--cell-size:--spacing(8)] [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent',
+        /**
+         * iOS 26 Liquid Glass Calendar
+         * From tema/src/styles/components/ion-datetime.scss:
+         * glass-background-overlay + border-radius: 24px
+         */
+        'bg-background/67 dark:bg-background/67 group/calendar p-3 [--cell-size:--spacing(8)]',
+        'backdrop-blur-[8px] backdrop-saturate-[360%]',
+        'rounded-3xl',
+        /* api.scss glass-background borders */
+        'border-[0.5px] border-t-white/100 border-b-white/100 border-r-white/80 border-l-white/60',
+        'dark:border-t-white/12 dark:border-b-white/12 dark:border-r-white/10 dark:border-l-white/8',
+        /* Glass shadow */
+        'shadow-[inset_0_0_8px_0_rgba(220,220,220,0.2),0_0_10px_0_rgba(220,220,220,0.82)]',
+        'dark:shadow-[inset_0_0_8px_0_rgba(40,40,40,0.3),0_0_10px_0_rgba(0,0,0,0.5)]',
+        '[[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent',
+        '[[data-slot=card-content]_&]:border-none [[data-slot=popover-content]_&]:border-none',
+        '[[data-slot=card-content]_&]:shadow-none [[data-slot=popover-content]_&]:shadow-none',
+        '[[data-slot=card-content]_&]:backdrop-blur-none [[data-slot=popover-content]_&]:backdrop-blur-none',
+        'transform-gpu backface-hidden',
         String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
         String.raw`rtl:**:[.rdp-button\_previous>svg]:rotate-180`,
         className,
