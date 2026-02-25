@@ -338,7 +338,7 @@ export default function DashboardPage() {
 
               {/* Greeting */}
               <p className="text-lg md:text-2xl lg:text-3xl text-foreground font-bold animate-scale-in">
-                {greeting()}, {user.nama.split(" ")[0]}! 👋
+                {greeting()}, {user.nama.split(" ")[0]}!
               </p>
 
               {/* Subtitle */}

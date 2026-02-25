@@ -190,11 +190,11 @@ export default function SchedulePage() {
       <button
         {...props}
         onClick={() => setSelectedDate(date)}
-        className={`relative flex h-10 w-full flex-col items-center justify-center rounded-lg transition-colors sm:h-12 ${
+        className={`relative flex w-full flex-col items-center justify-center rounded-lg transition-colors aspect-square ${
           isSelected ? "bg-primary text-primary-foreground" : isTodayDate ? "bg-accent font-semibold" : "hover:bg-muted"
         } ${isOutside ? "opacity-40" : ""}`}
       >
-        <span className="text-xs sm:text-sm">{format(date, "d")}</span>
+        <span className="text-[11px] sm:text-sm leading-none">{format(date, "d")}</span>
         {events.length > 0 && (
           <div className="mt-0.5 flex gap-0.5">
             {events.slice(0, 3).map((event, i) => (
@@ -228,105 +228,109 @@ export default function SchedulePage() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
+    <div className="ios-schedule-container">
+      {/* iOS-style Header with Glass Morphism */}
       <AnimateIn stagger={0}>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{t("schedule")}</h1>
-            <p className="text-sm text-muted-foreground sm:text-base">{t("scheduleDesc")}</p>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "calendar" | "list")}>
-              <TabsList className="h-9">
-                <TabsTrigger value="calendar" className="text-xs sm:text-sm">
-                  <CalendarDays className="mr-1.5 h-3.5 w-3.5" />
-                  {t("calendarView")}
-                </TabsTrigger>
-                <TabsTrigger value="list" className="text-xs sm:text-sm">
-                  <FileText className="mr-1.5 h-3.5 w-3.5" />
-                  {t("listView")}
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <Select value={filterType} onValueChange={(v) => setFilterType(v as "all" | EventType)}>
-              <SelectTrigger className="h-9 w-full sm:w-[160px]">
-                <SelectValue placeholder={t("filter")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("allEvents")}</SelectItem>
-                {(Object.entries(eventTypeConfig) as [EventType, (typeof eventTypeConfig)[EventType]][]).map(
-                  ([type, config]) => (
-                    <SelectItem key={type} value={type}>
-                      {config.label}
-                    </SelectItem>
-                  ),
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </AnimateIn>
-
-      {/* Legend */}
-      <AnimateIn stagger={1}>
-        <div className="flex flex-wrap gap-3 sm:gap-4">
-          {(Object.entries(eventTypeConfig) as [EventType, (typeof eventTypeConfig)[EventType]][]).map(
-            ([type, config]) => (
-              <div key={type} className="flex items-center gap-1.5 sm:gap-2">
-                <div className={`h-2.5 w-2.5 rounded-full sm:h-3 sm:w-3 ${config.dotColor}`} />
-                <span className="text-xs sm:text-sm">{config.label}</span>
+        <div className="ios-schedule-header">
+          <div className="ios-header-content">
+            <div className="ios-title-section">
+              <h1 className="ios-main-title">{t("schedule")}</h1>
+              <p className="ios-subtitle">{t("scheduleDesc")}</p>
+            </div>
+            <div className="ios-header-controls">
+              <div className="ios-view-toggle">
+                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "calendar" | "list")}>
+                  <TabsList className="ios-tab-list">
+                    <TabsTrigger value="calendar" className="ios-tab-trigger">
+                      <CalendarDays className="ios-tab-icon" />
+                      <span className="ios-tab-text">{t("calendarView")}</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="list" className="ios-tab-trigger">
+                      <FileText className="ios-tab-icon" />
+                      <span className="ios-tab-text">{t("listView")}</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
-            ),
-          )}
+              <Select value={filterType} onValueChange={(v) => setFilterType(v as "all" | EventType)}>
+                <SelectTrigger className="ios-filter-select">
+                  <SelectValue placeholder={t("filter")} />
+                </SelectTrigger>
+                <SelectContent className="ios-select-content">
+                  <SelectItem value="all">{t("allEvents")}</SelectItem>
+                  {(Object.entries(eventTypeConfig) as [EventType, (typeof eventTypeConfig)[EventType]][]).map(
+                    ([type, config]) => (
+                      <SelectItem key={type} value={type}>
+                        {config.label}
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* iOS-style Legend */}
+          <div className="ios-legend-container">
+            {(Object.entries(eventTypeConfig) as [EventType, (typeof eventTypeConfig)[EventType]][]).map(
+              ([type, config]) => (
+                <div key={type} className="ios-legend-item">
+                  <div className={`ios-legend-dot ${config.dotColor}`} />
+                  <span className="ios-legend-label">{config.label}</span>
+                </div>
+              ),
+            )}
+          </div>
         </div>
       </AnimateIn>
 
-      {/* Overdue Alert */}
+      {/* Overdue Alert with iOS styling */}
       {overdueEvents.length > 0 && (
-        <AnimateIn stagger={2}>
-          <Card className="border-destructive/50 bg-destructive/5">
-            <CardContent className="flex items-start gap-3 p-3 sm:p-4">
-              <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-destructive">
+        <AnimateIn stagger={1}>
+          <div className="ios-alert-card ios-alert-destructive">
+            <div className="ios-alert-content">
+              <div className="ios-alert-icon">
+                <AlertCircle className="ios-alert-icon-svg" />
+              </div>
+              <div className="ios-alert-text">
+                <p className="ios-alert-title">
                   {overdueEvents.length} {t("overdueItems")}
                 </p>
-                <div className="mt-1 flex flex-wrap gap-1.5">
+                <div className="ios-alert-badges">
                   {overdueEvents.map((event) => (
-                    <Badge key={event.id} variant="outline" className="text-xs border-destructive/30">
+                    <div key={event.id} className="ios-alert-badge">
                       {event.title}
-                    </Badge>
+                    </div>
                   ))}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </AnimateIn>
       )}
 
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-        {/* Main Content */}
-        <AnimateIn stagger={3} className="lg:col-span-2">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="flex items-center gap-1.5 text-base sm:gap-2 sm:text-lg">
-                <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5" />
+      <div className="ios-schedule-grid">
+        {/* Main Content - Calendar/List */}
+        <AnimateIn stagger={2} className="ios-main-content">
+          <div className="ios-card ios-calendar-card">
+            <div className="ios-card-header">
+              <div className="ios-card-title">
+                <CalendarDays className="ios-card-title-icon" />
                 <span>{format(currentMonth, "MMMM yyyy", { locale: dateLocale })}</span>
-              </CardTitle>
-              <div className="flex gap-0.5 sm:gap-1">
+              </div>
+              <div className="ios-calendar-nav">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 sm:h-9 sm:w-9"
+                  className="ios-nav-button"
                   onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="ios-nav-icon" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 px-2 text-xs sm:h-9 sm:px-3 sm:text-sm"
+                  className="ios-today-button"
                   onClick={() => {
                     setCurrentMonth(new Date())
                     setSelectedDate(new Date())
@@ -337,92 +341,94 @@ export default function SchedulePage() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 sm:h-9 sm:w-9"
+                  className="ios-nav-button"
                   onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="ios-nav-icon" />
                 </Button>
               </div>
-            </CardHeader>
-            <CardContent className="p-2 sm:p-6 sm:pt-0">
+            </div>
+            <div className="ios-card-content">
               {viewMode === "calendar" ? (
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  month={currentMonth}
-                  onMonthChange={setCurrentMonth}
-                  locale={dateLocale}
-                  className="w-full"
-                  components={{
-                    DayButton: CustomDayButton,
-                  }}
-                />
+                <div className="ios-calendar-wrapper">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    month={currentMonth}
+                    onMonthChange={setCurrentMonth}
+                    locale={dateLocale}
+                    className="ios-calendar"
+                    components={{
+                      DayButton: CustomDayButton,
+                    }}
+                  />
+                </div>
               ) : (
-                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                <div className="ios-list-view">
                   {monthEvents.length > 0 ? (
                     monthEvents.map((event) => {
                       const config = eventTypeConfig[event.type]
                       const Icon = config.icon
 
                       return (
-                        <div key={event.id} className={`flex items-start gap-3 rounded-lg border p-3 ${config.color}`}>
-                          <div className="rounded-full bg-background/50 p-2">
-                            <Icon className="h-4 w-4" />
+                        <div key={event.id} className={`ios-event-item ${config.color}`}>
+                          <div className="ios-event-icon">
+                            <Icon className="ios-event-icon-svg" />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="text-sm font-medium truncate">{event.title}</p>
-                              <Badge variant="outline" className="shrink-0 text-xs">
+                          <div className="ios-event-content">
+                            <div className="ios-event-header">
+                              <p className="ios-event-title">{event.title}</p>
+                              <div className="ios-event-date">
                                 {format(event.date, "d MMM", { locale: dateLocale })}
-                              </Badge>
+                              </div>
                             </div>
-                            {event.course && <p className="text-xs opacity-80 mt-0.5 truncate">{event.course}</p>}
+                            {event.course && <p className="ios-event-course">{event.course}</p>}
                             {event.description && (
-                              <p className="text-xs opacity-70 mt-1 line-clamp-2">{event.description}</p>
+                              <p className="ios-event-description">{event.description}</p>
                             )}
                           </div>
                         </div>
                       )
                     })
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <CalendarDays className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">{t("noEvents")}</p>
+                    <div className="ios-empty-state">
+                      <CalendarDays className="ios-empty-icon" />
+                      <p className="ios-empty-text">{t("noEvents")}</p>
                     </div>
                   )}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </AnimateIn>
 
         {/* Sidebar */}
-        <div className="space-y-4 sm:space-y-6">
+        <div className="ios-sidebar">
           {viewMode === "calendar" && (
-            <AnimateIn stagger={4}>
-              <Card>
-                <CardHeader className="pb-2 sm:pb-3">
-                  <CardTitle className="text-sm sm:text-base">
+            <AnimateIn stagger={3}>
+              <div className="ios-card ios-selected-day-card">
+                <div className="ios-card-header-simple">
+                  <h3 className="ios-card-subtitle">
                     {selectedDate ? formatDateLabel(selectedDate) : t("selectDate")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+                  </h3>
+                </div>
+                <div className="ios-card-content-simple">
                   {selectedDateEvents.length > 0 ? (
-                    <div className="space-y-2 sm:space-y-3 max-h-[250px] overflow-y-auto">
+                    <div className="ios-selected-events">
                       {selectedDateEvents.map((event) => {
                         const config = eventTypeConfig[event.type]
                         const Icon = config.icon
                         const link = getEventLink(event)
 
                         const cardContent = (
-                          <div className="flex items-start gap-1.5 sm:gap-2">
-                            <Icon className="h-3.5 w-3.5 mt-0.5 sm:h-4 sm:w-4 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium sm:text-sm">{event.title}</p>
-                              {event.course && <p className="text-xs opacity-80 truncate">{event.course}</p>}
+                          <div className="ios-selected-event-content">
+                            <Icon className="ios-selected-event-icon" />
+                            <div className="ios-selected-event-text">
+                              <p className="ios-selected-event-title">{event.title}</p>
+                              {event.course && <p className="ios-selected-event-course">{event.course}</p>}
                               {event.description && (
-                                <p className="text-xs opacity-70 mt-1 line-clamp-2">{event.description}</p>
+                                <p className="ios-selected-event-desc">{event.description}</p>
                               )}
                             </div>
                           </div>
@@ -432,67 +438,67 @@ export default function SchedulePage() {
                           <Link 
                             key={event.id} 
                             href={link}
-                            className={`block rounded-lg border p-2 sm:p-3 ${config.color} hover:opacity-80 transition-opacity cursor-pointer`}
+                            className={`ios-selected-event-link ${config.color}`}
                           >
                             {cardContent}
                           </Link>
                         ) : (
-                          <div key={event.id} className={`rounded-lg border p-2 sm:p-3 ${config.color}`}>
+                          <div key={event.id} className={`ios-selected-event ${config.color}`}>
                             {cardContent}
                           </div>
                         )
                       })}
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground sm:text-sm">{t("noEvents")}</p>
+                    <p className="ios-no-events-text">{t("noEvents")}</p>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </AnimateIn>
           )}
 
-          <AnimateIn stagger={5}>
-            <Card>
-              <CardHeader className="pb-2 sm:pb-3">
-                <CardTitle className="flex items-center gap-1.5 text-sm sm:gap-2 sm:text-base">
-                  <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  {t("next7Days")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+          <AnimateIn stagger={4}>
+            <div className="ios-card ios-upcoming-card">
+              <div className="ios-card-header-simple">
+                <div className="ios-card-subtitle-with-icon">
+                  <Clock className="ios-subtitle-icon" />
+                  <h3 className="ios-card-subtitle">{t("next7Days")}</h3>
+                </div>
+              </div>
+              <div className="ios-card-content-simple">
                 {upcomingEvents.length > 0 ? (
-                  <div className="space-y-2 sm:space-y-3 max-h-[300px] overflow-y-auto">
+                  <div className="ios-upcoming-events">
                     {upcomingEvents.map((event) => {
                       const config = eventTypeConfig[event.type]
                       const Icon = config.icon
                       const link = getEventLink(event)
 
                       const content = (
-                        <>
-                          <div className={`rounded-full p-1.5 sm:p-2 ${config.color}`}>
-                            <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <div className="ios-upcoming-event-content">
+                          <div className={`ios-upcoming-event-icon ${config.color}`}>
+                            <Icon className="ios-upcoming-icon-svg" />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium sm:text-sm truncate">{event.title}</p>
-                            <p className="text-[10px] text-muted-foreground sm:text-xs">
+                          <div className="ios-upcoming-event-text">
+                            <p className="ios-upcoming-event-title">{event.title}</p>
+                            <p className="ios-upcoming-event-date">
                               {format(event.date, "EEEE, d MMM", { locale: dateLocale })}
                             </p>
                           </div>
-                        </>
+                        </div>
                       )
 
                       return link ? (
                         <Link
                           key={event.id}
                           href={link}
-                          className="flex items-center gap-2 sm:gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                          className="ios-upcoming-event-link"
                         >
                           {content}
                         </Link>
                       ) : (
                         <div
                           key={event.id}
-                          className="flex items-center gap-2 sm:gap-3 p-2 rounded-lg"
+                          className="ios-upcoming-event"
                         >
                           {content}
                         </div>
@@ -500,19 +506,19 @@ export default function SchedulePage() {
                     })}
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground sm:text-sm">{t("noUpcoming")}</p>
+                  <p className="ios-no-events-text">{t("noUpcoming")}</p>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </AnimateIn>
 
-          <AnimateIn stagger={6}>
-            <Card>
-              <CardHeader className="pb-2 sm:pb-3">
-                <CardTitle className="text-sm sm:text-base">{t("monthSummary")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+          <AnimateIn stagger={5}>
+            <div className="ios-card ios-summary-card">
+              <div className="ios-card-header-simple">
+                <h3 className="ios-card-subtitle">{t("monthSummary")}</h3>
+              </div>
+              <div className="ios-card-content-simple">
+                <div className="ios-summary-grid">
                   {(Object.entries(eventTypeConfig) as [EventType, (typeof eventTypeConfig)[EventType]][]).map(
                     ([type, config]) => {
                       const count = monthEvents.filter((e) => e.type === type).length
@@ -520,20 +526,20 @@ export default function SchedulePage() {
                       return (
                         <div
                           key={type}
-                          className={`flex items-center gap-2 rounded-lg border p-2 sm:p-3 ${config.color}`}
+                          className={`ios-summary-item ${config.color}`}
                         >
-                          <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                          <div>
-                            <p className="text-lg font-bold sm:text-xl">{count}</p>
-                            <p className="text-[10px] sm:text-xs">{config.label}</p>
+                          <Icon className="ios-summary-icon" />
+                          <div className="ios-summary-text">
+                            <p className="ios-summary-count">{count}</p>
+                            <p className="ios-summary-label">{config.label}</p>
                           </div>
                         </div>
                       )
                     },
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </AnimateIn>
         </div>
       </div>

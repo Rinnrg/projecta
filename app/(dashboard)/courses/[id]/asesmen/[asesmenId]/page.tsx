@@ -189,13 +189,13 @@ export default function AsesmenDetailPage({ params }: PageProps) {
     <div className="w-full py-6 sm:py-8 space-y-6">
       <AlertComponent />
       
-      {/* Header */}
+      {/* Header - iOS Glass */}
       <div className="space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2 min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-xl font-bold sm:text-2xl md:text-3xl">{asesmen.nama}</h1>
-              <Badge variant={asesmen.tipe === 'KUIS' ? 'default' : 'secondary'}>
+              <Badge variant={asesmen.tipe === 'KUIS' ? 'default' : 'secondary'} className="rounded-lg">
                 {asesmen.tipe === 'KUIS' ? (
                   <><FileText className="mr-1 h-3 w-3" /> Kuis</>
                 ) : (
@@ -203,7 +203,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
                 )}
               </Badge>
               {isDeadlinePassed && (
-                <Badge variant="destructive">
+                <Badge variant="destructive" className="rounded-lg">
                   <XCircle className="mr-1 h-3 w-3" /> Ditutup
                 </Badge>
               )}
@@ -341,10 +341,10 @@ export default function AsesmenDetailPage({ params }: PageProps) {
         </Alert>
       )}
 
-      {/* Stats Cards - For KUIS */}
+      {/* Stats Cards - For KUIS - iOS Glass */}
       {asesmen.tipe === 'KUIS' && (
         <div className="grid gap-4 md:grid-cols-3">
-          <Card>
+          <Card className="ios-glass-card border-border/30 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Soal</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
@@ -355,7 +355,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="ios-glass-card border-border/30 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Durasi</CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
@@ -364,7 +364,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
               <div className="text-2xl font-bold">{asesmen.durasi || 0} menit</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="ios-glass-card border-border/30 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Bobot</CardTitle>
               <AlertCircle className="h-4 w-4 text-muted-foreground" />
@@ -380,10 +380,10 @@ export default function AsesmenDetailPage({ params }: PageProps) {
         </div>
       )}
 
-      {/* Stats Cards - For TUGAS */}
+      {/* Stats Cards - For TUGAS - iOS Glass */}
       {asesmen.tipe === 'TUGAS' && (
         <div className="grid gap-4 md:grid-cols-2">
-          <Card>
+          <Card className="ios-glass-card border-border/30 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Tipe Pengerjaan</CardTitle>
               {asesmen.tipePengerjaan === 'KELOMPOK' ? (
@@ -401,7 +401,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
               </p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="ios-glass-card border-border/30 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Deadline</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -431,8 +431,8 @@ export default function AsesmenDetailPage({ params }: PageProps) {
         </div>
       )}
 
-      {/* Description */}
-      <Card>
+      {/* Description - iOS Glass */}
+      <Card className="ios-glass-card border-border/30 rounded-2xl">
         <CardHeader>
           <CardTitle>Deskripsi</CardTitle>
         </CardHeader>
@@ -483,9 +483,9 @@ export default function AsesmenDetailPage({ params }: PageProps) {
         </CardContent>
       </Card>
 
-      {/* Lampiran Section */}
+      {/* Lampiran Section - iOS Glass */}
       {(asesmen.lampiran || asesmen.fileData) && (
-        <Card>
+        <Card className="ios-glass-card border-border/30 rounded-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
@@ -493,7 +493,7 @@ export default function AsesmenDetailPage({ params }: PageProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4 bg-muted rounded-lg">
+            <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4 ios-glass-inset rounded-xl">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="p-2 sm:p-3 rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400 shrink-0">
                   <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -710,9 +710,9 @@ export default function AsesmenDetailPage({ params }: PageProps) {
         </Card>
       )}
 
-      {/* Status Penilaian untuk Siswa - SELALU TAMPIL UNTUK SISWA */}
+      {/* Status Penilaian untuk Siswa - iOS Glass */}
       {isStudent && (
-        <Card className="border-2">
+        <Card className="ios-glass-card border-border/30 rounded-2xl border-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ClipboardList className="h-5 w-5" />

@@ -573,14 +573,14 @@ export default function KuisPage({ params }: PageProps) {
         <Progress value={progress} />
       </div>
 
-      {/* Question Card */}
-      <Card>
+      {/* Question Card - iOS Glass */}
+      <Card className="ios-glass-card border-border/30 rounded-2xl">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">Soal {currentSoalIndex + 1} / {asesmen.soal.length}</Badge>
-              <Badge variant="outline">{currentSoal.bobot} poin</Badge>
-              <Badge variant={currentSoal.tipeJawaban === 'PILIHAN_GANDA' ? 'default' : 'secondary'}>
+              <Badge variant="secondary" className="rounded-lg">Soal {currentSoalIndex + 1} / {asesmen.soal.length}</Badge>
+              <Badge variant="outline" className="rounded-lg">{currentSoal.bobot} poin</Badge>
+              <Badge variant={currentSoal.tipeJawaban === 'PILIHAN_GANDA' ? 'default' : 'secondary'} className="rounded-lg">
                 {currentSoal.tipeJawaban === 'PILIHAN_GANDA' ? 'Pilihan Ganda' : 'Isian'}
               </Badge>
               {isCurrentRagu && (
@@ -609,7 +609,7 @@ export default function KuisPage({ params }: PageProps) {
               onValueChange={(value) => handleJawabanChange(currentSoal.id, value)}
             >
               {currentSoal.opsi.map((opsi: Opsi) => (
-                <div key={opsi.id} className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-accent cursor-pointer">
+                <div key={opsi.id} className="flex items-center space-x-2 border border-border/30 rounded-xl p-3 hover:bg-accent/50 cursor-pointer transition-colors">
                   <RadioGroupItem value={opsi.id} id={opsi.id} />
                   <Label htmlFor={opsi.id} className="flex-1 cursor-pointer">
                     {opsi.teks}
@@ -689,8 +689,8 @@ export default function KuisPage({ params }: PageProps) {
         </CardContent>
       </Card>
 
-      {/* Question Navigator */}
-      <Card>
+      {/* Question Navigator - iOS Glass */}
+      <Card className="ios-glass-card border-border/30 rounded-2xl">
         <CardHeader>
           <CardTitle className="text-sm">Navigasi Soal</CardTitle>
           <CardDescription className="text-xs">

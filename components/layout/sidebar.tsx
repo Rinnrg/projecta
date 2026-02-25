@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -33,6 +33,17 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, onNavClick }: S
   const { t } = useAutoTranslate()
   const [isHovered, setIsHovered] = useState(false)
 
+  // Blob system refs
+  const navRef = useRef<HTMLDivElement>(null)
+  const blobRef = useRef<HTMLDivElement>(null)
+  const blobInnerRef = useRef<HTMLDivElement>(null)
+  const itemRefs = useRef<(HTMLElement | null)[]>([])
+  const prevActiveRef = useRef<number>(-1)
+
+  // Constants for smooth blob animation
+  const LIQUID_SETTLE = "cubic-bezier(0.23, 1, 0.32, 1)"
+  const WATER_EASING = "cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+
   const menuItems = [
     { title: t("Beranda"), href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "GURU", "SISWA"] },
     { title: t("Jadwal"), href: "/schedule", icon: Calendar, roles: ["ADMIN", "GURU", "SISWA"] },
@@ -48,8 +59,94 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, onNavClick }: S
   const filteredMenu = menuItems.filter((item) => user && item.roles.includes(user.role))
   const filteredAdminMenu = adminMenuItems.filter((item) => user && item.roles.includes(user.role))
 
+  // Combine all menu items for blob positioning
+  const allMenuItems = [...filteredMenu, ...filteredAdminMenu]
+
   // Sidebar akan expand jika tidak collapsed atau sedang di hover (tapi tidak untuk mobile)
   const isExpanded = isMobile || !isCollapsed || isHovered
+
+  // Find active index
+  const activeIndex = allMenuItems.findIndex(
+    (item) => pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))
+  )
+
+  /**
+   * Move blob to a specific menu item index with smooth animation
+   */
+  const moveBlobTo = useCallback((idx: number, animate = true) => {
+    const blob = blobRef.current
+    const inner = blobInnerRef.current
+    const nav = navRef.current
+    if (!blob || !nav || idx < 0 || idx >= allMenuItems.length) return
+
+    const targetElement = itemRefs.current[idx]
+    if (!targetElement) return
+
+    const navRect = nav.getBoundingClientRect()
+    const targetRect = targetElement.getBoundingClientRect()
+    
+    const top = targetRect.top - navRect.top
+    const height = targetRect.height
+
+    if (animate) {
+      const prevIdx = prevActiveRef.current
+      const direction = idx > prevIdx ? 1 : idx < prevIdx ? -1 : 0
+      const distance = Math.abs(idx - prevIdx)
+
+      // Add delay for smooth transition
+      const baseDuration = 450
+      const duration = baseDuration + distance * 80
+
+      blob.style.transition = `top ${duration}ms ${LIQUID_SETTLE}, height ${duration}ms ${LIQUID_SETTLE}, opacity 300ms ease`
+
+      // Smooth blob morphing animation
+      if (inner && direction !== 0) {
+        const stretchY = 1 + distance * 0.08
+        const squashX = 1 - distance * 0.04
+
+        inner.animate([
+          { transform: 'scale(1)', borderRadius: '14px', offset: 0 },
+          { transform: `scale(${squashX}, ${stretchY})`, borderRadius: `${12 - distance}px ${16 + distance}px ${16 + distance}px ${12 - distance}px`, offset: 0.3 },
+          { transform: `scale(${stretchY * 0.95}, ${squashX})`, borderRadius: `${16 + distance}px ${12 - distance}px ${12 - distance}px ${16 + distance}px`, offset: 0.65 },
+          { transform: 'scale(1.01, 0.99)', borderRadius: '13px 15px 15px 13px', offset: 0.85 },
+          { transform: 'scale(1)', borderRadius: '14px', offset: 1 },
+        ], {
+          duration: duration + 100,
+          easing: WATER_EASING,
+          fill: "forwards",
+        })
+      }
+    } else {
+      blob.style.transition = "none"
+      if (inner) inner.style.transform = 'scale(1)'
+    }
+
+    blob.style.top = `${top}px`
+    blob.style.height = `${height}px`
+    blob.style.opacity = "1"
+
+    prevActiveRef.current = idx
+  }, [allMenuItems.length, LIQUID_SETTLE, WATER_EASING])
+
+  // Move blob when active item changes
+  useEffect(() => {
+    if (activeIndex >= 0) {
+      // Small delay to let layout settle
+      const timer = setTimeout(() => moveBlobTo(activeIndex, true), 80)
+      return () => clearTimeout(timer)
+    }
+  }, [activeIndex, moveBlobTo])
+
+  // Reposition on resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (activeIndex >= 0) {
+        moveBlobTo(activeIndex, false)
+      }
+    }
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [activeIndex, moveBlobTo])
 
   return (
     <aside
@@ -85,34 +182,50 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, onNavClick }: S
       </div>
 
       <div className="flex-1 overflow-y-auto sidebar-scroll">
-        <nav className="flex flex-col gap-1 px-3 py-4 min-h-full pb-4">
+        <nav 
+          ref={navRef}
+          className="relative flex flex-col gap-1 px-3 py-4 min-h-full pb-4"
+        >
+          {/* Liquid Glass blob — flows smoothly between nav items */}
+          <div
+            ref={blobRef}
+            className="sidebar-blob"
+            style={{ top: 0, height: 0, opacity: 0 }}
+          >
+            <div ref={blobInnerRef} className="sidebar-blob-inner" />
+          </div>
+
           {filteredMenu.map((item, index) => {
             const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))
 
             return (
               <Link
                 key={item.href}
+                ref={(el) => { itemRefs.current[index] = el }}
                 href={item.href}
-                onClick={onNavClick}
+                onClick={(e) => {
+                  // Smooth blob movement on click
+                  moveBlobTo(index, true)
+                  onNavClick?.()
+                }}
                 className={cn(
-                  /* Nav item from tema/ion-tabs.scss ion-tab-button pattern */
+                  /* Nav item with outline removal */
                   "group relative flex items-center rounded-[14px] py-2.5 px-2 text-sm font-medium overflow-hidden",
+                  "outline-none focus:outline-none -webkit-tap-highlight-color-transparent",
                   /* Transition from tema: transform 140ms ease-out, color 140ms ease */
-                  "transition-[background,color,transform,box-shadow] duration-[140ms]",
+                  "transition-[color,transform,box-shadow] duration-[140ms]",
                   "ease-[cubic-bezier(0.32,0.72,0,1)]",
                   "transform-gpu backface-hidden",
                   `stagger-${Math.min(index + 1, 5)}`,
                   "animate-slide-in-left",
                   isActive
-                    ? "bg-primary/10 text-primary shadow-[inset_0_0_4px_0_rgba(var(--ios26-accent-rgb,0,122,255),0.08)]"
+                    ? "text-primary"
                     /* Hover: from ion-button :not(.ion-activated):hover opacity 0.72 pattern */
-                    : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/8 hover:text-accent-foreground active:scale-[1.03]",
+                    : "text-muted-foreground hover:text-accent-foreground active:scale-[1.03]",
                 )}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-              {isActive && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-full" />
-              )}
-              <div className="flex items-center justify-center w-[38px] shrink-0">
+              <div className="flex items-center justify-center min-w-[38px] w-[38px] shrink-0 relative z-10">
                 <item.icon
                   className={cn(
                     "h-5 w-5 shrink-0 transition-transform duration-150 group-hover:scale-110",
@@ -122,7 +235,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, onNavClick }: S
               </div>
               <span 
                 className={cn(
-                  "whitespace-nowrap transition-all duration-300 overflow-hidden",
+                  "whitespace-nowrap transition-all duration-300 overflow-hidden relative z-10",
                   isExpanded || isMobile ? "opacity-100 w-auto" : "opacity-0 w-0"
                 )}
               >
@@ -137,28 +250,33 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, onNavClick }: S
           <>
             <div className="my-2 border-t border-sidebar-border" />
             {filteredAdminMenu.map((item, index) => {
+              const globalIndex = filteredMenu.length + index
               const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))
 
               return (
                 <Link
                   key={item.href}
+                  ref={(el) => { itemRefs.current[globalIndex] = el }}
                   href={item.href}
-                  onClick={onNavClick}
+                  onClick={(e) => {
+                    // Smooth blob movement on click
+                    moveBlobTo(globalIndex, true)
+                    onNavClick?.()
+                  }}
                   className={cn(
-                    /* Admin nav item — same pattern as ion-tab-button */
+                    /* Admin nav item with outline removal */
                     "group relative flex items-center rounded-[14px] py-2.5 px-2 text-sm font-medium overflow-hidden",
-                    "transition-[background,color,transform,box-shadow] duration-[140ms]",
+                    "outline-none focus:outline-none -webkit-tap-highlight-color-transparent",
+                    "transition-[color,transform,box-shadow] duration-[140ms]",
                     "ease-[cubic-bezier(0.32,0.72,0,1)]",
                     "transform-gpu backface-hidden",
                     isActive
-                      ? "bg-primary/10 text-primary shadow-[inset_0_0_4px_0_rgba(var(--ios26-accent-rgb,0,122,255),0.08)]"
-                      : "text-muted-foreground hover:bg-white/50 dark:hover:bg-white/8 hover:text-accent-foreground active:scale-[1.03]",
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-accent-foreground active:scale-[1.03]",
                   )}
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
-                  {isActive && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-full" />
-                  )}
-                  <div className="flex items-center justify-center w-[38px] shrink-0">
+                  <div className="flex items-center justify-center min-w-[38px] w-[38px] shrink-0 relative z-10">
                     <item.icon
                       className={cn(
                         "h-5 w-5 shrink-0 transition-transform duration-150 group-hover:scale-110",
@@ -168,7 +286,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, onNavClick }: S
                   </div>
                   <span 
                     className={cn(
-                      "whitespace-nowrap transition-all duration-300 overflow-hidden",
+                      "whitespace-nowrap transition-all duration-300 overflow-hidden relative z-10",
                       isExpanded || isMobile ? "opacity-100 w-auto" : "opacity-0 w-0"
                     )}
                   >

@@ -82,7 +82,7 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
     }
   ], [course.judul])
 
-  useBreadcrumbPage(breadcrumbItems)
+  useBreadcrumbPage(course.judul, breadcrumbItems)
 
   // TODO: Implement completed tracking in the database
   const completedCount = 0
@@ -253,10 +253,10 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
         onSuccess={fetchEnrollments}
       />
       
-      {/* Course Header */}
+      {/* Course Header - iOS Glass */}
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <div className="relative aspect-video overflow-hidden rounded-lg border border-border/50 sm:rounded-xl">
+          <div className="relative aspect-video overflow-hidden rounded-2xl sm:rounded-3xl border border-border/30">
             <img
               src={course.gambar || "/placeholder.svg?height=400&width=700&query=course"}
               alt={course.judul}
@@ -264,7 +264,7 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
             />
             <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/20 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
-              <Badge className="mb-2 bg-background/90 text-foreground backdrop-blur-sm text-xs sm:mb-3">
+              <Badge className="mb-2 bg-background/80 text-foreground backdrop-blur-md text-xs sm:mb-3 rounded-lg border-0">
                 {course.kategori}
               </Badge>
               <h1 className="text-lg font-bold text-background sm:text-2xl md:text-3xl text-balance">{course.judul}</h1>
@@ -272,14 +272,14 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
           </div>
         </div>
 
-        {/* Course Info Card */}
-        <Card className="border-border/50">
+        {/* Course Info Card - iOS Glass */}
+        <Card className="ios-glass-card border-border/30 rounded-2xl sm:rounded-3xl">
           <CardHeader className="pb-3 sm:pb-4">
             <CardTitle className="text-base sm:text-lg">Informasi Course</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 sm:space-y-5">
             {/* Instructor */}
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 sm:gap-3 sm:p-3">
+            <div className="flex items-center gap-2 p-2 rounded-xl ios-glass-inset sm:gap-3 sm:p-3">
               <Avatar className="h-9 w-9 border-2 border-background sm:h-11 sm:w-11">
                 <AvatarImage src={course.guru?.foto || "/placeholder.svg"} />
                 <AvatarFallback className="bg-primary/10 text-primary font-medium text-xs sm:text-sm">
@@ -297,7 +297,7 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 shrink-0"
+                  className="h-8 w-8 shrink-0 rounded-lg"
                   title="Edit Guru Pengampu"
                   onClick={() => setEditTeacherOpen(true)}
                 >
@@ -307,14 +307,14 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
             </div>
 
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              <div className="rounded-lg bg-muted/50 p-3 text-center sm:p-4">
+              <div className="rounded-xl ios-glass-inset p-3 text-center sm:p-4">
                 <div className="flex items-center justify-center gap-1.5 text-primary mb-0.5 sm:gap-2 sm:mb-1">
                   <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span className="text-xl font-bold sm:text-2xl">{course.materi?.length || 0}</span>
                 </div>
                 <p className="text-xs text-muted-foreground">Materi</p>
               </div>
-              <div className="rounded-lg bg-muted/50 p-3 text-center sm:p-4">
+              <div className="rounded-xl ios-glass-inset p-3 text-center sm:p-4">
                 <div className="flex items-center justify-center gap-1.5 text-primary mb-0.5 sm:gap-2 sm:mb-1">
                   <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span className="text-xl font-bold sm:text-2xl">{assessments.length}</span>
@@ -324,7 +324,7 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
             </div>
 
             {user?.role === "SISWA" && (
-              <div className="space-y-1.5 p-2 rounded-lg bg-muted/50 sm:space-y-2 sm:p-3">
+              <div className="space-y-1.5 p-2 rounded-xl ios-glass-inset sm:space-y-2 sm:p-3">
                 <div className="flex justify-between text-xs sm:text-sm">
                   <span className="text-muted-foreground">Progress Belajar</span>
                   <span className="font-semibold">{progressPercent}%</span>
@@ -338,13 +338,13 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
 
             {isTeacherOrAdmin && (
               <div className="space-y-2">
-                <div className="flex items-center gap-1.5 p-2 rounded-lg bg-muted/50 sm:gap-2 sm:p-3">
+                <div className="flex items-center gap-1.5 p-2 rounded-xl ios-glass-inset sm:gap-2 sm:p-3">
                   <Users className="h-3.5 w-3.5 text-muted-foreground sm:h-4 sm:w-4" />
                   <span className="text-xs sm:text-sm">
                     {isLoadingStudents ? "Memuat..." : `${enrollments.length} siswa terdaftar`}
                   </span>
                 </div>
-                <Button className="w-full" size="sm" asChild>
+                <Button className="w-full rounded-xl" size="sm" asChild>
                   <Link href={`/courses/${course.id}/edit`}>
                     <Pencil className="mr-2 h-4 w-4" />
                     Edit Course
@@ -356,21 +356,21 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
         </Card>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs - iOS Style */}
       <Tabs value={activeTab} onValueChange={(value) => {
         setActiveTab(value)
-        setTabKey(prev => prev + 1) // Trigger re-render for animation
+        setTabKey(prev => prev + 1)
       }} className="space-y-4 sm:space-y-6">
         <div className="overflow-visible">
-          <TabsList className="inline-flex w-max sm:w-auto">
-            <TabsTrigger value="materials" className="text-xs sm:text-sm">
+          <TabsList className="inline-flex w-max sm:w-auto rounded-xl bg-muted/60 backdrop-blur-sm p-1">
+            <TabsTrigger value="materials" className="text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
               Materi
             </TabsTrigger>
-            <TabsTrigger value="assessments" className="text-xs sm:text-sm">
+            <TabsTrigger value="assessments" className="text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
               Asesmen
             </TabsTrigger>
             {isTeacherOrAdmin && (
-              <TabsTrigger value="students" className="text-xs sm:text-sm">
+              <TabsTrigger value="students" className="text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
                 Siswa
               </TabsTrigger>
             )}
@@ -382,7 +382,7 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <h2 className="text-base font-semibold sm:text-lg">Materi Pembelajaran</h2>
             {isTeacherOrAdmin && (
-              <Button size="sm" className="w-full sm:w-auto" asChild>
+              <Button size="sm" className="w-full sm:w-auto rounded-xl" asChild>
                 <Link href={`/courses/${course.id}/materi/new`}>
                   <Plus className="mr-2 h-4 w-4" />
                   Tambah Materi
@@ -393,12 +393,12 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
           <div className="space-y-2 sm:space-y-3">
             {(course.materi && course.materi.length > 0) ? course.materi.map((material, index) => (
               <Link key={material.id} href={`/courses/${course.id}/materi/${material.id}`} className="block">
-              <Card className="border-border/50 transition-all hover:border-border hover:shadow-sm cursor-pointer group">
+              <Card className="ios-glass-card border-border/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 cursor-pointer group rounded-2xl">
                 <CardContent className="flex items-center gap-2 p-3 sm:gap-4 sm:p-4">
                   <div className="hidden items-center justify-center text-xs font-medium text-muted-foreground sm:flex sm:h-10 sm:w-10 sm:text-sm">
                     {String(index + 1).padStart(2, "0")}
                   </div>
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary sm:h-10 sm:w-10">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-10 sm:w-10">
                     <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -452,10 +452,10 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
               </Card>
               </Link>
             )) : (
-              <Card className="border-dashed border-border/60 bg-muted/20">
+              <Card className="border-dashed border-border/30 ios-glass-card rounded-2xl">
                 <CardContent className="flex flex-col items-center justify-center py-8 text-center sm:py-12">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted sm:h-14 sm:w-14">
-                    <BookOpen className="h-5 w-5 text-muted-foreground sm:h-6 sm:w-6" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 sm:h-14 sm:w-14">
+                    <BookOpen className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
                   </div>
                   <h3 className="mt-4 text-sm font-semibold sm:text-base">Belum ada materi</h3>
                   <p className="mt-1 max-w-sm text-xs text-muted-foreground sm:mt-1.5 sm:text-sm">
@@ -472,7 +472,7 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <h2 className="text-base font-semibold sm:text-lg">Daftar Asesmen</h2>
             {isTeacherOrAdmin && (
-              <Button size="sm" className="w-full sm:w-auto" asChild>
+              <Button size="sm" className="w-full sm:w-auto rounded-xl" asChild>
                 <Link href={`/courses/${course.id}/asesmen/new`}>
                   <Plus className="mr-2 h-4 w-4" />
                   Buat Asesmen
@@ -484,7 +484,7 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
             <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
               {assessments.map((assessment) => (
                 <Link key={assessment.id} href={`/courses/${course.id}/asesmen/${assessment.id}`} className="block">
-                <Card className="border-border/50 hover:border-border transition-colors cursor-pointer group">
+                <Card className="ios-glass-card border-border/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 cursor-pointer group rounded-2xl">
                   <CardHeader className="pb-2 sm:pb-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
@@ -546,10 +546,10 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
               ))}
             </div>
           ) : (
-            <Card className="border-dashed border-border/60 bg-muted/20">
+            <Card className="border-dashed border-border/30 ios-glass-card rounded-2xl">
               <CardContent className="flex flex-col items-center justify-center py-8 text-center sm:py-12">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted sm:h-14 sm:w-14">
-                  <FileText className="h-5 w-5 text-muted-foreground sm:h-6 sm:w-6" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 sm:h-14 sm:w-14">
+                  <FileText className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
                 </div>
                 <h3 className="mt-4 text-sm font-semibold sm:text-base">Belum ada asesmen</h3>
                 <p className="mt-1 max-w-sm text-xs text-muted-foreground sm:mt-1.5 sm:text-sm">
@@ -566,16 +566,16 @@ export default function CourseDetailClient({ course, assessments }: CourseDetail
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold sm:text-lg">Siswa Terdaftar</h2>
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs rounded-lg">
                   {enrollments.length} Siswa
                 </Badge>
-                <Button size="sm" className="gap-2" onClick={() => setAddStudentOpen(true)}>
+                <Button size="sm" className="gap-2 rounded-xl" onClick={() => setAddStudentOpen(true)}>
                   <Plus className="h-4 w-4" />
                   <span className="hidden sm:inline">Tambah Siswa</span>
                 </Button>
               </div>
             </div>
-            <Card className="border-border/50">
+            <Card className="ios-glass-card border-border/30 rounded-2xl">
               <CardContent className="p-0">
                 {isLoadingStudents ? (
                   <div className="p-8 text-center text-sm text-muted-foreground">

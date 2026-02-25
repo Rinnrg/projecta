@@ -238,9 +238,9 @@ export function MobileBottomNav({ className }: MobileBottomNavProps) {
       barRef.current.style.transform = "scale(1.038) translateZ(0)"
     }
 
-    // Show blob at touched tab and zoom it in (only during drag)
+    // Show blob at touched tab and zoom it in instantly (no animation)
     if (idx >= 0) {
-      moveBlobTo(idx, false)
+      moveBlobTo(idx, false) // Immediately move blob with no delay
       animateBlobScale("zoomIn")
     }
 
@@ -334,9 +334,8 @@ export function MobileBottomNav({ className }: MobileBottomNavProps) {
   /* ---- Position blob on active tab when pathname changes ---- */
   useEffect(() => {
     const idx = activeIndex >= 0 ? activeIndex : 0
-    // Small delay to let layout settle
-    const t = setTimeout(() => moveBlobTo(idx, true), 60)
-    return () => clearTimeout(t)
+    // Immediate blob movement when route changes
+    moveBlobTo(idx, false)
   }, [activeIndex, moveBlobTo, filteredMenu.length])
 
   // Also reposition on resize
@@ -383,7 +382,7 @@ export function MobileBottomNav({ className }: MobileBottomNavProps) {
               onClick={(e) => {
                 e.preventDefault()
                 if (!isDragging.current) {
-                  moveBlobTo(index, true)
+                  moveBlobTo(index, false) // Immediate blob movement for click
                   router.navigate(item.href)
                 }
               }}
@@ -392,6 +391,11 @@ export function MobileBottomNav({ className }: MobileBottomNavProps) {
                 isActive && "ios26-tab-selected"
               )}
               draggable={false}
+              style={{ 
+                WebkitTapHighlightColor: 'transparent',
+                outline: 'none',
+                touchAction: 'manipulation'
+              }}
             >
               <item.icon
                 className={cn(

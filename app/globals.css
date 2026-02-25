@@ -43,6 +43,16 @@
   --sidebar-ring: oklch(0.55 0.2 250);
   --success: oklch(0.55 0.15 145);
   --warning: oklch(0.7 0.15 70);
+  
+  /* iOS 26 Water-Glass System Variables */
+  --ios26-glass-bg-rgb: 248, 250, 252;
+  --ios26-glass-shadow-rgb: 148, 163, 184;
+  --ios26-glass-border-rgb: 203, 213, 225;
+  --ios26-accent-rgb: 139, 92, 246;
+  
+  /* Animation easings */
+  --ios26-liquid-settle: cubic-bezier(0.23, 1, 0.32, 1);
+  --ios26-water-easing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .dark {
@@ -79,6 +89,12 @@
   --sidebar-ring: oklch(0.65 0.2 250);
   --success: oklch(0.6 0.15 145);
   --warning: oklch(0.75 0.15 70);
+  
+  /* iOS 26 Water-Glass System Variables - Dark Mode */
+  --ios26-glass-bg-rgb: 40, 40, 40;
+  --ios26-glass-shadow-rgb: 60, 60, 60;
+  --ios26-glass-border-rgb: 120, 120, 120;
+  --ios26-accent-rgb: 10, 132, 255;
 }
 
 @theme inline {
@@ -144,6 +160,92 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* ── iOS 26 Liquid Glass Utility Classes ─── */
+
+/* Glass Section - for header/container areas */
+.ios-glass-section {
+  background: linear-gradient(135deg, rgba(var(--ios26-glass-bg-rgb), 0.45) 0%, rgba(var(--ios26-glass-bg-rgb), 0.15) 100%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  backdrop-filter: blur(20px) saturate(200%);
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.dark .ios-glass-section {
+  background: linear-gradient(135deg, rgba(40, 40, 40, 0.6) 0%, rgba(40, 40, 40, 0.3) 100%);
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Glass Card - for card elements */
+.ios-glass-card {
+  background: linear-gradient(135deg, rgba(var(--ios26-glass-bg-rgb), 0.55) 0%, rgba(var(--ios26-glass-bg-rgb), 0.25) 100%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 0.5px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  border-radius: 1rem;
+}
+
+.dark .ios-glass-card {
+  background: linear-gradient(135deg, rgba(40, 40, 40, 0.5) 0%, rgba(40, 40, 40, 0.2) 100%);
+  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Glass Pill - for small badges, pills, chips */
+.ios-glass-pill {
+  background: rgba(var(--ios26-glass-bg-rgb), 0.6);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+}
+
+.dark .ios-glass-pill {
+  background: rgba(40, 40, 40, 0.4);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Glass Input - for input fields */
+.ios-glass-input {
+  background: rgba(var(--ios26-glass-bg-rgb), 0.4);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  backdrop-filter: blur(10px) saturate(150%);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  transition: all 200ms ease;
+}
+
+.ios-glass-input:focus {
+  background: rgba(var(--ios26-glass-bg-rgb), 0.6);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--ios26-accent-rgb), 0.15);
+}
+
+.dark .ios-glass-input {
+  background: rgba(40, 40, 40, 0.3);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Glass Inset - for inner sections/grouped content */
+.ios-glass-inset {
+  background: rgba(var(--ios26-glass-bg-rgb), 0.3);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+}
+
+.dark .ios-glass-inset {
+  background: rgba(40, 40, 40, 0.25);
+  border-color: rgba(255, 255, 255, 0.04);
 }
 
 /* Bounce in animation keyframes */
@@ -356,6 +458,50 @@
   animation: twinkle 2s ease-in-out infinite;
 }
 
+/* Skeleton Animations */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+.animate-wave {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-wave::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: wave 1.6s ease-in-out infinite;
+}
+
 /* Radial gradient utility for realistic sun/moon */
 .bg-gradient-radial {
   background-image: radial-gradient(circle, var(--tw-gradient-stops));
@@ -546,6 +692,55 @@
     opacity 200ms ease;
 }
 
+/* Sidebar blob — same concept but for vertical navigation */
+.sidebar-blob {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  z-index: 0;
+  pointer-events: none;
+  overflow: visible;
+  /* Smooth vertical movement with delay */
+  transition:
+    top 450ms var(--ios26-liquid-settle),
+    height 450ms var(--ios26-liquid-settle),
+    opacity 300ms ease;
+}
+
+.sidebar-blob-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+
+  /* Liquid water-glass blob tint */
+  background: rgba(var(--ios26-accent-rgb), 0.12);
+  -webkit-backdrop-filter: blur(4px) saturate(140%);
+  backdrop-filter: blur(4px) saturate(140%);
+  /* Water caustic refraction glow */
+  box-shadow:
+    inset 0 1px 4px 0 rgba(var(--ios26-accent-rgb), 0.12),
+    inset 0 -1px 2px 0 rgba(var(--ios26-accent-rgb), 0.06),
+    inset 0 0 12px 0 rgba(var(--ios26-accent-rgb), 0.04),
+    0 0 14px 0 rgba(var(--ios26-accent-rgb), 0.06);
+  border: 0.5px solid rgba(var(--ios26-accent-rgb), 0.15);
+
+  /* GPU for smooth morphing */
+  will-change: transform, border-radius;
+  transform-origin: center center;
+  /* Smooth border-radius transitions for liquid shape morphing */
+  transition: border-radius 300ms var(--ios26-water-easing);
+}
+
+.dark .sidebar-blob-inner {
+  background: rgba(var(--ios26-accent-rgb), 0.16);
+  box-shadow:
+    inset 0 1px 4px 0 rgba(var(--ios26-accent-rgb), 0.14),
+    inset 0 -1px 2px 0 rgba(var(--ios26-accent-rgb), 0.08),
+    inset 0 0 12px 0 rgba(var(--ios26-accent-rgb), 0.06),
+    0 0 16px 0 rgba(var(--ios26-accent-rgb), 0.1);
+  border-color: rgba(var(--ios26-accent-rgb), 0.2);
+}
+
 .ios26-blob-inner {
   width: 100%;
   height: 100%;
@@ -595,13 +790,21 @@
   border-radius: 32px;
   color: rgba(0, 0, 0, 0.50);
   text-decoration: none;
+  /* Remove all outlines */
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
   /* Water-glass fluid transition — smooth multi-property flow */
   transition:
-    color 280ms var(--ios26-water-easing),
     transform 300ms var(--ios26-liquid-settle),
     filter 250ms var(--ios26-water-easing);
-  -webkit-tap-highlight-color: transparent;
   transform-origin: center center;
+}
+
+/* Remove focus outlines completely */
+.ios26-tab-button:focus,
+.ios26-tab-button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .dark .ios26-tab-button {
@@ -614,7 +817,7 @@
   filter: brightness(1.04);
 }
 
-/* Selected tab — Fluid color morph */
+/* Selected tab — Fluid color morph (maintain color on selected state) */
 .ios26-tab-button.ios26-tab-selected {
   color: var(--color-primary, rgb(var(--ios26-accent-rgb)));
 }
@@ -655,6 +858,453 @@
 .ios26-tab-label-active {
   font-weight: 600;
   transform: translateY(-0.5px);
+}
+
+/* ── iOS Schedule Page Styling ─── */
+
+.ios-schedule-container {
+  @apply space-y-6 p-4 sm:p-6 max-w-[1400px] mx-auto;
+}
+
+/* Header Section */
+.ios-schedule-header {
+  @apply space-y-4 sm:space-y-6;
+  background: linear-gradient(135deg, rgba(var(--ios26-glass-bg-rgb), 0.4) 0%, rgba(var(--ios26-glass-bg-rgb), 0.1) 100%);
+  backdrop-filter: blur(20px) saturate(200%);
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  @apply rounded-3xl p-4 sm:p-6;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.ios-header-content {
+  @apply flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6;
+}
+
+.ios-title-section h1.ios-main-title {
+  @apply text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text;
+}
+
+.ios-title-section p.ios-subtitle {
+  @apply text-sm sm:text-base text-muted-foreground mt-1;
+}
+
+.ios-header-controls {
+  @apply flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4;
+}
+
+.ios-view-toggle .ios-tab-list {
+  @apply h-10 bg-background/50 border-background/20;
+}
+
+.ios-tab-trigger {
+  @apply flex items-center gap-2 text-xs sm:text-sm;
+}
+
+.ios-tab-icon {
+  @apply h-4 w-4;
+}
+
+.ios-tab-text {
+  @apply hidden sm:inline;
+}
+
+.ios-filter-select {
+  @apply h-10 w-full sm:w-[180px] bg-background/50 border-background/20;
+}
+
+.ios-select-content {
+  backdrop-filter: blur(20px) saturate(180%);
+  @apply bg-background/90 border-background/20;
+}
+
+.ios-legend-container {
+  @apply flex flex-wrap gap-4 sm:gap-6;
+}
+
+.ios-legend-item {
+  @apply flex items-center gap-2;
+}
+
+.ios-legend-dot {
+  @apply h-3 w-3 rounded-full;
+}
+
+.ios-legend-label {
+  @apply text-sm font-medium;
+}
+
+/* Alert Card */
+.ios-alert-card {
+  @apply rounded-2xl border border-destructive/20 p-4 sm:p-5;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0.02) 100%);
+  backdrop-filter: blur(10px);
+}
+
+.ios-alert-destructive {
+  @apply border-destructive/30;
+}
+
+.ios-alert-content {
+  @apply flex items-start gap-3 sm:gap-4;
+}
+
+.ios-alert-icon {
+  @apply shrink-0 mt-0.5;
+}
+
+.ios-alert-icon-svg {
+  @apply h-5 w-5 text-destructive;
+}
+
+.ios-alert-text {
+  @apply flex-1 min-w-0;
+}
+
+.ios-alert-title {
+  @apply text-sm font-semibold text-destructive;
+}
+
+.ios-alert-badges {
+  @apply mt-2 flex flex-wrap gap-2;
+}
+
+.ios-alert-badge {
+  @apply text-xs px-2 py-1 rounded-lg border border-destructive/20 bg-destructive/5 text-destructive;
+}
+
+/* Main Grid */
+.ios-schedule-grid {
+  @apply grid gap-6 lg:grid-cols-3;
+}
+
+.ios-main-content {
+  @apply lg:col-span-2;
+}
+
+.ios-sidebar {
+  @apply space-y-6;
+}
+
+/* Cards */
+.ios-card {
+  @apply rounded-3xl border border-background/20 overflow-hidden;
+  background: linear-gradient(135deg, rgba(var(--ios26-glass-bg-rgb), 0.6) 0%, rgba(var(--ios26-glass-bg-rgb), 0.3) 100%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.ios-card-header {
+  @apply flex flex-row items-center justify-between p-4 sm:p-6 border-b border-background/10;
+}
+
+.ios-card-title {
+  @apply flex items-center gap-3 text-lg sm:text-xl font-semibold;
+}
+
+.ios-card-title-icon {
+  @apply h-5 w-5 sm:h-6 sm:w-6;
+}
+
+.ios-calendar-nav {
+  @apply flex items-center gap-1 sm:gap-2;
+}
+
+.ios-nav-button {
+  @apply h-9 w-9 hover:bg-background/50 transition-colors rounded-xl;
+}
+
+.ios-nav-icon {
+  @apply h-4 w-4;
+}
+
+.ios-today-button {
+  @apply h-9 px-4 hover:bg-background/50 transition-colors rounded-xl text-sm;
+}
+
+.ios-card-content {
+  @apply p-4 sm:p-6;
+}
+
+.ios-card-header-simple {
+  @apply p-4 sm:p-6 pb-3 sm:pb-4;
+}
+
+.ios-card-subtitle {
+  @apply text-base sm:text-lg font-semibold;
+}
+
+.ios-card-subtitle-with-icon {
+  @apply flex items-center gap-2;
+}
+
+.ios-subtitle-icon {
+  @apply h-4 w-4 sm:h-5 sm:w-5;
+}
+
+.ios-card-content-simple {
+  @apply px-4 sm:px-6 pb-4 sm:pb-6;
+}
+
+/* Calendar */
+.ios-calendar-wrapper {
+  @apply w-full overflow-hidden;
+}
+
+.ios-calendar {
+  @apply w-full;
+}
+
+/* Fix calendar overflow on mobile */
+.ios-calendar-wrapper [data-slot="calendar"] {
+  @apply w-full max-w-full;
+  --cell-size: calc((100% - 2rem) / 7);
+}
+
+.ios-calendar-wrapper .rdp-month {
+  @apply w-full;
+}
+
+.ios-calendar-wrapper .rdp-table,
+.ios-calendar-wrapper table {
+  @apply w-full table-fixed;
+}
+
+.ios-calendar-wrapper .rdp-weekdays,
+.ios-calendar-wrapper .rdp-week {
+  @apply w-full;
+}
+
+.ios-calendar-wrapper .rdp-day {
+  @apply p-0;
+}
+
+@media (max-width: 640px) {
+  .ios-calendar-wrapper [data-slot="calendar"] {
+    @apply p-2 rounded-2xl;
+    --cell-size: calc((100vw - 5rem) / 7);
+  }
+  
+  .ios-calendar-wrapper .rdp-day button,
+  .ios-calendar-wrapper .rdp-day_button {
+    @apply text-xs;
+    min-width: unset !important;
+    width: 100% !important;
+  }
+}
+
+/* List View */
+.ios-list-view {
+  @apply space-y-3 max-h-[500px] overflow-y-auto;
+}
+
+.ios-event-item {
+  @apply flex items-start gap-3 sm:gap-4 rounded-2xl border p-4;
+  backdrop-filter: blur(10px);
+}
+
+.ios-event-icon {
+  @apply rounded-full bg-background/40 p-2.5;
+}
+
+.ios-event-icon-svg {
+  @apply h-4 w-4 sm:h-5 sm:w-5;
+}
+
+.ios-event-content {
+  @apply flex-1 min-w-0;
+}
+
+.ios-event-header {
+  @apply flex items-start justify-between gap-2;
+}
+
+.ios-event-title {
+  @apply text-sm sm:text-base font-medium truncate;
+}
+
+.ios-event-date {
+  @apply text-xs px-2 py-1 rounded-lg bg-background/40 shrink-0;
+}
+
+.ios-event-course {
+  @apply text-xs sm:text-sm opacity-80 mt-1 truncate;
+}
+
+.ios-event-description {
+  @apply text-xs sm:text-sm opacity-70 mt-2 line-clamp-2;
+}
+
+/* Empty State */
+.ios-empty-state {
+  @apply text-center py-12;
+}
+
+.ios-empty-icon {
+  @apply h-12 w-12 mx-auto mb-3 opacity-40;
+}
+
+.ios-empty-text {
+  @apply text-sm text-muted-foreground;
+}
+
+/* Selected Day Events */
+.ios-selected-events {
+  @apply space-y-3 max-h-[300px] overflow-y-auto;
+}
+
+.ios-selected-event, .ios-selected-event-link {
+  @apply rounded-2xl border p-3 sm:p-4;
+  backdrop-filter: blur(10px);
+}
+
+.ios-selected-event-link {
+  @apply block hover:opacity-80 transition-opacity cursor-pointer;
+}
+
+.ios-selected-event-content {
+  @apply flex items-start gap-3;
+}
+
+.ios-selected-event-icon {
+  @apply h-4 w-4 mt-0.5 shrink-0;
+}
+
+.ios-selected-event-text {
+  @apply flex-1 min-w-0;
+}
+
+.ios-selected-event-title {
+  @apply text-sm font-medium;
+}
+
+.ios-selected-event-course {
+  @apply text-xs opacity-80 truncate mt-0.5;
+}
+
+.ios-selected-event-desc {
+  @apply text-xs opacity-70 mt-1 line-clamp-2;
+}
+
+.ios-no-events-text {
+  @apply text-sm text-muted-foreground;
+}
+
+/* Upcoming Events */
+.ios-upcoming-events {
+  @apply space-y-3 max-h-[400px] overflow-y-auto;
+}
+
+.ios-upcoming-event, .ios-upcoming-event-link {
+  @apply flex items-center gap-3 sm:gap-4 p-3 rounded-2xl transition-colors;
+}
+
+.ios-upcoming-event-link {
+  @apply hover:bg-muted/50;
+}
+
+.ios-upcoming-event-icon {
+  @apply rounded-full p-2;
+}
+
+.ios-upcoming-icon-svg {
+  @apply h-4 w-4;
+}
+
+.ios-upcoming-event-text {
+  @apply flex-1 min-w-0;
+}
+
+.ios-upcoming-event-title {
+  @apply text-sm font-medium truncate;
+}
+
+.ios-upcoming-event-date {
+  @apply text-xs text-muted-foreground;
+}
+
+/* Summary Grid */
+.ios-summary-grid {
+  @apply grid grid-cols-2 gap-3;
+}
+
+.ios-summary-item {
+  @apply flex items-center gap-3 rounded-2xl border p-3 sm:p-4;
+  backdrop-filter: blur(10px);
+}
+
+.ios-summary-icon {
+  @apply h-5 w-5 sm:h-6 sm:w-6;
+}
+
+.ios-summary-text {
+  @apply flex-1;
+}
+
+.ios-summary-count {
+  @apply text-xl sm:text-2xl font-bold;
+}
+
+.ios-summary-label {
+  @apply text-xs sm:text-sm opacity-80;
+}
+
+/* Dark mode adjustments */
+.dark .ios-schedule-header,
+.dark .ios-card {
+  background: linear-gradient(135deg, rgba(40, 40, 40, 0.6) 0%, rgba(40, 40, 40, 0.3) 100%);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.dark .ios-alert-card.ios-alert-destructive {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+}
+
+@media (max-width: 640px) {
+  .ios-schedule-container {
+    @apply px-3 space-y-4;
+  }
+  
+  .ios-schedule-header {
+    @apply p-4 rounded-2xl;
+  }
+  
+  .ios-card {
+    @apply rounded-2xl;
+  }
+  
+  .ios-card-content {
+    @apply p-3;
+  }
+  
+  .ios-summary-grid {
+    @apply grid-cols-1;
+  }
+  
+  /* Calendar card overflow fix for mobile */
+  .ios-calendar-card {
+    @apply overflow-hidden;
+  }
+  
+  .ios-calendar-card .ios-card-content {
+    @apply p-2;
+  }
+
+  /* Ensure calendar wrapper clips on mobile */
+  .ios-calendar-wrapper {
+    @apply overflow-x-hidden;
+  }
+
+  .ios-calendar-wrapper [data-slot="calendar"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
 }
 
 /* ── Page Transition — From tema/src/transition/ios.transition.ts ─── */

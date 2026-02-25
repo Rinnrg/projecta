@@ -80,7 +80,7 @@ export default function EditMateriClient({ materi }: EditMateriClientProps) {
     }
   ], [materi.course.judul, materi.judul, materi.courseId, materi.id])
 
-  useBreadcrumbPage(breadcrumbItems)
+  useBreadcrumbPage('Edit Materi', breadcrumbItems)
 
   // Check authentication and authorization
   useEffect(() => {

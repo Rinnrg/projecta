@@ -82,7 +82,7 @@ export default function ProjectsPage() {
     }
   ], [])
   
-  useBreadcrumbPage(breadcrumbItems)
+  useBreadcrumbPage('Proyek', breadcrumbItems)
   
   const [proyeks, setProyeks] = useState<Proyek[]>([])
   const [loading, setLoading] = useState(true)

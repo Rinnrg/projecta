@@ -98,7 +98,7 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
     }
   ], [materi.course.judul, materi.judul, courseId])
 
-  useBreadcrumbPage(breadcrumbItems)
+  useBreadcrumbPage(materi.judul, breadcrumbItems)
 
   // Fetch PDF as blob for fast rendering
   const loadPdfBlob = useCallback(async () => {
@@ -251,9 +251,9 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
       <AlertComponent />
       <ActionFeedback />
 
-      {/* Sidebar - Materi List */}
-      <div className="w-80 border-r bg-card/50 flex flex-col hidden lg:flex sticky top-8 h-[calc(100vh-4rem)] mt-8 relative z-0">
-        <div className="p-4 sm:p-6 border-b shrink-0">
+      {/* Sidebar - Materi List - iOS Glass */}
+      <div className="w-80 border-r border-border/30 bg-background/50 backdrop-blur-md flex flex-col hidden lg:flex sticky top-8 h-[calc(100vh-4rem)] mt-8 relative z-0">
+        <div className="p-4 sm:p-6 border-b border-border/30 shrink-0">
           <h2 className="font-semibold text-lg mb-1">Daftar Materi</h2>
           <p className="text-sm text-muted-foreground">Pilih materi untuk melihat detail</p>
         </div>
@@ -264,10 +264,10 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
               <button
                 key={m.id}
                 onClick={() => handleMateriChange(m.id)}
-                className={`w-full text-left p-3 sm:p-4 rounded-lg border transition-all hover:border-primary/50 ${
+                className={`w-full text-left p-3 sm:p-4 rounded-xl border transition-all hover:border-primary/30 ${
                   selectedMateriId === m.id
-                    ? "bg-primary/10 border-primary shadow-sm"
-                    : "bg-background border-transparent hover:bg-accent"
+                    ? "bg-primary/8 border-primary/30 shadow-sm"
+                    : "bg-background/60 border-transparent hover:bg-accent/50"
                 }`}
               >
                 <div className="flex justify-between items-start mb-1">
@@ -298,15 +298,15 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
       <div className="flex-1 bg-background mt-8 relative z-0">
         <div className="p-4 sm:p-6 lg:p-8 w-full space-y-6 sm:space-y-8">
 
-          {/* Header Section */}
+          {/* Header Section - iOS Glass */}
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 space-y-3">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5">
+                  <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5 rounded-lg">
                     Materi Pembelajaran
                   </Badge>
-                  <Badge variant="secondary" className="gap-1">
+                  <Badge variant="secondary" className="gap-1 rounded-lg">
                     <Calendar className="h-3 w-3" />
                     {new Date(materi.tgl_unggah).toLocaleDateString('id-ID', {
                       day: 'numeric',
@@ -347,10 +347,10 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
 
             <Separator />
 
-            {/* Description */}
+            {/* Description - iOS Glass */}
             {materi.deskripsi && (
               <div className="prose dark:prose-invert max-w-none">
-                <div className="p-4 sm:p-6 rounded-lg bg-muted/30 border">
+                <div className="p-4 sm:p-6 rounded-2xl ios-glass-inset border border-border/30">
                   <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
                     <BookOpen className="h-4 w-4 text-primary" />
                     Deskripsi Materi
@@ -372,7 +372,7 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
 
             {(materi.hasFileData || materi.lampiran) ? (
               <div className="grid gap-4">
-                <Card className="group hover:border-primary/50 transition-all hover:shadow-md">
+                <Card className="group ios-glass-card border-border/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 rounded-2xl">
                   <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row items-start gap-4">
                     <div className={`p-3 rounded-lg shrink-0 transition-transform group-hover:scale-110 ${
                       materi.hasFileData 
@@ -562,9 +562,9 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
                 )}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center border-2 border-dashed rounded-xl bg-muted/30">
-                <div className="p-4 rounded-full bg-muted mb-4">
-                  <FileText className="h-8 w-8 text-muted-foreground" />
+              <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center border border-dashed border-border/30 rounded-2xl ios-glass-inset">
+                <div className="p-4 rounded-2xl bg-primary/10 mb-4">
+                  <FileText className="h-8 w-8 text-primary" />
                 </div>
                 <h3 className="font-semibold text-base sm:text-lg mb-2">Belum ada lampiran</h3>
                 <p className="text-muted-foreground text-sm max-w-xs mx-auto">
@@ -576,8 +576,8 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
 
           <Separator />
 
-          {/* Course Info Card */}
-          <Card className="border-border/50 bg-muted/30">
+          {/* Course Info Card - iOS Glass */}
+          <Card className="ios-glass-card border-border/30 rounded-2xl">
             <CardContent className="p-4 sm:p-6">
               <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                 <BookOpen className="h-5 w-5 text-primary" />
