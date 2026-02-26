@@ -100,7 +100,12 @@ export default function AddMateriForm({ courseId, courseTitle }: AddMateriFormPr
         successTitle: "Berhasil!",
         successDescription: "Materi berhasil ditambahkan",
         errorTitle: "Gagal",
-        onSuccess: () => { router.push(`/courses/${courseId}`); router.refresh() },
+        onSuccess: () => {
+          setTimeout(() => {
+            router.push(`/courses/${courseId}`)
+            router.refresh()
+          }, 1500)
+        },
       }
     )
     setIsLoading(false)

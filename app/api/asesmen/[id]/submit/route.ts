@@ -8,7 +8,7 @@ export async function POST(
   try {
     const { id } = await params
     const body = await request.json()
-    const { namaKelompok, ketua, anggota, fileUrl, catatan, siswaId } = body
+    const { namaKelompok, ketua, anggota, fileUrl, catatan, siswaId, sourceCode, output } = body
 
     if (!siswaId) {
       return NextResponse.json(
@@ -65,6 +65,9 @@ export async function POST(
           anggota,
           fileUrl: fileUrl || existingSubmission.fileUrl,
           catatan,
+          sourceCode: sourceCode || existingSubmission.sourceCode,
+          output: output || existingSubmission.output,
+          status: 'PENDING', // Reset status when re-submitted
         },
       })
     } else {
@@ -76,8 +79,11 @@ export async function POST(
           anggota,
           fileUrl,
           catatan,
+          sourceCode,
+          output,
           siswaId,
           asesmenId: id,
+          status: 'PENDING',
         },
       })
     }

@@ -304,6 +304,44 @@ export default function AsesmenDetailPage({ params }: PageProps) {
               </>
             )}
             {isTeacherOrAdmin && asesmen.tipe === 'KUIS' && (
+              <>
+                <Button asChild>
+                  <Link href={`/courses/${courseId}/asesmen/${asesmenId}/soal/new`}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Tambah Soal
+                  </Link>
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(`/api/asesmen/${asesmenId}/export-excel`)
+                      if (response.ok) {
+                        const blob = await response.blob()
+                        const url = window.URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url
+                        a.download = `Nilai_Kuis_${asesmen.nama.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`
+                        document.body.appendChild(a)
+                        a.click()
+                        window.URL.revokeObjectURL(url)
+                        document.body.removeChild(a)
+                      } else {
+                        const error = await response.json()
+                        alert(error.error || 'Gagal mengekspor data')
+                      }
+                    } catch (error) {
+                      console.error('Error downloading Excel:', error)
+                      alert('Terjadi kesalahan saat mengunduh file')
+                    }
+                  }}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Excel
+                </Button>
+              </>
+            )}
+            {isTeacherOrAdmin && asesmen.tipe === 'TUGAS' && (
               <Button asChild>
                 <Link href={`/courses/${courseId}/asesmen/${asesmenId}/soal/new`}>
                   <Plus className="mr-2 h-4 w-4" />

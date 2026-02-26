@@ -259,6 +259,12 @@ model PengumpulanProyek {
   anggota      String? // Nama anggota kelompok (tugas)
   fileUrl      String? @db.Text // URL or base64 for file attachment
 
+  // Validation & Feedback fields
+  status       String   @default("PENDING") // PENDING, VALIDATED, REVISION
+  feedback     String?  @db.Text // Feedback dari guru
+  validatedAt  DateTime? // Tanggal divalidasi
+  validatedBy  String?  // ID guru yang memvalidasi
+
   // Relations
   kelompokId String? // Optional: untuk proyek kelompok
   kelompok   Kelompok? @relation(fields: [kelompokId], references: [id])
@@ -275,6 +281,7 @@ model PengumpulanProyek {
   @@index([siswaId])
   @@index([asesmenId])
   @@index([tgl_unggah])
+  @@index([status])
 }
 
 model ProfileShowcase {

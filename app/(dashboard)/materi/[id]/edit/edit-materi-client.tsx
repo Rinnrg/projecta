@@ -127,8 +127,12 @@ export default function EditMateriClient({ materi }: EditMateriClientProps) {
         successTitle: "Berhasil!",
         successDescription: "Materi berhasil diperbarui",
         errorTitle: "Gagal",
-        autoCloseMs: 1500,
-        onSuccess: () => { router.push(`/courses/${materi.course.id}`); router.refresh() },
+        onSuccess: () => {
+          setTimeout(() => {
+            router.push(`/courses/${materi.course.id}`)
+            router.refresh()
+          }, 1500)
+        },
       }
     )
     setIsLoading(false)
@@ -161,8 +165,12 @@ export default function EditMateriClient({ materi }: EditMateriClientProps) {
         successTitle: "Berhasil!",
         successDescription: "Materi berhasil dihapus",
         errorTitle: "Gagal",
-        autoCloseMs: 1500,
-        onSuccess: () => { router.push(`/courses/${materi.course.id}`); router.refresh() },
+        onSuccess: () => {
+          setTimeout(() => {
+            router.push(`/courses/${materi.course.id}`)
+            router.refresh()
+          }, 1500)
+        },
       }
     )
     setIsDeleting(false)

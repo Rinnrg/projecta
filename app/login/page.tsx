@@ -83,8 +83,11 @@ export default function LoginPage() {
         successTitle: "Berhasil!",
         successDescription: "Selamat datang kembali",
         errorTitle: "Login Gagal",
-        autoCloseMs: 1500,
-        onSuccess: () => router.push("/dashboard"),
+        onSuccess: () => {
+          setTimeout(() => {
+            router.push("/dashboard")
+          }, 1500)
+        },
         onError: (err) => setError(err.message),
       }
     )
@@ -100,8 +103,11 @@ export default function LoginPage() {
         loadingMessage: "Masuk...",
         successTitle: "Berhasil!",
         successDescription: `Login sebagai ${role}`,
-        autoCloseMs: 1200,
-        onSuccess: () => router.push("/dashboard"),
+        onSuccess: () => {
+          setTimeout(() => {
+            router.push("/dashboard")
+          }, 1200)
+        },
       }
     )
   }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
@@ -34,7 +34,8 @@ interface Proyek {
   }
 }
 
-export default function EditProjectPage({ params }: { params: { id: string } }) {
+export default function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: projectId } = use(params)
   const { user } = useAuth()
   const { t } = useAutoTranslate()
   const router = useRouter()
@@ -58,7 +59,7 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
     const loadProyek = async () => {
       try {
         setLoading(true)
-        const response = await fetch(`/api/proyek/${params.id}`)
+        const response = await fetch(`/api/proyek/${projectId}`)
         const data = await response.json()
 
         if (response.ok) {
@@ -86,7 +87,7 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
     }
 
     loadProyek()
-  }, [params.id, router, showError, t])
+  }, [projectId, router, showError, t])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -151,7 +152,7 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
       
       await execute(
         async () => {
-          const response = await fetch(`/api/proyek/${params.id}`, {
+          const response = await fetch(`/api/proyek/${projectId}`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
@@ -170,8 +171,11 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
           successTitle: t("Berhasil"),
           successDescription: t("Proyek berhasil diupdate"),
           errorTitle: t("Gagal"),
-          autoCloseMs: 1500,
-          onSuccess: () => router.push(`/projects/${params.id}`),
+          onSuccess: () => {
+            setTimeout(() => {
+              router.push(`/projects/${projectId}`)
+            }, 1500)
+          },
         }
       )
     } finally {
@@ -371,7 +375,7 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
 
               {/* Submit Buttons */}
               <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:justify-end">
-                <Link href={`/projects/${params.id}`}>
+                <Link href={`/projects/${projectId}`}>
                   <Button type="button" variant="outline" className="w-full sm:w-auto">
                     {t("Batal")}
                   </Button>

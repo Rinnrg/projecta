@@ -77,8 +77,12 @@ export default function AddCoursePage() {
         successTitle: "Berhasil!",
         successDescription: "Kursus berhasil dibuat",
         errorTitle: "Gagal",
-        autoCloseMs: 1500,
-        onSuccess: () => { router.push("/courses"); router.refresh() },
+        onSuccess: () => {
+          setTimeout(() => {
+            router.push("/courses")
+            router.refresh()
+          }, 1500)
+        },
       }
     )
 

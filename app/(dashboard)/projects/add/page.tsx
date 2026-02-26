@@ -192,8 +192,11 @@ export default function AddProjectPage() {
           successTitle: t("Berhasil"),
           successDescription: t("Proyek berhasil dibuat"),
           errorTitle: t("Gagal"),
-          autoCloseMs: 1500,
-          onSuccess: () => router.push("/projects"),
+          onSuccess: () => {
+            setTimeout(() => {
+              router.push("/projects")
+            }, 1500)
+          },
         }
       )
     } finally {

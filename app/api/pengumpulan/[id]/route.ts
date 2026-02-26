@@ -47,7 +47,7 @@ export async function GET(
   }
 }
 
-// UPDATE pengumpulan (nilai dan catatan)
+// UPDATE pengumpulan (nilai, catatan, feedback, status/validation)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -55,7 +55,7 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const { nilai, catatan } = body
+    const { nilai, catatan, feedback, status, validatedBy } = body
 
     // Validate
     if (nilai !== undefined && (nilai < 0 || nilai > 100)) {
@@ -65,18 +65,39 @@ export async function PUT(
       )
     }
 
+    // Build update data
+    const updateData: Record<string, unknown> = {}
+    if (nilai !== undefined) updateData.nilai = parseFloat(nilai)
+    if (catatan !== undefined) updateData.catatan = catatan
+    if (feedback !== undefined) updateData.feedback = feedback
+    if (status !== undefined) {
+      updateData.status = status
+      if (status === 'VALIDATED') {
+        updateData.validatedAt = new Date()
+        if (validatedBy) updateData.validatedBy = validatedBy
+      }
+    }
+
     const pengumpulan = await prisma.pengumpulanProyek.update({
       where: { id },
-      data: {
-        ...(nilai !== undefined && { nilai: parseFloat(nilai) }),
-        ...(catatan !== undefined && { catatan }),
-      },
+      data: updateData,
       include: {
         siswa: {
           select: {
             id: true,
             nama: true,
             email: true,
+          },
+        },
+        asesmen: {
+          select: {
+            id: true,
+            nama: true,
+            tipe: true,
+            tipePengerjaan: true,
+            course: {
+              select: { id: true, judul: true },
+            },
           },
         },
       },
@@ -100,6 +121,42 @@ export async function PUT(
           skor: parseFloat(nilai),
         },
       })
+    }
+
+    // Auto-create ProfileShowcase when validated
+    if (status === 'VALIDATED' && pengumpulan.siswaId && pengumpulan.asesmen) {
+      const courseName = pengumpulan.asesmen.course?.judul || ''
+      const asesmenNama = pengumpulan.asesmen.nama || ''
+      const judul = `${asesmenNama}${courseName ? ` - ${courseName}` : ''}`
+
+      await prisma.profileShowcase.upsert({
+        where: { pengumpulanProyekId: id },
+        create: {
+          judul,
+          deskripsi: `Tugas "${asesmenNama}" berhasil divalidasi${courseName ? ` pada kelas ${courseName}` : ''}`,
+          nilai: parseFloat(nilai) || pengumpulan.nilai || 0,
+          siswaId: pengumpulan.siswaId,
+          pengumpulanProyekId: id,
+          isPublic: true,
+          tanggalDinilai: new Date(),
+        },
+        update: {
+          judul,
+          nilai: parseFloat(nilai) || pengumpulan.nilai || 0,
+          tanggalDinilai: new Date(),
+        },
+      })
+    }
+
+    // Remove ProfileShowcase if status changed away from VALIDATED
+    if (status && status !== 'VALIDATED') {
+      try {
+        await prisma.profileShowcase.delete({
+          where: { pengumpulanProyekId: id },
+        })
+      } catch {
+        // No showcase record to delete — that's fine
+      }
     }
 
     return NextResponse.json({ pengumpulan })

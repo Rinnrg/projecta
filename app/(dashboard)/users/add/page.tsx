@@ -2,18 +2,19 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { User, Mail, Lock, AtSign, Loader2 } from "lucide-react"
+import { User, Mail, Lock, AtSign, Loader2, GraduationCap } from "lucide-react"
 import Link from "next/link"
 import { useAdaptiveAlert } from "@/components/ui/adaptive-alert"
 import { AnimateIn } from "@/components/ui/animate-in"
 import { useAsyncAction } from "@/hooks/use-async-action"
+import { AddClassDialog } from "@/components/add-class-dialog"
 
 export default function AddUserPage() {
   const router = useRouter()
@@ -25,7 +26,39 @@ export default function AddUserPage() {
   const [password, setPassword] = useState("")
   const [role, setRole] = useState("")
   const [kelas, setKelas] = useState("")
+  const [availableClasses, setAvailableClasses] = useState<string[]>([])
+  const [loadingClasses, setLoadingClasses] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Fetch available classes when role is SISWA
+  useEffect(() => {
+    if (role === "SISWA") {
+      fetchAvailableClasses()
+    } else {
+      // Reset kelas when role is not SISWA
+      setKelas("")
+    }
+  }, [role])
+
+  const fetchAvailableClasses = async () => {
+    setLoadingClasses(true)
+    try {
+      const response = await fetch("/api/kelas")
+      if (!response.ok) throw new Error("Gagal mengambil data kelas")
+      const data = await response.json()
+      setAvailableClasses(data.classes || [])
+    } catch (error) {
+      console.error("Error fetching classes:", error)
+      setAvailableClasses([])
+    } finally {
+      setLoadingClasses(false)
+    }
+  }
+
+  const handleClassAdded = (newClass: string) => {
+    setAvailableClasses(prev => [...prev, newClass].sort())
+    setKelas(newClass)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,6 +75,11 @@ export default function AddUserPage() {
 
     if (!role) {
       showError("Error", "Please select a role")
+      return
+    }
+
+    if (role === "SISWA" && !kelas.trim()) {
+      showError("Error", "Kelas is required for students")
       return
     }
 
@@ -75,8 +113,12 @@ export default function AddUserPage() {
         successTitle: "Berhasil!",
         successDescription: "Pengguna berhasil dibuat",
         errorTitle: "Gagal",
-        autoCloseMs: 1500,
-        onSuccess: () => { router.push("/users"); router.refresh() },
+        onSuccess: () => {
+          setTimeout(() => {
+            router.push("/users")
+            router.refresh()
+          }, 1500)
+        },
       }
     )
 
@@ -96,6 +138,21 @@ export default function AddUserPage() {
           </CardHeader>
           <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Role Field - di paling atas */}
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <Select value={role} onValueChange={setRole} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SISWA">Siswa (Student)</SelectItem>
+                  <SelectItem value="GURU">Guru (Teacher)</SelectItem>
+                  <SelectItem value="ADMIN">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="nama">Full Name</Label>
               <div className="relative">
@@ -158,29 +215,94 @@ export default function AddUserPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Select value={role} onValueChange={setRole} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SISWA">Siswa (Student)</SelectItem>
-                  <SelectItem value="GURU">Guru (Teacher)</SelectItem>
-                  <SelectItem value="ADMIN">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
+            {/* Conditional fields based on role */}
             {role === "SISWA" && (
               <div className="space-y-2">
-                <Label htmlFor="kelas">Kelas</Label>
-                <Input
-                  id="kelas"
-                  placeholder="Enter class (e.g., 10 IPA 1)"
-                  value={kelas}
-                  onChange={(e) => setKelas(e.target.value)}
-                />
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="kelas">Kelas</Label>
+                  {availableClasses.length > 0 && (
+                    <AddClassDialog onClassAdded={handleClassAdded} />
+                  )}
+                </div>
+                {loadingClasses ? (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span className="text-sm text-muted-foreground">Loading classes...</span>
+                  </div>
+                ) : availableClasses.length > 0 ? (
+                  <div className="space-y-3">
+                    <Select value={kelas} onValueChange={setKelas}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih kelas yang sudah ada" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableClasses.map((className) => (
+                          <SelectItem key={className} value={className}>
+                            <div className="flex items-center">
+                              <GraduationCap className="h-4 w-4 mr-2" />
+                              {className}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="text-center text-sm text-muted-foreground">
+                      atau
+                    </div>
+                    <div className="relative">
+                      <GraduationCap className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Masukkan nama kelas baru (e.g., 10 IPA 1)"
+                        value={kelas}
+                        onChange={(e) => setKelas(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                    <div className="flex justify-center">
+                      <AddClassDialog onClassAdded={handleClassAdded} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <GraduationCap className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="kelas"
+                        placeholder="Enter class (e.g., 10 IPA 1)"
+                        value={kelas}
+                        onChange={(e) => setKelas(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                    <div className="flex justify-center">
+                      <AddClassDialog onClassAdded={handleClassAdded} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {role === "GURU" && (
+              <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center mb-2">
+                  <User className="h-5 w-5 text-blue-600 mr-2" />
+                  <h4 className="font-medium text-blue-900 dark:text-blue-100">Guru Account</h4>
+                </div>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  Akun guru akan memiliki akses untuk mengelola course, materi, dan asesmen.
+                </p>
+              </div>
+            )}
+
+            {role === "ADMIN" && (
+              <div className="p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+                <div className="flex items-center mb-2">
+                  <User className="h-5 w-5 text-red-600 mr-2" />
+                  <h4 className="font-medium text-red-900 dark:text-red-100">Administrator Account</h4>
+                </div>
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  Akun admin memiliki akses penuh untuk mengelola semua aspek platform.
+                </p>
               </div>
             )}
 

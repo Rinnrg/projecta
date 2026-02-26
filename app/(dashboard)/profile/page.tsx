@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { mockShowcase, mockUsers } from "@/lib/mock-data"
 import { Card, CardContent, CardFooter, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { Search, Award, Star, Calendar, ExternalLink, Code, BookOpen, Mail, User, Clock, Trophy, Settings, Camera, Shield, Palette, Globe, Check } from "lucide-react"
+import { Search, Award, Star, Calendar, ExternalLink, Code, BookOpen, Mail, User, Users, Clock, Trophy, Settings, Camera, Shield, Palette, Globe, Check } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
 import { id as idLocale, enUS } from "date-fns/locale"
@@ -25,36 +24,6 @@ import { useAsyncAction } from "@/hooks/use-async-action"
 import { AvatarCropDialog } from "@/components/ui/avatar-crop-dialog"
 import { uploadProfilePhoto } from "../settings/actions"
 import { useRouter } from "next/navigation"
-
-const extendedShowcase = [
-  ...mockShowcase,
-  {
-    id: "s3",
-    judul: "Weather Dashboard",
-    deskripsi: "Real-time weather application with beautiful UI",
-    nilai: 95,
-    tanggalDinilai: new Date("2024-11-25"),
-    isPublic: true,
-    siswaId: "5",
-    pengumpulanProyekId: "pp3",
-    createdAt: new Date("2024-11-25"),
-    updatedAt: new Date("2024-11-25"),
-    siswa: mockUsers[4],
-  },
-  {
-    id: "s4",
-    judul: "Blog Platform",
-    deskripsi: "Full-stack blog with authentication and comments",
-    nilai: 90,
-    tanggalDinilai: new Date("2024-11-28"),
-    isPublic: true,
-    siswaId: "1",
-    pengumpulanProyekId: "pp4",
-    createdAt: new Date("2024-11-28"),
-    updatedAt: new Date("2024-11-28"),
-    siswa: mockUsers[0],
-  },
-]
 
 export default function ProfilePage() {
   const { user, refreshUser } = useAuth()
@@ -81,6 +50,8 @@ export default function ProfilePage() {
   const [uploading, setUploading] = useState(false)
   const [courses, setCourses] = useState<any[]>([])
   const [coursesLoading, setCoursesLoading] = useState(true)
+  const [showcases, setShowcases] = useState<any[]>([])
+  const [showcasesLoading, setShowcasesLoading] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const dateLocale = locale === 'id' ? idLocale : enUS
@@ -109,6 +80,23 @@ export default function ProfilePage() {
       }
     }
     fetchCourses()
+    // Fetch real showcase data
+    const fetchShowcases = async () => {
+      try {
+        setShowcasesLoading(true)
+        const res = await fetch(`/api/profile/showcase?siswaId=${user.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          setShowcases(data.showcases || [])
+        }
+      } catch (error) {
+        console.error("Error fetching showcases:", error)
+      } finally {
+        setShowcasesLoading(false)
+      }
+    }
+    if (user.role === "SISWA") fetchShowcases()
+    else setShowcasesLoading(false)
   }, [user])
 
   // Settings handlers
@@ -195,31 +183,30 @@ export default function ProfilePage() {
     { value: "system", label: t("Sistem"), icon: "💻" },
   ]
 
-  // Get user's showcases
-  const userShowcases = extendedShowcase
-    .filter((item) => {
+  // Get user's showcases (real data)
+  const userShowcases = showcases
+    .filter((item: any) => {
       const matchesSearch =
-        item.judul.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.judul?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.deskripsi?.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesUser = item.siswaId === user?.id
-      return matchesSearch && matchesUser && item.isPublic
+      return matchesSearch && item.isPublic
     })
-    .sort((a, b) => {
-      if (sortBy === "newest") return b.createdAt.getTime() - a.createdAt.getTime()
+    .sort((a: any, b: any) => {
+      if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       if (sortBy === "highest") return b.nilai - a.nilai
       return a.judul.localeCompare(b.judul)
     })
 
-  // Stats
-  const totalShowcases = extendedShowcase.filter((s) => s.siswaId === user?.id).length
+  // Stats from real data
+  const totalShowcases = showcases.length
   const averageGrade =
     totalShowcases > 0
       ? Math.round(
-          extendedShowcase.filter((s) => s.siswaId === user?.id).reduce((acc, s) => acc + s.nilai, 0) / totalShowcases,
+          showcases.reduce((acc: number, s: any) => acc + s.nilai, 0) / totalShowcases,
         )
       : 0
   const highestGrade =
-    totalShowcases > 0 ? Math.max(...extendedShowcase.filter((s) => s.siswaId === user?.id).map((s) => s.nilai)) : 0
+    totalShowcases > 0 ? Math.max(...showcases.map((s: any) => s.nilai)) : 0
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -601,7 +588,7 @@ export default function ProfilePage() {
 
             {userShowcases.length > 0 ? (
               <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-                {userShowcases.map((item, index) => (
+                {userShowcases.map((item: any, index: number) => (
                   <AnimateIn key={item.id} stagger={6 + index}>
                     <Card className="group overflow-hidden transition-all hover:shadow-lg">
                       <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5">
@@ -612,24 +599,39 @@ export default function ProfilePage() {
                           <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 sm:h-4 sm:w-4" />
                           <span>{item.nilai}</span>
                         </div>
+                        {item.pengumpulanProyek?.asesmen?.course && (
+                          <div className="absolute left-2 top-2">
+                            <Badge variant="secondary" className="text-[10px] sm:text-xs">
+                              {item.pengumpulanProyek.asesmen.course.judul}
+                            </Badge>
+                          </div>
+                        )}
                       </div>
                       <CardContent className="p-3 sm:p-4">
                         <h3 className="text-sm font-semibold transition-colors group-hover:text-primary sm:text-base">
                           {item.judul}
                         </h3>
                         <p className="mt-1 line-clamp-2 text-xs text-muted-foreground sm:text-sm">{item.deskripsi}</p>
+                        {item.pengumpulanProyek?.namaKelompok && (
+                          <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                            <Users className="h-3 w-3" />
+                            {item.pengumpulanProyek.namaKelompok}
+                          </div>
+                        )}
                         <div className="mt-3 flex items-center gap-1 text-xs text-muted-foreground sm:mt-4">
                           <Calendar className="h-3 w-3" />
-                          {format(item.tanggalDinilai, "d MMMM yyyy", { locale: dateLocale })}
+                          {format(new Date(item.tanggalDinilai), "d MMMM yyyy", { locale: dateLocale })}
                         </div>
                       </CardContent>
                       <CardFooter className="border-t p-3 sm:p-4">
-                        <Button asChild className="w-full bg-transparent" variant="outline" size="sm">
-                          <Link href={`/showcase/${item.id}`}>
-                            {t("Lihat Detail")}
-                            <ExternalLink className="ml-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                          </Link>
-                        </Button>
+                        {item.pengumpulanProyek?.asesmen && (
+                          <Button asChild className="w-full bg-transparent" variant="outline" size="sm">
+                            <Link href={`/courses/${item.pengumpulanProyek.asesmen.course?.id}/asesmen/${item.pengumpulanProyek.asesmen.id}`}>
+                              {t("Lihat Detail")}
+                              <ExternalLink className="ml-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            </Link>
+                          </Button>
+                        )}
                       </CardFooter>
                     </Card>
                   </AnimateIn>

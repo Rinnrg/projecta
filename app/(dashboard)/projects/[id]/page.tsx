@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useAutoTranslate } from "@/lib/auto-translate-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -57,7 +57,8 @@ interface Proyek {
   }
 }
 
-export default function ProjectDetailPage({ params }: { params: { id: string } }) {
+export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: projectId } = use(params)
   const { user } = useAuth()
   const { t, locale } = useAutoTranslate()
   const { error: showError, AlertComponent } = useAdaptiveAlert()
@@ -72,7 +73,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   const loadProyek = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/proyek/${params.id}`)
+      const response = await fetch(`/api/proyek/${projectId}`)
       const data = await response.json()
 
       if (response.ok) {
@@ -90,7 +91,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
 
   useEffect(() => {
     loadProyek()
-  }, [params.id])
+  }, [projectId])
 
   const getProjectStatus = (tglMulai: string, tglSelesai: string) => {
     const now = new Date()
@@ -353,7 +354,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
           </TabsContent>
 
           <TabsContent value="kelompok">
-            <ProjectGroupsManagement proyekId={params.id} />
+            <ProjectGroupsManagement proyekId={projectId} />
           </TabsContent>
 
           {activeSintaksPhases.map((phase) => (

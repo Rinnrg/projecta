@@ -184,8 +184,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ proyek }, { status: 201 })
   } catch (error) {
     console.error('Error creating proyek:', error)
+    const message = error instanceof Error ? error.message : 'Gagal membuat proyek'
     return NextResponse.json(
-      { error: 'Gagal membuat proyek' },
+      { error: message },
       { status: 500 }
     )
   }

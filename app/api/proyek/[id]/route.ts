@@ -4,11 +4,12 @@ import { prisma } from '@/lib/prisma'
 // GET single proyek by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const proyek = await prisma.proyek.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         guru: {
           select: {
@@ -68,9 +69,10 @@ export async function GET(
 // UPDATE proyek
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
     const { judul, deskripsi, tgl_mulai, tgl_selesai, lampiran, sintaks } = body
 
@@ -99,7 +101,7 @@ export async function PUT(
 
     // Check if project exists
     const existingProyek = await prisma.proyek.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!existingProyek) {
@@ -110,7 +112,7 @@ export async function PUT(
     }
 
     const proyek = await prisma.proyek.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         judul,
         deskripsi,
@@ -143,11 +145,12 @@ export async function PUT(
 // DELETE proyek
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await prisma.proyek.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ message: 'Proyek berhasil dihapus' })

@@ -224,8 +224,11 @@ export default function MateriDetailClient({ materi, allMateri, courseId }: Mate
         successTitle: "Berhasil!",
         successDescription: `Materi "${materi.judul}" berhasil dihapus`,
         errorTitle: "Gagal",
-        autoCloseMs: 1500,
-        onSuccess: () => router.push(`/courses/${courseId}`),
+        onSuccess: () => {
+          setTimeout(() => {
+            router.push(`/courses/${courseId}`)
+          }, 1500)
+        },
       }
     )
   }

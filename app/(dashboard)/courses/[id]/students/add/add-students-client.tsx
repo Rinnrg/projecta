@@ -93,7 +93,12 @@ export default function AddStudentsClient({
         successTitle: "Berhasil!",
         successDescription: `${studentIds.length} siswa dari ${selectedClasses.length} kelas berhasil ditambahkan`,
         errorTitle: "Gagal",
-        onSuccess: () => { router.push(`/courses/${course.id}?tab=students`); router.refresh() },
+        onSuccess: () => {
+          setTimeout(() => {
+            router.push(`/courses/${course.id}?tab=students`)
+            router.refresh()
+          }, 1500)
+        },
       }
     )
     setIsSubmitting(false)
